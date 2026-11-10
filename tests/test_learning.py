@@ -720,3 +720,46 @@ def test_evaluation_script_with_an_ai_provider(teacher, home, tmp_path):
     # ... and its review confirms the findings strict mode had set aside
     assert with_ai_strict["tp"] == with_ai["tp"]
     assert "deep scan added" in with_ai["ai"]["llm"]
+
+
+# ====================================================================== keep learning
+def test_learning_repeats_until_nothing_new_is_found(teacher, home, capsys):
+    # round 1 learns and activates the memcpy rule; round 2 finds nothing new and stops
+    assert cli(["learn", str(VULN), "--quiet", "--llm-host", teacher, "--model", "teacher:1",
+                "--llm-max", "0", "--rounds", "5", "--auto-approve"]) == 0
+    out = capsys.readouterr().out
+    assert "Round 1: 1 candidate(s), 1 passed validation, 1 activated" in out
+    assert "Round 2: 0 candidate(s)" in out and "Round 3" not in out
+    assert "Nothing new to learn from this project" in out
+    assert len(store.read_learned()) == 1 and home.list_candidates("pending") == []
+    static = run_scan(str(VULN), ScanOptions(save=False), storage=home)
+    assert any(f.engines == ["learned"] for f in static.findings)
+
+
+def test_learning_without_auto_approve_stops_and_waits(teacher, home, capsys):
+    assert cli(["learn", str(VULN), "--quiet", "--llm-host", teacher, "--model", "teacher:1",
+                "--llm-max", "0", "--rounds", "5"]) == 0
+    out = capsys.readouterr().out
+    assert "Round 1: 1 candidate(s), 1 passed validation, 0 activated" in out
+    assert "Round 2" not in out and "Stopped after round 1" in out
+    assert "1 candidate(s) are waiting for your approval" in out
+    assert store.read_learned() == []                     # nothing is active without you
+
+
+def test_bootstrap_all_fills_every_language_with_a_gap(teacher, home, capsys):
+    gaps = loop.all_gaps(cwes=["CWE-89"])
+    assert "dart" in gaps and "lua" in gaps and "swift" in gaps
+    assert "python" in gaps and "php" not in gaps         # PHP already has SQL injection rules
+    client = llm.OllamaClient(teacher, "teacher:1")
+    created = loop.bootstrap_all(client, home, languages=["dart", "lua", "php"],
+                                 cwes=["CWE-89"])
+    assert sorted(c["languages"][0] for c in created) == ["dart", "lua"]
+    assert all(c["status"] == "pending" and c["origin"] == "bootstrap" for c in created)
+    assert cli(["learn", "--bootstrap", "klingon", "--quiet", "--llm-host", teacher,
+                "--model", "teacher:1"]) == 2
+    capsys.readouterr()
+    assert cli(["learn", "--bootstrap", "all", "--cwe", "CWE-89", "--quiet", "--llm-host",
+                teacher, "--model", "teacher:1"]) == 0
+    out = capsys.readouterr().out
+    assert "Coverage gaps:" in out and "waiting for your approval" in out
+    assert store.read_learned() == []                     # bootstrap rules always wait for you

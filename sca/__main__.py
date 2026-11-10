@@ -3,6 +3,8 @@
     python -m sca scan <folder> [--llm] [--deep] [--strict] [--format html,json,sarif,pdf]
     python -m sca config              # choose the AI provider and store the API key
     python -m sca learn <folder>      # let the AI propose new rules from a project
+    python -m sca learn <folder> --rounds 5 --auto-approve    # keep learning until stable
+    python -m sca learn --bootstrap all                       # fill gaps of every language
     python -m sca rules list          # review, approve or reject proposed rules
     python -m sca feedback fp <id>    # mark a finding as a false positive (or tp = real)
     python -m sca coverage            # rules per language and weakness
@@ -279,33 +281,61 @@ def cmd_learn(args: argparse.Namespace) -> int:
         return 2
     storage = Storage()
     created: List[Dict[str, Any]] = []
+    auto_approved: List[str] = []
     if args.path:
         options = ScanOptions(use_llm=True, llm_deep_scan=True,
                               llm_deep_max_files=args.max_files, llm_max_findings=args.llm_max,
                               save=False, **_llm_settings(args))
         try:
-            result, files = scan_project(args.path, options, _progress(args), storage)
+            report = loop.learn_until_stable(
+                args.path, client, storage,
+                lambda: scan_project(args.path, options, _progress(args), storage),
+                rounds=args.rounds, approve=args.auto_approve, max_candidates=args.max_rules,
+                progress=_progress(args))
         except FileNotFoundError as exc:
             print("Error: %s" % exc, file=sys.stderr)
             return 2
-        print("AI: %s" % result.ai.get("llm"))
-        created += loop.learn_from_scan(result, files, client, storage, args.max_rules,
-                                        _progress(args))
+        for entry in report:
+            print("Round %d: %d candidate(s), %d passed validation, %d activated. AI: %s" % (
+                entry["round"], len(entry["created"]), entry["pending"],
+                len(entry["approved"]), entry["llm"]))
+            created += entry["created"]
+            auto_approved += entry["approved"]
+        last = report[-1]
+        if not last["created"]:
+            print("Nothing new to learn from this project: the rules cover what the AI found.")
+        elif last["pending"] and not args.auto_approve and args.rounds > 1:
+            print("Stopped after round %d: approve the candidates, then run the command again "
+                  "(or use --auto-approve) so the next round can look for more." % last["round"])
     if args.from_feedback:
         created += loop.learn_from_feedback(client, storage, args.max_rules)
     if args.bootstrap:
         cwes = [c for c in args.cwe.split(",") if c] if args.cwe else None
-        created += loop.bootstrap(client, storage, args.bootstrap, cwes, _progress(args))
+        if args.bootstrap.lower() == "all":
+            gaps = loop.all_gaps(cwes=cwes)
+            total = sum(len(v) for v in gaps.values())
+            print("Coverage gaps: %d weaknesses in %d languages (up to %d AI requests)."
+                  % (total, len(gaps), 2 * total))
+            created += loop.bootstrap_all(client, storage, cwes=cwes, progress=_progress(args))
+        else:
+            try:
+                created += loop.bootstrap(client, storage, args.bootstrap, cwes,
+                                          _progress(args))
+            except ValueError as exc:
+                print("Error: %s. Run `python -m sca coverage` for the list." % exc,
+                      file=sys.stderr)
+                return 2
 
     pending = [c for c in created if c["status"] == "pending"]
     print("\n%d candidate(s) proposed: %d passed validation, %d rejected automatically."
           % (len(created), len(pending), len(created) - len(pending)))
     _print_candidates(created)
-    if args.auto_approve:
-        approved = loop.auto_approve(storage, created)
-        print("\nAuto-approved %d rule(s): %s" % (len(approved), ", ".join(approved) or "-"))
-    elif pending:
-        print("\nReview them:  python -m sca rules show <id>")
+    still_pending = [c["id"] for c in storage.list_candidates("pending")]
+    if auto_approved:
+        print("\nActivated automatically: %s" % ", ".join(auto_approved))
+    if still_pending:
+        print("\n%d candidate(s) are waiting for your approval." % len(still_pending))
+        print("Review them:  python -m sca rules show <id>")
         print("Approve    :  python -m sca rules approve <id>   (or: approve all)")
     return 0
 
@@ -549,7 +579,12 @@ def build_parser() -> argparse.ArgumentParser:
     learn = sub.add_parser("learn", help="let the AI propose new rules")
     learn.add_argument("path", nargs="?", help="project to learn from")
     learn.add_argument("--bootstrap", metavar="LANGUAGE",
-                       help="write rules for the weaknesses this language has no rule for")
+                       help="write rules for the weaknesses this language has no rule for; "
+                            "'all' does every language that has a gap")
+    learn.add_argument("--rounds", type=int, default=1,
+                       help="repeat deep scan + learning until a round finds nothing new, "
+                            "at most this many times (needs --auto-approve to continue "
+                            "past the first round)")
     learn.add_argument("--cwe", default="", help="with --bootstrap: comma list of CWE ids")
     learn.add_argument("--from-feedback", action="store_true",
                        help="propose exclusions for findings you marked as false positives")

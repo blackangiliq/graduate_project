@@ -211,6 +211,50 @@ def bootstrap(client: Any, storage: Storage, language: str,
     return created
 
 
+def all_gaps(languages: Optional[Sequence[str]] = None,
+             cwes: Optional[Sequence[str]] = None) -> Dict[str, List[str]]:
+    """language -> weaknesses without a rule, for every language that has a gap."""
+    out: Dict[str, List[str]] = {}
+    for language in languages or CODE_LANGUAGES:
+        gaps = coverage_gaps(language, cwes)
+        if gaps:
+            out[language] = gaps
+    return out
+
+
+def bootstrap_all(client: Any, storage: Storage, languages: Optional[Sequence[str]] = None,
+                  cwes: Optional[Sequence[str]] = None, progress: Optional[ProgressFn] = None
+                  ) -> List[Dict[str, Any]]:
+    """Fill the coverage gaps of every language (or of the given ones) in one run."""
+    created: List[Dict[str, Any]] = []
+    for language in all_gaps(languages, cwes):
+        created += bootstrap(client, storage, language, cwes, progress)
+    return created
+
+
+def learn_until_stable(target: str, client: Any, storage: Storage, scan: Callable[[], Any],
+                       rounds: int = 3, approve: bool = False, max_candidates: int = 20,
+                       progress: Optional[ProgressFn] = None) -> List[Dict[str, Any]]:
+    """Repeat "deep scan -> learn" until a round teaches nothing new (or ``rounds`` is
+    reached). ``scan`` runs one deep scan and returns (result, files).
+
+    After each round the validated rules must become active before the next round can find
+    anything new: with ``approve`` they are activated automatically (only rules learned from
+    real code qualify), otherwise the loop stops after the first round and waits for the
+    reviewer."""
+    report: List[Dict[str, Any]] = []
+    for number in range(1, max(1, rounds) + 1):
+        result, files = scan()
+        created = learn_from_scan(result, files, client, storage, max_candidates, progress)
+        pending = [c for c in created if c["status"] == "pending"]
+        approved = auto_approve(storage, created) if approve else []
+        report.append({"round": number, "created": created, "pending": len(pending),
+                       "approved": approved, "llm": result.ai.get("llm", "")})
+        if not approved:
+            break     # nothing new became active, so another round would find the same
+    return report
+
+
 def auto_approve(storage: Storage, candidates: List[Dict[str, Any]]) -> List[str]:
     """Approve validated candidates without a human. Only scan-derived rules qualify: they
     have real evidence. Bootstrap rules and exclusions always wait for a person."""

@@ -42,6 +42,7 @@ def test_dashboard_scan_flow():
     labels = [m.label for m in app.metric]
     assert "Security score (grade F)" in labels and "Critical" in labels
     assert "Learned rules" in labels and "Waiting for approval" in labels
+    assert any("weaknesses without a rule in" in c.value for c in app.caption)
     assert len(app.expander) >= 50                  # one per finding in the Findings tab
 
     # review the first finding as a false positive, then take it back

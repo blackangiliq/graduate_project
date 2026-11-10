@@ -105,6 +105,18 @@ Click the image to enlarge it. Source: [docs/diagrams/pipeline.mmd](docs/diagram
 6. **Track.** Every "real" / "false positive" review adjusts the confidence of the rule
    behind the finding. A rule that keeps producing false positives is quarantined.
 
+To keep learning until a round finds nothing new, and to fill the gaps of every language:
+
+```bash
+python -m sca learn path/to/project --rounds 5 --auto-approve
+python -m sca learn --bootstrap all      # one candidate rule per missing (language, weakness)
+python -m sca coverage                   # rules per language and weakness
+```
+
+`--auto-approve` activates only validated rules learned from real code; exclusions and
+bootstrap rules always wait for a person. Without it the loop stops after one round and
+waits for your approval.
+
 ![Learning loop](docs/images/learning-loop.png)
 
 Diagram source: [docs/diagrams/learning-loop.mmd](docs/diagrams/learning-loop.mmd). The Learning tab of the dashboard:
@@ -178,7 +190,7 @@ The rule was tightened as described under *Fewer false alarms*.
 ## What was and was not tested
 
 - Tested (Linux and Windows through GitHub Actions, Python 3.10 and 3.12; locally 3.13):
-  235 automated tests covering every engine, the pipeline, reports, the dashboard
+  238 automated tests covering every engine, the pipeline, reports, the dashboard
   (including the learn-and-approve flow), the provider clients, the configuration command,
   the learning loop, feedback, quarantine, strict mode and the evaluation script.
 - **No real AI service was called.** The provider clients and the learning loop were tested
@@ -225,7 +237,7 @@ sca/
 learned/               rules and exclusions this installation has learned (YAML)
 samples/               vulnerable_app, safe_app, ground_truth.json
 evaluation/            evaluate.py, results.md
-tests/                 235 tests
+tests/                 238 tests
 docs/                  Arabic guide, illustrated walk-through, thesis outline, architecture,
                        diagrams/ (Mermaid sources) and images/
 experiments/           optional CodeBERT fine-tuning script (not executed)

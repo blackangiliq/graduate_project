@@ -190,6 +190,11 @@ seconds.
 For an exclusion: compiles, fast, specific, matches the false positive, and matches none of
 the known-vulnerable lines that the target rule reports (so recall cannot silently drop).
 
+**Repeating** (`loop.learn_until_stable`, `--rounds N`). A round is deep scan plus
+learning. Rounds repeat while each one activates at least one new rule, so the model is
+asked again only after its earlier discoveries are covered statically. `bootstrap_all`
+(`--bootstrap all`) proposes a first rule for every (language, weakness) pair that has none.
+
 **Approval** (`store.py`). Only a candidate whose validation passed can be approved.
 `--auto-approve` exists for unattended use and applies only to rules learned from real code;
 exclusions and bootstrap rules always wait for a person. A learned rule starts at

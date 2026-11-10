@@ -352,7 +352,7 @@ MessageDigest md = MessageDigest.getInstance("MD5");
 | fpdf2 | تقرير PDF | توليد PDF ببايثون خالص |
 | SARIF 2.1.0 | التصدير | صيغة معيارية يقرؤها GitHub و VS Code |
 | Bandit و Opengrep/Semgrep و Gitleaks | محركات اختيارية | الاستفادة من قواعد جاهزة |
-| pytest و GitHub Actions | الاختبارات | 235 اختباراً على لينكس وويندوز |
+| pytest و GitHub Actions | الاختبارات | 238 اختباراً على لينكس وويندوز |
 | Mermaid | هذه المخططات | مخططات نصية قابلة للتعديل |
 
 ---

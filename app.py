@@ -457,12 +457,21 @@ with tab_learn:
             st.rerun()
     with t2:
         st.markdown("**Fill gaps for a language**")
-        language = st.selectbox("Language", CODE_LANGUAGES, index=CODE_LANGUAGES.index("ruby"))
-        gaps = loop.coverage_gaps(language)
-        st.caption("Weaknesses without a rule: %s" % (", ".join(gaps) or "none"))
-        if st.button("Write rules for this language", disabled=not llm_ready or not gaps, **WIDE):
+        every = "all languages"
+        language = st.selectbox("Language", [every] + CODE_LANGUAGES)
+        if language == every:
+            gap_map = loop.all_gaps()
+            gaps = [c for v in gap_map.values() for c in v]
+            st.caption("%d weaknesses without a rule in %d languages (up to %d AI requests)"
+                       % (len(gaps), len(gap_map), 2 * len(gaps)))
+        else:
+            gaps = loop.coverage_gaps(language)
+            st.caption("Weaknesses without a rule: %s" % (", ".join(gaps) or "none"))
+        if st.button("Write rules for the gaps", disabled=not llm_ready or not gaps, **WIDE):
             with st.spinner("Asking the model for rules"):
-                created = loop.bootstrap(make_client(llm_config), storage, language)
+                client = make_client(llm_config)
+                created = (loop.bootstrap_all(client, storage) if language == every
+                           else loop.bootstrap(client, storage, language))
             ok = sum(1 for c in created if c["status"] == "pending")
             st.session_state["learn_note"] = (
                 "%d candidate(s) proposed: %d passed validation, %d rejected automatically."

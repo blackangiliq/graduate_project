@@ -62,9 +62,12 @@ def render_pdf(result: ScanResult) -> bytes:
     counts = result.counts()
     line("   ".join("%s: %d" % (s.capitalize(), counts[s]) for s in SEVERITIES), 11, "B")
     hidden = len(result.findings) - len(result.open_findings)
+    confirmed = sum(1 for f in result.open_findings if f.tier == "confirmed")
+    line("%d of the %d open findings are confirmed by independent evidence."
+         % (confirmed, len(result.open_findings)), 9, "", (90, 90, 90))
     if hidden:
-        line("%d finding(s) were judged likely false positives by the AI review and are "
-             "listed at the end." % hidden, 9, "I", (90, 90, 90))
+        line("%d finding(s) are not counted in the score (needs review, likely false positive "
+             "or dismissed) and are listed at the end." % hidden, 9, "I", (90, 90, 90))
     for key in ("ml", "llm"):
         if result.ai.get(key):
             line("AI %s: %s" % (key.upper(), result.ai[key]), 8, "", (90, 90, 90), 4.5)
@@ -87,7 +90,9 @@ def render_pdf(result: ScanResult) -> bytes:
         pdf.ln(2)
         tag = finding.severity.upper()
         if finding.status != "open":
-            tag += " (likely false positive)"
+            tag += " (%s)" % finding.status.replace("_", " ")
+        elif finding.tier == "confirmed":
+            tag += ", confirmed"
         line("%d. [%s] %s" % (number, tag, finding.title), 10, "B",
              COLORS[finding.severity])
         line("%s:%d    %s    risk %.1f/10    confidence %d%%    engines: %s"
@@ -104,6 +109,8 @@ def render_pdf(result: ScanResult) -> bytes:
             line(finding.description, 9)
         if _is_latin(finding.fix):
             line("Fix: " + finding.fix, 9, "I")
+        if finding.evidence and finding.status == "open":
+            line("Confirmed: " + "; ".join(finding.evidence), 8, "", (21, 128, 61), 4.5)
         if finding.ai_verdict:
             line("AI review (%s): %s" % (finding.ai_model, finding.ai_verdict.replace("_", " ")),
                  9, "B", (70, 50, 140))

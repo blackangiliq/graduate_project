@@ -70,10 +70,16 @@ def _same_engine_other_line(cluster: List[Finding], finding: Finding) -> bool:
 
 def _combine(cluster: List[Finding]) -> Finding:
     # prefer our own engines for wording (they have the knowledge-base text), then confidence
-    order = {"ast": 0, "rules": 1, "secrets": 1}
+    order = {"ast": 0, "rules": 1, "secrets": 1, "learned": 1}
     best = min(cluster, key=lambda f: (order.get(f.engines[0], 2), -f.confidence))
     if len(cluster) == 1:
         return best
+    rule_ids: List[str] = []
+    for finding in cluster:
+        for rule_id in finding.rule_ids:
+            if rule_id not in rule_ids:
+                rule_ids.append(rule_id)
+    best.rule_ids = rule_ids
     engines: List[str] = []
     per_engine: Dict[str, float] = {}
     for finding in cluster:

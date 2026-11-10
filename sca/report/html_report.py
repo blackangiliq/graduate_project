@@ -61,6 +61,7 @@ min-width:62px}
 .tag{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--code);color:var(--ink);
 text-decoration:none}
 .tag.ai{color:var(--ai);border:1px solid var(--ai);background:none}
+.tag.ok{color:var(--ok);border:1px solid var(--ok);background:none}
 pre{background:var(--code);border-radius:6px;padding:10px 12px;overflow-x:auto;margin:10px 0;
 font:12.5px/1.5 ui-monospace,Consolas,monospace;direction:ltr;text-align:left}
 pre .hit{background:color-mix(in srgb,var(--c) 22%,transparent);display:block}
@@ -80,10 +81,15 @@ document.querySelectorAll('.filters button').forEach(function(b){b.addEventListe
 function(){document.querySelectorAll('.filters button').forEach(function(x){
 x.classList.remove('on')});b.classList.add('on');var s=b.dataset.sev;
 document.querySelectorAll('details.f').forEach(function(d){
-d.style.display=(s==='all'||d.dataset.sev===s||(s==='fp'&&d.classList.contains('fp')))?'':'none'})})});
+d.style.display=(s==='all'||(d.dataset.status==='open'&&d.dataset.sev===s)||d.dataset.status===s)?'':'none'})})});
 window.addEventListener('beforeprint',function(){document.querySelectorAll('details.f')
 .forEach(function(d){d.open=true})});
 """
+
+
+STATUS_TEXT = {"open": "open", "needs_review": "needs review",
+               "likely_false_positive": "likely false positive",
+               "dismissed": "dismissed by the reviewer"}
 
 
 def _context_html(finding: Finding) -> str:
@@ -109,13 +115,19 @@ def _finding_html(finding: Finding) -> str:
     tags.append('<span class="tag">risk %.1f / 10</span>' % finding.risk_score)
     tags.append('<span class="tag">confidence %d%%</span>' % round(finding.confidence * 100))
     tags.append('<span class="tag">engines: %s</span>' % escape(", ".join(finding.engines)))
-    if finding.tainted:
-        tags.append('<span class="tag">user input reaches this line</span>')
+    if finding.tier == "confirmed":
+        tags.append('<span class="tag ok">confirmed: %s</span>'
+                    % escape("; ".join(finding.evidence)))
+    elif finding.tier:
+        tags.append('<span class="tag">probable: not independently confirmed</span>')
     if finding.ml_score is not None:
         tags.append('<span class="tag ai">ML %d%%</span>' % round(finding.ml_score * 100))
     if finding.ai_verdict:
-        tags.append('<span class="tag ai">LLM: %s</span>'
+        tags.append('<span class="tag ai">AI: %s</span>'
                     % escape(finding.ai_verdict.replace("_", " ")))
+    if finding.user_verdict:
+        tags.append('<span class="tag ok">reviewer: %s</span>'
+                    % escape(finding.user_verdict.replace("_", " ")))
     parts = ['<div class="meta">%s</div>' % "".join(tags),
              "<pre>%s</pre>" % _context_html(finding)]
     if finding.description:
@@ -126,7 +138,7 @@ def _finding_html(finding: Finding) -> str:
                      % escape(finding.fix))
     if finding.ai_explanation or finding.ai_fix:
         ai = ['<div class="aibox"><div class="lbl">AI review (%s)</div>'
-              % escape(finding.ai_model or "local model")]
+              % escape(finding.ai_model or "model")]
         if finding.ai_explanation:
             ai.append('<p dir="auto">%s</p>' % escape(finding.ai_explanation))
         if finding.ai_fix:
@@ -135,11 +147,12 @@ def _finding_html(finding: Finding) -> str:
         parts.append("".join(ai))
     fp = finding.status != "open"
     return (
-        '<details class="f%s" data-sev="%s" style="--c:var(--%s)">'
+        '<details class="f%s" data-sev="%s" data-status="%s" style="--c:var(--%s)">'
         '<summary><span class="pill">%s</span><span class="t">%s%s</span>'
         '<span class="loc">%s:%d</span></summary><div class="body">%s</div></details>'
-        % (" fp" if fp else "", finding.severity, finding.severity, finding.severity,
-           escape(finding.title), " (likely false positive)" if fp else "",
+        % (" fp" if fp else "", finding.severity, finding.status, finding.severity,
+           finding.severity, escape(finding.title),
+           " (%s)" % STATUS_TEXT[finding.status] if fp else "",
            escape(finding.file), finding.line, "".join(parts))
     )
 
@@ -171,13 +184,18 @@ def render_html(result: ScanResult) -> str:
     langs = ", ".join("%s (%d)" % (k, v) for k, v in
                       sorted(result.languages.items(), key=lambda kv: -kv[1]))
     fp_count = len(result.findings) - len(result.open_findings)
+    other = ["%d %s" % (result.status_count(key), text) for key, text in STATUS_TEXT.items()
+             if key != "open" and result.status_count(key)]
+    confirmed = sum(1 for f in result.open_findings if f.tier == "confirmed")
 
     buttons: List[str] = ['<button class="on" data-sev="all">All (%d)</button>'
                           % len(result.findings)]
     buttons += ['<button data-sev="%s">%s (%d)</button>' % (s, s.capitalize(), counts[s])
                 for s in SEVERITIES if counts[s]]
-    if fp_count:
-        buttons.append('<button data-sev="fp">Likely false positives (%d)</button>' % fp_count)
+    buttons += ['<button data-sev="%s">%s (%d)</button>'
+                % (key, text.capitalize(), result.status_count(key))
+                for key, text in STATUS_TEXT.items()
+                if key != "open" and result.status_count(key)]
     findings_html = "".join(_finding_html(f) for f in result.findings) or \
         '<div class="card">No findings. Remember that a clean scan is not a proof of security.</div>'
 
@@ -215,8 +233,8 @@ false positives; AI reviews can be wrong. Verify findings before acting on them.
         "duration": result.duration_seconds, "langs": escape(langs), "gc": grade_color,
         "score": result.score, "grade": result.grade, "sev_boxes": sev_boxes, "bar": bar,
         "total": total,
-        "fp_note": (" &middot; %d judged likely false positives by the AI review" % fp_count)
-        if fp_count else "",
+        "fp_note": " (%d confirmed by independent evidence)%s" % (
+            confirmed, " &middot; not counted: " + escape(", ".join(other)) if other else ""),
         "owasp_rows": owasp_rows or "<tr><td>None</td></tr>",
         "file_rows": file_rows or "<tr><td>None</td></tr>",
         "buttons": "".join(buttons), "findings": findings_html, "engine_rows": engine_rows,

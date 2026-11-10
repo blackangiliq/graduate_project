@@ -10,13 +10,19 @@ Idea:
 
 A finding is reported when dynamic data reaches a sink. If the data was traced back to a
 source, the finding is marked ``tainted`` and gets a higher confidence.
-The analysis is intra-procedural (one function at a time) and flow-insensitive, which keeps it
-fast and simple; the limits are documented in docs/ARCHITECTURE.md.
+
+The analysis runs in three passes:
+  1. each function on its own (intra-procedural),
+  2. a summary per function: which parameters reach a sink,
+  3. call sites: a call that passes user input to such a parameter makes the sink inside the
+     callee a traced finding (inter-procedural, one call deep, within one file).
+It is flow-insensitive inside a function. The limits are documented in docs/ARCHITECTURE.md.
 """
 from __future__ import annotations
 
 import ast
 import re
+from dataclasses import replace
 from typing import Dict, Iterable, Iterator, List, Optional, Set
 
 from ..models import Finding
@@ -211,13 +217,15 @@ class _Analyzer:
 
     # ------------------------------------------------------------------ analysis
     def run(self) -> List[Finding]:
+        # ---- pass 1: every scope on its own (intra-procedural)
         module_nodes = list(_iter_scope(self.tree))
         self._propagate(module_nodes)
         module_tainted, module_dyn = set(self.tainted), set(self.dyn)
         self._check(module_nodes, None)
-        for func in ast.walk(self.tree):
-            if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
+        scopes = [(module_nodes, set(self.tainted), set(self.dyn))]
+        funcs = [f for f in ast.walk(self.tree)
+                 if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        for func in funcs:
             self.tainted, self.dyn = set(module_tainted), set(module_dyn)
             if self._is_route(func):
                 for arg in func.args.args + func.args.kwonlyargs:
@@ -226,7 +234,71 @@ class _Analyzer:
             nodes = list(_iter_scope(func))
             self._propagate(nodes)
             self._check(nodes, func)
+            scopes.append((nodes, set(self.tainted), set(self.dyn)))
+
+        # ---- pass 2: function summaries. "If parameter p held user input, which sinks in
+        # this function would it reach?" Each parameter is tried on its own.
+        known = {(f.line, f.rule_id) for f in self.findings if f.tainted}
+        summaries: Dict[str, Dict[object, List[Finding]]] = {}
+        final_findings = self.findings
+        for func in funcs:
+            if self._is_route(func):
+                continue
+            params = [a.arg for a in func.args.posonlyargs + func.args.args
+                      if a.arg not in ("self", "cls")]
+            nodes = list(_iter_scope(func))
+            for index, param in enumerate(params):
+                self.findings = []
+                self.tainted, self.dyn = module_tainted | {param}, set(module_dyn)
+                self._propagate(nodes)
+                self._check(nodes, func)
+                reached = [f for f in self.findings
+                           if f.tainted and (f.line, f.rule_id) not in known]
+                if reached:
+                    entry = summaries.setdefault(func.name, {})
+                    entry.setdefault(index, []).extend(reached)
+                    entry.setdefault(param, []).extend(reached)
+        self.findings = final_findings
+
+        # ---- pass 3: call sites. A call that passes user input to such a parameter makes
+        # the sink inside the callee a traced finding (inter-procedural, one call deep,
+        # same file).
+        if summaries:
+            for nodes, tainted, dyn in scopes:
+                self.tainted, self.dyn = tainted, dyn
+                for node in nodes:
+                    if not isinstance(node, ast.Call):
+                        continue
+                    if isinstance(node.func, ast.Name):
+                        callee = node.func.id
+                    elif isinstance(node.func, ast.Attribute) and \
+                            isinstance(node.func.value, ast.Name) and \
+                            node.func.value.id in ("self", "cls"):
+                        callee = node.func.attr
+                    else:
+                        continue
+                    summary = summaries.get(callee)
+                    if not summary:
+                        continue
+                    passed = [(i, a) for i, a in enumerate(node.args)]
+                    passed += [(k.arg, k.value) for k in node.keywords if k.arg]
+                    for key, value in passed:
+                        if key in summary and self.is_tainted(value):
+                            for reached in summary[key]:
+                                self._report_interprocedural(reached, callee, node.lineno)
         return self.findings
+
+    def _report_interprocedural(self, reached: Finding, callee: str, call_line: int) -> None:
+        note = "User input is passed to %s() by the call on line %d." % (callee, call_line)
+        for existing in self.findings:
+            if (existing.line, existing.rule_id) == (reached.line, reached.rule_id):
+                if not existing.tainted:
+                    existing.tainted = True
+                    existing.confidence = max(existing.confidence, 0.8)
+                    existing.description = note
+                return
+        self.findings.append(replace(reached, confidence=0.8, tainted=True, description=note,
+                                     engines=["ast"], rule_ids=[reached.rule_id]))
 
     def _is_route(self, func: ast.AST) -> bool:
         for dec in getattr(func, "decorator_list", []):

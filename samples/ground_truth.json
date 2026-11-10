@@ -25,7 +25,7 @@
     "K22": {"cwe": [], "note": "safe: SHA-256"},
     "K23": {"cwe": ["CWE-489"], "also": ["CWE-605", "CWE-95"], "note": "debug mode in production"},
     "K24": {"cwe": ["CWE-639"], "hard": true, "note": "missing ownership check (IDOR) - a logic flaw"},
-    "K25": {"cwe": ["CWE-22"], "hard": true, "note": "path traversal across two functions (inter-procedural)"},
+    "K25": {"cwe": ["CWE-22"], "note": "path traversal across two functions (needs inter-procedural analysis)"},
     "K26": {"cwe": ["CWE-89"], "note": "SQL built from a parameter of unknown origin"},
 
     "J01": {"cwe": ["CWE-798"], "note": "hard-coded database password"},

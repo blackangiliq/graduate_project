@@ -1,4 +1,4 @@
-# Rules for Go and C#.
+# Rules for Go, C# and Rust.
 
 - id: GO-SQLI-001
   title: SQL query built with fmt.Sprintf or concatenation
@@ -63,3 +63,95 @@
   severity: high
   confidence: 0.75
   pattern: '\bnew\s+BinaryFormatter\s*\('
+
+- id: GO-CMDI-002
+  title: Command line built with string concatenation
+  languages: [go]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.7
+  pattern: 'exec\.Command(Context)?\s*\(.*"\s*\+\s*\w'
+
+- id: GO-RANDOM-001
+  title: math/rand used for a security value
+  languages: [go]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.6
+  pattern: '(token|secret|password|otp|nonce|salt|session)\w*\s*:?=[^=]*\brand\.(Intn|Int63|Int31|Uint32|Perm|Float64)\s*\('
+  ignore_case: true
+
+- id: GO-XSS-001
+  title: Dynamic value marked as trusted HTML
+  languages: [go]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.55
+  pattern: 'template\.(HTML|JS|URL)\s*\(\s*[A-Za-z_]'
+
+- id: GO-PATH-001
+  title: File path taken from the request
+  languages: [go]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.7
+  pattern: '(os\.(Open|ReadFile|Create|Remove)|ioutil\.ReadFile|http\.ServeFile)\s*\(.*(FormValue|URL\.Query|\.Param\(|Vars\()'
+  exclude: 'filepath\.Base'
+
+- id: CS-XSS-001
+  title: Html.Raw on a non-constant value
+  languages: [csharp]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.5
+  pattern: 'Html\.Raw\s*\(\s*(?!")'
+
+- id: CS-TLS-001
+  title: TLS certificate verification disabled
+  languages: [csharp]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.85
+  pattern: 'ServerCertificateValidationCallback\s*\+?=[^;]*true|DangerousAcceptAnyServerCertificateValidator'
+
+- id: CS-RANDOM-001
+  title: System.Random used for a security value
+  languages: [csharp]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.65
+  pattern: '(token|secret|password|otp|nonce|salt|session)\w*\s*=[^=;]*\bnew\s+Random\s*\('
+  ignore_case: true
+
+- id: CS-PATH-001
+  title: File path taken from the request
+  languages: [csharp]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.7
+  pattern: '(File\.(ReadAll\w+|Open\w*|Delete|WriteAll\w+)|new\s+FileStream)\s*\([^;]*Request\.(QueryString|Form|Query)'
+  exclude: 'Path\.GetFileName'
+
+- id: RS-TLS-001
+  title: TLS certificate verification disabled
+  languages: [rust]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.9
+  pattern: 'danger_accept_invalid_(certs|hostnames)\s*\(\s*true'
+
+- id: RS-CMDI-001
+  title: Shell invoked through Command
+  languages: [rust]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.5
+  pattern: 'Command::new\s*\(\s*"(sh|bash|cmd|powershell)"'
+
+- id: RS-SQLI-001
+  title: SQL query built with format!
+  languages: [rust]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: '(query|execute|query_as|sql_query)\s*\(\s*&?format!\s*\('

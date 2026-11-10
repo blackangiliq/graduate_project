@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from sca.engines import external, python_ast, rules_engine, secrets
+from sca.engines import external, python_ast, rules_engine, secrets, taint_lite
 from sca.walker import SourceFile, detect_language, walk_project
 
 
@@ -83,6 +83,43 @@ def test_python_ast_route_parameters_are_sources():
     assert finding.cwe == "CWE-78" and finding.tainted
 
 
+def test_python_ast_follows_user_input_into_a_helper_function():
+    code = ('from flask import request\n'
+            'def read_template(name):\n'
+            '    return open("templates/" + name).read()\n'
+            'def view():\n'
+            '    return read_template(request.args.get("tpl"))\n')
+    findings = python_ast.scan_file(make(code, "a.py"))
+    assert [(f.cwe, f.line, f.tainted) for f in findings] == [("CWE-22", 3, True)]
+    assert "line 5" in findings[0].description
+
+
+def test_python_ast_interprocedural_keyword_argument_and_method():
+    code = ('import os\n'
+            'class Jobs:\n'
+            '    def run(self, command):\n'
+            '        os.system("nice " + command)\n'
+            '    def handle(self, request):\n'
+            '        self.run(command=request.args["c"])\n')
+    findings = python_ast.scan_file(make(code, "a.py"))
+    assert len(findings) == 1 and findings[0].tainted and findings[0].confidence >= 0.8
+
+
+def test_python_ast_interprocedural_respects_sanitizers_and_constants():
+    sanitized = ('from flask import request\n'
+                 'from werkzeug.utils import secure_filename\n'
+                 'def read_template(name):\n'
+                 '    return open("templates/" + secure_filename(name)).read()\n'
+                 'def view():\n'
+                 '    return read_template(request.args.get("tpl"))\n')
+    constant = ('def read_template(name):\n'
+                '    return open("templates/" + name).read()\n'
+                'def view():\n'
+                '    return read_template("home.html")\n')
+    assert python_ast.scan_file(make(sanitized, "a.py")) == []
+    assert python_ast.scan_file(make(constant, "a.py")) == []
+
+
 def test_python_ast_survives_invalid_python():
     assert python_ast.scan_file(make("def broken(:\n", "a.py")) == []
 
@@ -119,6 +156,40 @@ RULE_VULNERABLE = [
     ("a.go", "CWE-295", "cfg := &tls.Config{InsecureSkipVerify: true}"),
     ("a.go", "CWE-89", 'rows, _ := db.Query("SELECT * FROM t WHERE id=" + id)'),
     ("a.cs", "CWE-89", 'var cmd = new SqlCommand("SELECT * FROM t WHERE id=" + id, conn);'),
+    ("a.cs", "CWE-295", "handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;"),
+    ("a.cs", "CWE-338", "var token = new Random().Next().ToString();"),
+    ("a.cs", "CWE-79", "@Html.Raw(Model.Comment)"),
+    ("a.cs", "CWE-22", 'var text = File.ReadAllText("docs/" + Request.Query["name"]);'),
+    ("a.go", "CWE-78", 'cmd := exec.Command("sh", "-c", "ping " + host)'),
+    ("a.go", "CWE-338", "token := rand.Intn(999999)"),
+    ("a.go", "CWE-79", "page := template.HTML(comment)"),
+    ("a.go", "CWE-22", 'data, _ := os.ReadFile("files/" + r.FormValue("name"))'),
+    ("a.rb", "CWE-89", 'User.where("name = \'#{params[:name]}\'")'),
+    ("a.rb", "CWE-89", 'User.where("name = \'" + name + "\'")'),
+    ("a.rb", "CWE-78", 'system("ping -c 1 #{host}")'),
+    ("a.rb", "CWE-78", "out = `ls #{dir}`"),
+    ("a.rb", "CWE-95", "eval(params[:code])"),
+    ("a.rb", "CWE-502", "obj = Marshal.load(data)"),
+    ("a.rb", "CWE-22", "send_file params[:path]"),
+    ("a.rb", "CWE-601", "redirect_to params[:next]"),
+    ("a.rb", "CWE-79", "raw params[:comment]"),
+    ("a.rb", "CWE-327", "Digest::MD5.hexdigest(password)"),
+    ("a.rb", "CWE-295", "http.verify_mode = OpenSSL::SSL::VERIFY_NONE"),
+    ("a.rb", "CWE-338", "reset_token = rand(999999).to_s"),
+    ("a.sh", "CWE-95", 'eval "$USER_COMMAND"'),
+    ("a.sh", "CWE-494", "curl -s https://example.com/install.sh | sudo bash"),
+    ("a.sh", "CWE-295", "curl -k https://internal.example.com/data"),
+    ("a.sh", "CWE-732", "chmod -R 777 /var/www"),
+    ("a.ps1", "CWE-95", "Invoke-Expression $userInput"),
+    ("a.ps1", "CWE-295", "Invoke-WebRequest $url -SkipCertificateCheck"),
+    ("a.ps1", "CWE-798", '$p = ConvertTo-SecureString "Winter2024!" -AsPlainText -Force'),
+    ("a.rs", "CWE-295", "let c = Client::builder().danger_accept_invalid_certs(true).build()?;"),
+    ("a.rs", "CWE-89", 'let rows = sqlx::query(&format!("SELECT * FROM t WHERE id = {}", id))'),
+    ("a.rs", "CWE-78", 'let out = Command::new("sh").arg("-c").arg(cmd).output()?;'),
+    ("a.kt", "CWE-89", 'val rs = st.executeQuery("SELECT * FROM t WHERE id=" + id)'),
+    ("a.kt", "CWE-327", 'val md = MessageDigest.getInstance("MD5")'),
+    ("a.scala", "CWE-78", 'Runtime.getRuntime().exec("ping " + host)'),
+    ("a.vue", "CWE-79", "el.innerHTML = userText;"),
 ]
 
 RULE_SAFE = [
@@ -139,6 +210,29 @@ RULE_SAFE = [
     ("a.c", 'snprintf(buf, sizeof(buf), "%s", s);'),
     ("a.c", 'strcpy(dst, "constant");'),
     ("a.c", '/* gets(buf); */'),
+    ("a.cs", '@Html.Raw("<b>static</b>")'),
+    ("a.cs", "var index = new Random().Next(10);"),
+    ("a.cs", 'var text = File.ReadAllText("docs/" + Path.GetFileName(Request.Query["name"]));'),
+    ("a.go", 'cmd := exec.Command("ping", "-c", "1", host)'),
+    ("a.go", "index := rand.Intn(len(items))"),
+    ("a.go", 'page := template.HTML("<b>static</b>")'),
+    ("a.rb", 'User.where("name = ?", params[:name])'),
+    ("a.rb", "User.where(name: params[:name])"),
+    ("a.rb", 'system("ping", "-c", "1", host)'),
+    ("a.rb", "data = YAML.safe_load(text)"),
+    ("a.rb", "send_file File.basename(params[:path])"),
+    ("a.rb", "redirect_to root_path"),
+    ("a.rb", "Digest::SHA256.hexdigest(data)"),
+    ("a.rb", "index = rand(items.size)"),
+    ("a.rb", "# eval(params[:code])"),
+    ("a.sh", "curl -fsSL https://example.com/file.tar.gz -o file.tar.gz"),
+    ("a.sh", "chmod 640 config.ini"),
+    ("a.sh", "# eval $cmd"),
+    ("a.ps1", "Invoke-WebRequest $url -OutFile out.zip"),
+    ("a.ps1", "$p = Read-Host -AsSecureString"),
+    ("a.rs", 'let rows = sqlx::query("SELECT * FROM t WHERE id = ?").bind(id)'),
+    ("a.rs", 'let out = Command::new("ls").arg(dir).output()?;'),
+    ("a.kt", 'val md = MessageDigest.getInstance("SHA-256")'),
 ]
 
 
@@ -154,7 +248,7 @@ def test_rules_ignore_safe_code(name, code):
 
 def test_rules_have_unique_ids_and_valid_fields():
     rules = rules_engine.load_rules()
-    assert len(rules) >= 60
+    assert len(rules) >= 95
     assert len({r.id for r in rules}) == len(rules)
     for rule in rules:
         assert rule.cwe.startswith("CWE-")
@@ -260,6 +354,54 @@ def test_run_bandit_end_to_end(tmp_path):
     assert any(f.cwe == "CWE-502" and f.line == 4 for f in findings)
 
 
+# ------------------------------------------------------------------ taint-lite
+def _traced(code: str, name: str, line: int) -> bool:
+    return taint_lite.is_traced(make(code, name), line)
+
+
+def test_taint_lite_traces_assignments_from_request_data():
+    php = "<?php\n$name = $_POST['name'];\n$sql = \"SELECT * FROM u WHERE n = '$name'\";\n"
+    java = ('String user = request.getParameter("user");\n'
+            'String q = "SELECT * FROM u WHERE n = \'" + user + "\'";\n'
+            'rs = st.executeQuery(q);\n')
+    js = ("const params = new URLSearchParams(window.location.search);\n"
+          "const message = params.get('msg');\n"
+          "el.innerHTML = message;\n")
+    destructured = "const { id } = req.query;\ndb.query(`SELECT * FROM t WHERE id = ${id}`);\n"
+    go = 'name := r.FormValue("name")\nrows, _ := db.Query("SELECT * FROM t WHERE n=" + name)\n'
+    assert _traced(php, "a.php", 3)
+    assert _traced(java, "A.java", 3)          # two hops: user -> q -> executeQuery(q)
+    assert _traced(js, "a.js", 3)
+    assert _traced(destructured, "a.js", 2)
+    assert _traced(go, "a.go", 2)
+    assert _traced("echo $_GET['q'];\n", "a.php", 1)   # the source is on the line itself
+
+
+def test_taint_lite_does_not_trace_constants_sanitized_values_or_table_lookups():
+    constant = "<?php\n$name = 'admin';\n$sql = \"SELECT * FROM u WHERE n = '$name'\";\n"
+    sanitized = "<?php\n$id = intval($_GET['id']);\n$sql = \"SELECT * FROM u WHERE id = $id\";\n"
+    lookup = "<?php\n$page = $pages[$_GET['page']] ?? $pages['home'];\ninclude $page;\n"
+    reassigned = ("let name = req.query.name;\nname = encodeURIComponent(name);\n"
+                  "el.innerHTML = name;\n")
+    parameter = "void copy(const char *input) {\n    strcpy(buffer, input);\n}\n"
+    assert not _traced(constant, "a.php", 3)
+    assert not _traced(sanitized, "a.php", 3)
+    assert not _traced(lookup, "a.php", 3)
+    assert not _traced(reassigned, "a.js", 3)
+    assert not _traced(parameter, "a.c", 2)
+
+
+def test_taint_lite_raises_confidence_only_for_injection_findings():
+    php = "<?php\n$name = $_POST['name'];\n$sql = \"SELECT * FROM u WHERE n = '$name'\";\n$h = md5($name);\n"
+    sf = make(php, "a.php")
+    findings = rules_engine.scan_file(sf)
+    before = {f.cwe: f.confidence for f in findings}
+    assert taint_lite.apply(findings, {"a.php": sf}) == 1
+    after = {f.cwe: (f.confidence, f.tainted) for f in findings}
+    assert after["CWE-89"] == (pytest.approx(before["CWE-89"] + 0.15), True)
+    assert after["CWE-327"] == (before["CWE-327"], False)
+
+
 # ------------------------------------------------------------------ walker
 def test_walker_skips_dependencies_and_binaries(tmp_path):
     (tmp_path / "src").mkdir()
@@ -270,3 +412,12 @@ def test_walker_skips_dependencies_and_binaries(tmp_path):
     (tmp_path / "bundle.min.js").write_text("eval(x)\n", encoding="utf-8")
     (tmp_path / "notes.txt").write_text("hello\n", encoding="utf-8")
     assert [f.rel for f in walk_project(str(tmp_path))] == ["src/a.py"]
+
+
+def test_walker_knows_many_languages():
+    expected = {"a.rb": "ruby", "a.kt": "kotlin", "a.rs": "rust", "a.swift": "swift",
+                "a.ps1": "powershell", "a.dart": "dart", "a.vue": "javascript",
+                "a.scala": "scala", "a.lua": "lua", "a.sql": "sql", "a.tsx": "typescript"}
+    for name, language in expected.items():
+        assert detect_language(Path(name)) == language
+    assert make("x", "a.kt").rule_language == "java"       # Kotlin shares the JVM API rules

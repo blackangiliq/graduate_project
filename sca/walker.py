@@ -16,8 +16,13 @@ LANG_BY_EXT = {
     ".cpp": "cpp", ".cc": "cpp", ".cxx": "cpp", ".hpp": "cpp",
     ".cs": "csharp",
     ".go": "go",
-    ".rb": "ruby",
-    ".sh": "shell", ".bash": "shell",
+    ".rb": "ruby", ".erb": "ruby", ".rake": "ruby",
+    ".kt": "kotlin", ".kts": "kotlin", ".scala": "scala", ".groovy": "groovy",
+    ".swift": "swift", ".rs": "rust", ".dart": "dart",
+    ".pl": "perl", ".pm": "perl", ".lua": "lua", ".ex": "elixir", ".exs": "elixir",
+    ".ps1": "powershell", ".psm1": "powershell", ".sql": "sql",
+    ".vue": "javascript", ".svelte": "javascript",
+    ".sh": "shell", ".bash": "shell", ".zsh": "shell",
     ".html": "html", ".htm": "html",
     ".yml": "config", ".yaml": "config", ".json": "config", ".ini": "config",
     ".cfg": "config", ".conf": "config", ".toml": "config", ".xml": "config",
@@ -26,7 +31,14 @@ LANG_BY_EXT = {
 LANG_BY_NAME = {".env": "config", "dockerfile": "config"}
 
 # Languages that share rules with another language.
-RULE_LANGUAGE = {"typescript": "javascript", "cpp": "c"}
+# Kotlin, Scala and Groovy call the same JVM APIs, so the Java API rules apply to them.
+RULE_LANGUAGE = {"typescript": "javascript", "cpp": "c", "kotlin": "java", "scala": "java",
+                 "groovy": "java"}
+
+# Languages that hold program logic (everything except configuration and markup).
+CODE_LANGUAGES = ["python", "javascript", "typescript", "php", "java", "kotlin", "scala",
+                  "groovy", "c", "cpp", "csharp", "go", "ruby", "rust", "swift", "dart",
+                  "shell", "powershell", "perl", "lua", "elixir", "sql"]
 
 SKIP_DIRS = {
     ".git", ".hg", ".svn", "node_modules", "venv", ".venv", "env", "__pycache__",
@@ -44,6 +56,10 @@ COMMENT_PREFIXES = {
     "java": ("//", "*", "/*"), "c": ("//", "*", "/*"), "cpp": ("//", "*", "/*"),
     "csharp": ("//", "*", "/*"), "go": ("//", "*", "/*"),
     "html": ("<!--",),
+    "kotlin": ("//", "*", "/*"), "scala": ("//", "*", "/*"), "groovy": ("//", "*", "/*"),
+    "swift": ("//", "*", "/*"), "rust": ("//", "*", "/*"), "dart": ("//", "*", "/*"),
+    "perl": ("#",), "powershell": ("#",), "elixir": ("#",),
+    "lua": ("--",), "sql": ("--",),
 }
 
 

@@ -100,19 +100,38 @@ class VulnerabilityClassifier:
         }
 
 
-_CACHE: Dict[str, VulnerabilityClassifier] = {}
+_CACHE: Dict[Any, VulnerabilityClassifier] = {}
+FEEDBACK_WEIGHT = 3   # a reviewed finding counts as much as three synthetic samples
 
 
-def get_classifier(model_path: Optional[str] = None) -> Optional[VulnerabilityClassifier]:
-    """Return a ready classifier, or None when scikit-learn is missing."""
+def get_classifier(model_path: Optional[str] = None,
+                   feedback: Optional[List[Tuple[str, int]]] = None
+                   ) -> Optional[VulnerabilityClassifier]:
+    """Return a ready classifier, or None when scikit-learn is missing.
+
+    ``feedback`` is the list of (code line, label) pairs the reviewer has confirmed or
+    dismissed. They are added to the training data, so the model keeps learning from
+    every review (continual learning). A model file given with ``model_path`` is used as is.
+    """
     if not SKLEARN_AVAILABLE:
         return None
-    key = model_path or "default"
+    feedback = [(text, int(label)) for text, label in (feedback or []) if text]
+    key = (model_path or "default", hash(tuple(feedback)))
     if key not in _CACHE:
         if model_path and Path(model_path).is_file():
-            _CACHE[key] = VulnerabilityClassifier.load(model_path)
+            model = VulnerabilityClassifier.load(model_path)
         else:
-            _CACHE[key] = VulnerabilityClassifier.default()
+            texts, labels = build_corpus()
+            source = "built-in synthetic corpus (%d samples)" % len(texts)
+            if feedback:
+                for text, label in feedback:
+                    texts.extend([text] * FEEDBACK_WEIGHT)
+                    labels.extend([label] * FEEDBACK_WEIGHT)
+                source += " + %d reviewed findings" % len(feedback)
+            model = VulnerabilityClassifier.train(texts, labels, source)
+        if len(_CACHE) > 4:
+            _CACHE.clear()
+        _CACHE[key] = model
     return _CACHE[key]
 
 

@@ -1,6 +1,6 @@
 # Evaluation results
 
-Samples: `samples/vulnerable_app` (71 labelled vulnerabilities, 6 of them marked hard, 21 safe decoy lines) and `samples/safe_app` (no vulnerabilities).
+Samples: `samples/vulnerable_app` (71 labelled vulnerabilities, 5 of them marked hard, 21 safe decoy lines) and `samples/safe_app` (no vulnerabilities).
 
 These samples were written together with the tool. The numbers show that the pipeline works end to end; they are not an unbiased benchmark.
 
@@ -8,13 +8,13 @@ These samples were written together with the tool. The numbers show that the pip
 |---|---:|---:|---:|---:|---:|---:|
 | Bandit only (Python baseline) | 15 | 4 | 56 | 0.789 | 0.211 | 0.333 |
 | Pattern rules + secrets | 48 | 3 | 23 | 0.941 | 0.676 | 0.787 |
-| + Python AST taint engine | 65 | 3 | 6 | 0.956 | 0.915 | 0.935 |
-| All static engines | 65 | 7 | 6 | 0.903 | 0.915 | 0.909 |
+| + Python AST taint engine | 66 | 3 | 5 | 0.957 | 0.930 | 0.943 |
+| All static engines | 66 | 7 | 5 | 0.904 | 0.930 | 0.917 |
+| All static, strict mode (confirmed only) | 44 | 0 | 27 | 1.000 | 0.620 | 0.765 |
 
 ## Missed (All static engines)
 
 - `app.py:142` CWE-639 (hard): missing ownership check (IDOR) - a logic flaw
-- `app.py:147` CWE-22 (hard): path traversal across two functions (inter-procedural)
 - `index.php:4` CWE-798 (hard): password passed as a positional argument: no variable name to recognize
 - `parser.c:36` CWE-120 (hard): memcpy with an unchecked length
 - `parser.c:40` CWE-190 (hard): integer overflow in the allocation size

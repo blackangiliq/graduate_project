@@ -1,0 +1,52 @@
+%%{init: {"flowchart": {"wrappingWidth": 520}}}%%
+%% The learning loop in detail: how an AI discovery becomes an active static rule.
+%% Render:  mmdc -i docs/diagrams/learning-loop.mmd -o docs/images/learning-loop.png -w 1600 -s 2 -b white
+flowchart TD
+    SCAN["Static scan<br/>built-in + learned rules, AST, secrets"] --> DEEP["AI deep scan<br/>the model reads whole files"]
+    DEEP --> Q1{"Did the model report something<br/>that no rule reported?"}
+    Q1 -- no --> DONE(["Nothing to learn from this file"])
+    Q1 -- yes --> VERIFY["Second pass<br/>a separate request reviews the discovery"]
+    VERIFY --> Q2{"Confirmed as real,<br/>confidence 0.7 or more?"}
+    Q2 -- no --> PROB["Kept as a probable finding<br/>no rule is learned from it"]
+    Q2 -- yes --> PROPOSE["<b>Propose a rule</b><br/>prompt: language, CWE, the vulnerable line, context<br/>answer (JSON): title, CWE, severity, pattern, exclude,<br/>message, fix, 3 vulnerable and 3 safe examples"]
+
+    FP["A finding judged false<br/>by you, or by the AI at 0.8 or more"] --> EXCL["<b>Propose an exclusion</b><br/>a narrow regex for lines that are<br/>safe for the same reason"]
+
+    GAP["A language has no rule<br/>for a weakness (coverage gap)"] --> BOOT["<b>Bootstrap a rule</b><br/>written from the model's knowledge,<br/>evidence = its own examples only"]
+
+    PROPOSE --> V1
+    EXCL --> V1
+    BOOT --> V1
+    subgraph VAL["Automatic validation  -  nothing reaches you before it passes"]
+        V1["1 schema: fields, CWE format, language, length under 400, no nested quantifier"]
+        V2["2 compiles - 3 fast: run in a sandbox process, killed after 6 s<br/>stress input: long runs, repeated literals from the pattern"]
+        V3["4 specific: has a literal anchor, does not match everyday lines such as x = 1"]
+        V4["5 evidence: matches the line it was learned from<br/>6 examples: matches its vulnerable examples, none of its safe ones"]
+        V5["7 clean corpus: no match in known-safe code<br/>safe samples + safe training lines + lines you dismissed"]
+        V6["8 blast radius: at most 25 matches and at most 2% of the project<br/>9 novelty: no active rule already reports the line, not a duplicate"]
+        VX["Exclusions instead: must match the false positive and must NOT match<br/>any known-vulnerable line of the rule, so recall cannot drop silently"]
+        V1 --> V2 --> V3 --> V4 --> V5 --> V6
+        V1 -.-> VX
+    end
+
+    V6 --> Q3{"All checks passed?"}
+    VX --> Q3
+    Q3 -- "no, first attempt" --> RETRY["Reasons are sent back to the model<br/>one self-correction attempt"]
+    RETRY --> V1
+    Q3 -- "no, second attempt" --> REJ["rejected_auto<br/>kept with the failed checks for inspection"]
+    Q3 -- yes --> PENDING["<b>pending</b><br/>shown in the Learning tab with pattern, examples,<br/>check results and the lines it would flag"]
+    PENDING --> Q4{"Your decision"}
+    Q4 -- reject --> REJ2["rejected"]
+    Q4 -- approve --> ACTIVE["<b>approved</b><br/>learned/rules.yaml or learned/overrides.yaml<br/>confidence starts at 0.55 (probation)"]
+    ACTIVE --> NEXT["Next scan: the weakness is found statically<br/>fast, offline, no AI request"]
+    NEXT --> REVIEW["Your reviews of its findings"]
+    REVIEW --> Q5{"3 or more false positives and<br/>adjusted confidence below 0.35?"}
+    Q5 -- no --> ADJ["confidence = (tp + 4c) / (tp + fp + 4)<br/>goes up with confirmations, down with dismissals"]
+    Q5 -- yes --> QUAR["Rule quarantined: switched off,<br/>listed in rules stats"]
+
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    class PROPOSE,EXCL,BOOT,DEEP,VERIFY ai
+    class PENDING,ACTIVE,NEXT,ADJ learn
+    class REJ,REJ2,QUAR stop

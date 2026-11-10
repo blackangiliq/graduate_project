@@ -1,0 +1,110 @@
+%%{init: {"flowchart": {"wrappingWidth": 560, "nodeSpacing": 28, "rankSpacing": 42}}}%%
+%% Full pipeline of Secure Code Analyzer: every stage with the tools and techniques it uses.
+%% Render:  mmdc -i docs/diagrams/pipeline.mmd -o docs/images/pipeline.png -w 2000 -s 2 -b white
+flowchart TD
+    USER(["<b>User</b><br/>web dashboard: Streamlit (app.py)<br/>or command line: python -m sca (argparse)"])
+    USER --> INPUT["<b>0. Input</b><br/>project folder: typed path or Browse dialog (tkinter)<br/>options: engines, AI provider and model, explanation language, strict mode"]
+
+    subgraph KB["Knowledge kept between scans  (what the tool has learned)"]
+        LEARNED[("<b>learned/rules.yaml</b><br/><b>learned/overrides.yaml</b><br/>approved learned rules<br/>and exclusions, plain YAML")]
+        REVIEWS[("<b>SQLite: feedback</b><br/>your verdict on each finding<br/>real / false positive,<br/>keyed by fingerprint")]
+        CACHE[("<b>SQLite: llm_cache</b><br/>earlier AI answers,<br/>so a repeated scan<br/>costs no new requests")]
+    end
+
+    INPUT --> WALK
+    subgraph S1["1. Collect  -  sca/walker.py"]
+        WALK["<b>File walker</b><br/>os.walk over the folder<br/>skips .git, node_modules, venv, build output, lock files<br/>skips binary files, minified files and files over 1.5 MB"]
+        LANG["<b>Language detection</b><br/>54 file extensions mapped to 22 programming languages<br/>TypeScript uses the JavaScript rules, C++ uses the C rules,<br/>Kotlin, Scala and Groovy use the Java API rules"]
+        WALK --> LANG
+    end
+
+    LANG --> SECRETS
+    LANG --> RULES
+    LANG --> AST
+    LANG --> EXT
+    LEARNED --> RULES
+    subgraph S2["2. Detect  -  static analysis engines in sca/engines/  (the code is read, never executed)"]
+        SECRETS["<b>Secrets engine</b>  secrets.py<br/>regular expressions for known key formats:<br/>AWS, GitHub, Google, Slack, Stripe, private keys, JWT, URL passwords<br/>sensitive variable name assigned a literal value<br/>Shannon entropy of at least 3.2 bits per character<br/>placeholder filter (changeme, ${VAR}, labels)<br/>runs first: found secrets are masked in all later stages"]
+        RULES["<b>Pattern rule engine</b>  rules_engine.py<br/>98 built-in rules in sca/rules/*.yaml (PyYAML) + learned rules<br/>each rule: regex pattern + optional exclude (Python re), one line at a time<br/>comments and block comments are skipped<br/>JavaScript, TypeScript 22 - PHP 18 - Java, Kotlin, Scala, Groovy 13<br/>Ruby 11 - C, C++ 8 - C# 8 - Go 8 - shell 4 - Rust 3 - PowerShell 3"]
+        AST["<b>Python AST taint engine</b>  python_ast.py<br/>Python ast module (abstract syntax tree)<br/>sources: request data, input(), sys.argv, route parameters<br/>sinks: SQL, shell, eval, files, HTTP requests, templates, redirects<br/>sanitizers: int, shlex.quote, escape, secure_filename<br/>pass 1: inside each function - pass 2: function summaries<br/>pass 3: call sites (inter-procedural, one call deep, same file)"]
+        EXT["<b>External scanners</b>  external.py  (optional)<br/>Bandit: Python security linter<br/>Opengrep or Semgrep: ready rules for 30+ languages<br/>Gitleaks: secret scanner<br/>each runs as a subprocess, its JSON output<br/>is converted to the common Finding format"]
+    end
+
+    SECRETS --> TRACK
+    RULES --> TRACK
+    AST --> TRACK
+    EXT --> TRACK
+    REVIEWS --> TRACK
+    subgraph S3["3. Refine  -  fewer false alarms before merging"]
+        TRACK["<b>Rule track record</b>  learn/feedback.py<br/>confidence = (tp + 4c) / (tp + fp + 4)   (mean of a Beta posterior)<br/>tp, fp = findings of this rule you confirmed or dismissed<br/>quarantine: 3 or more false positives and confidence below 0.35"]
+        TLITE["<b>Taint-lite</b>  engines/taint_lite.py<br/>for JavaScript, TypeScript, PHP, Java, Go, C#, Ruby, C, C++<br/>looks up to 60 lines back and follows assignments from request sources<br/>stops at sanitizers; a table lookup is treated as trusted<br/>traced finding: marked tainted, +0.15 confidence"]
+        TRACK --> TLITE
+    end
+
+    TLITE --> MERGE
+    subgraph S4["4. Merge  -  sca/merge.py and sca/cwe.py"]
+        MERGE["<b>Deduplicate and enrich</b><br/>same issue = same file, same CWE, at most 1 line apart, different engines<br/>combined confidence (noisy-OR): 1 - (1-c1)(1-c2)..., capped at 0.97<br/>CWE normalization, mapping to OWASP Top 10 (2021)<br/>explanation and fix text in English and Arabic (30+ weaknesses)<br/>suppression comments: nosec, sca:ignore<br/>your earlier verdicts re-applied by SHA-256 fingerprint"]
+    end
+
+    MERGE --> ML
+    REVIEWS --> ML
+    subgraph S5["5. Machine learning  -  sca/ai/classifier.py"]
+        ML["<b>ML classifier, second opinion</b>  scikit-learn<br/>code tokenizer, TF-IDF over 1 to 3-grams, logistic regression<br/>output: probability that the flagged line is vulnerable<br/>weight: confidence = 0.75 x static + 0.25 x ML<br/>retrained with every line you review (continual learning)<br/>can be trained on PrimeVul or DiverseVul: python -m sca train"]
+    end
+
+    ML --> PROV
+    CACHE --> PROV
+    subgraph S6["6. AI review  -  sca/ai/providers.py and sca/ai/llm.py  (optional)"]
+        PROV["<b>AI provider</b>  one interface, HTTP with urllib (no extra library)<br/>cloud API, OpenAI-compatible: OpenAI, Gemini, OpenRouter, Groq, DeepSeek, Mistral<br/>cloud API, Anthropic Messages API - local model: Ollama<br/>API key from .env (git-ignored) - retry on HTTP 429 - fallback on HTTP 400"]
+        TRIAGE["<b>Review of each finding</b><br/>prompt: finding + up to 28 lines of context<br/>strict JSON answer: verdict, confidence,<br/>explanation, fix (English or Arabic)"]
+        DEEP["<b>Deep scan of whole files</b><br/>the model reports what no rule found<br/>line number and CWE of each answer are validated<br/>second pass: each discovery is checked by a separate request"]
+        GUARD["<b>Safeguards</b><br/>scanned code is data, not instructions (prompt injection)<br/>secrets are masked before sending<br/>a verdict re-labels a finding, it never deletes one"]
+        PROV --> TRIAGE
+        PROV --> DEEP
+        TRIAGE --> GUARD
+        DEEP --> GUARD
+    end
+
+    GUARD --> TIER
+    subgraph S7["7. Assess  -  sca/scoring.py"]
+        TIER["<b>Confirmed or probable</b><br/>confirmed when independent evidence exists: your review, AI review at 0.7 or more,<br/>2 or more independent engines, traced user input, or one engine at 0.85 or more<br/>strict mode: unconfirmed findings move to Needs review and are not counted"]
+        SCORE["<b>Risk and score</b><br/>risk per finding = base(severity) x (0.6 + 0.4 x confidence), from 0 to 10<br/>penalty = sum of weight(severity) x confidence over open findings<br/>project score = 100 x exp(-(penalty / KLOC) / 25) - grade A to F"]
+        TIER --> SCORE
+    end
+
+    SCORE --> DB
+    subgraph S8["8. Store and report  -  sca/storage.py and sca/report/"]
+        DB[("<b>SQLite</b>  data/sca.db<br/>scans, llm_cache,<br/>feedback, rule_candidates")]
+        OUT["<b>Outputs</b><br/>dashboard: Streamlit + pandas (charts, filters, review buttons)<br/>HTML report: one self-contained file, light and dark<br/>PDF: fpdf2 - JSON - SARIF 2.1.0 (GitHub code scanning, VS Code)<br/>history and score trend per project"]
+        DB --> OUT
+    end
+
+    OUT --> YOU(["<b>You review the findings</b><br/>Real vulnerability / False positive"])
+    YOU --> PROPOSE
+    DEEP -. "confirmed discovery<br/>that no rule reports" .-> PROPOSE
+    subgraph S9["9. Learn  -  sca/learn/   (the AI proposes, the tool validates, you approve)"]
+        PROPOSE["<b>Propose</b>  propose.py<br/>the model writes a detection rule as strict JSON:<br/>pattern, exclude, message, fix, 3 vulnerable + 3 safe examples<br/>or a narrow exclusion for a false positive<br/>or a first rule for a language with a coverage gap (bootstrap)"]
+        VALIDATE["<b>Validate</b>  validate.py + sandbox.py<br/>9 automatic checks: schema, compiles, fast, specific, evidence,<br/>examples, clean corpus, blast radius, novelty<br/>the untrusted regex runs in a child process that is killed after 6 seconds<br/>on failure the reasons are sent back to the model for one correction"]
+        APPROVE["<b>Human approval</b>  store.py<br/>Learning tab, or: python -m sca rules approve<br/>only validated candidates can be approved<br/>a learned rule starts at confidence 0.55 (probation)"]
+        PROPOSE --> VALIDATE --> APPROVE
+    end
+    APPROVE --> SAVED(["<b>Saved to the knowledge at the top</b><br/>learned/rules.yaml is used by stage 2 in the next scan:<br/>the weakness is then found statically, offline, with no AI request<br/>your verdicts feed stage 3, stage 5 and the clean corpus of stage 9"])
+
+    classDef stage fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef store fill:#faeeda,stroke:#854f0b,color:#412402
+    class INPUT,WALK,LANG,SECRETS,RULES,AST,EXT,TRACK,TLITE,MERGE,TIER,SCORE,OUT stage
+    class ML,PROV,TRIAGE,DEEP,GUARD ai
+    class PROPOSE,VALIDATE,APPROVE,SAVED,YOU learn
+    class LEARNED,REVIEWS,CACHE,DB store
+    style KB fill:#fffdf5,stroke:#c9a55a
+    style S1 fill:#fbfaf7,stroke:#c9c7bd
+    style S2 fill:#fbfaf7,stroke:#c9c7bd
+    style S3 fill:#fbfaf7,stroke:#c9c7bd
+    style S4 fill:#fbfaf7,stroke:#c9c7bd
+    style S5 fill:#f7f6fe,stroke:#afa9ec
+    style S6 fill:#f7f6fe,stroke:#afa9ec
+    style S7 fill:#fbfaf7,stroke:#c9c7bd
+    style S8 fill:#fbfaf7,stroke:#c9c7bd
+    style S9 fill:#f2fbf7,stroke:#5dcaa5

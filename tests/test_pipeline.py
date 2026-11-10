@@ -214,7 +214,7 @@ def test_pipeline_with_llm_review(ollama, tmp_path):
     assert [(f.file, f.cwe) for f in fps] == [("app.py", "CWE-338")]
     assert any(f.engines == ["llm"] and f.cwe == "CWE-639" for f in result.findings)
     reviewed = [f for f in result.findings if f.ai_verdict]
-    assert len(reviewed) >= 60 and all(f.ai_model == "fake-coder:1b" for f in reviewed)
+    assert len(reviewed) >= 60 and all(f.ai_model == "ollama/fake-coder:1b" for f in reviewed)
 
     # the hard-coded secrets must never be sent to the model unmasked
     sent = json.dumps(FakeOllama.requests_seen)

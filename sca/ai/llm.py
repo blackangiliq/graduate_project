@@ -1,6 +1,7 @@
-"""Local LLM integration through Ollama (https://ollama.com).
+"""LLM review of findings and deep scan of files.
 
-Everything runs on the user's machine: the code is sent only to http://localhost:11434.
+This module holds the prompts, the answer validation and the Ollama client (a model on
+this computer). Cloud providers with the same interface are in sca/ai/providers.py.
 
 Two jobs:
   * triage_finding  - review one static finding: is it real? explain it, propose a fix.
@@ -60,11 +61,35 @@ class LLMError(RuntimeError):
 
 
 class OllamaClient:
+    kind = "ollama"
+    name = "ollama"
+
     def __init__(self, host: str = DEFAULT_HOST, model: str = DEFAULT_MODEL,
                  timeout: int = 180) -> None:
         self.host = host.rstrip("/")
+        self.base_url = self.host
         self.model = model
         self.timeout = timeout
+        self.requests = 0
+
+    @property
+    def label(self) -> str:
+        return "ollama/%s" % self.model
+
+    @property
+    def is_local(self) -> bool:
+        return any(h in self.host for h in ("localhost", "127.0.0.1", "[::1]"))
+
+    def check(self):
+        """(ready, message)"""
+        if not self.available():
+            return False, ("Ollama is not running at %s (install it from https://ollama.com "
+                           "and run: ollama pull %s)" % (self.host, self.model))
+        names = self.models()
+        if self.model not in names and self.model + ":latest" not in names:
+            return False, "model %s is not downloaded (run: ollama pull %s)" % (
+                self.model, self.model)
+        return True, "ready"
 
     def _request(self, path: str, payload: Optional[Dict[str, Any]] = None,
                  timeout: Optional[int] = None) -> Dict[str, Any]:
@@ -101,17 +126,29 @@ class OllamaClient:
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}],
         }
+        self.requests += 1
         data = self._request("/api/chat", payload)
         if data.get("error"):
             raise LLMError(str(data["error"]))
         return parse_json_object((data.get("message") or {}).get("content", ""))
 
 
+_BAD_ESCAPE = re.compile(r'\\(?!["\\/bfnrtu])')
+
+
+def _loads(text: str) -> Any:
+    """json.loads that tolerates regex backslashes a model forgot to double (\\s, \\w ...)."""
+    try:
+        return json.loads(text)
+    except ValueError:
+        return json.loads(_BAD_ESCAPE.sub(r"\\\\", text))
+
+
 def parse_json_object(text: str) -> Dict[str, Any]:
     """Extract the first JSON object from a model answer (models sometimes add extra text)."""
     text = (text or "").strip()
     try:
-        value = json.loads(text)
+        value = _loads(text)
         return value if isinstance(value, dict) else {}
     except ValueError:
         pass
@@ -135,7 +172,7 @@ def parse_json_object(text: str) -> Dict[str, Any]:
                 depth -= 1
                 if depth == 0:
                     try:
-                        value = json.loads(text[start:index + 1])
+                        value = _loads(text[start:index + 1])
                         if isinstance(value, dict):
                             return value
                     except ValueError:
@@ -152,7 +189,7 @@ def _clamp(value: Any, default: float = 0.5) -> float:
         return default
 
 
-def triage_finding(client: OllamaClient, finding: Finding, code_context: str,
+def triage_finding(client: Any, finding: Finding, code_context: str,
                    lang: str = "en") -> Dict[str, Any]:
     """Ask the model to review one finding. Returns a validated dict."""
     system = TRIAGE_SYSTEM % {"language": LANG_NAME.get(lang, "English")}
@@ -176,7 +213,7 @@ def triage_finding(client: OllamaClient, finding: Finding, code_context: str,
     }
 
 
-def deep_scan_file(client: OllamaClient, sf: SourceFile, known: List[Finding],
+def deep_scan_file(client: Any, sf: SourceFile, known: List[Finding],
                    lang: str = "en", max_lines: int = 400) -> List[Finding]:
     """Ask the model to audit one file. Returns new findings (engine = 'llm')."""
     lines = sf.lines[:max_lines]
@@ -211,7 +248,7 @@ def deep_scan_file(client: OllamaClient, sf: SourceFile, known: List[Finding],
             cwe=cwe, confidence=0.5, engines=["llm"], snippet=sf.line_text(line),
             context=sf.context(line), language=sf.language,
             ai_explanation=str(item.get("explanation", "")).strip()[:2000],
-            ai_fix=str(item.get("fix", "")).strip()[:2000], ai_model=client.model,
+            ai_fix=str(item.get("fix", "")).strip()[:2000], ai_model=client.label,
         )
         out.append(finding)
     return out

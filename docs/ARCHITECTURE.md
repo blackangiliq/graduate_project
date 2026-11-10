@@ -1,202 +1,243 @@
 # Architecture
 
-This document explains how the analyzer is built and why. It is written so that each
-section can be reused in the design and implementation chapters of the thesis.
+How the analyzer is built and why. Each section can be reused in the design and
+implementation chapters of the thesis.
 
 ## 1. Design goals
 
 | Goal | Consequence in the design |
 |---|---|
-| Local and private | No cloud service. The LLM is reached only at `localhost` through Ollama. The dashboard binds to `localhost`. |
-| Works without optional parts | Every external tool (Bandit, Opengrep, Gitleaks, Ollama, scikit-learn) is detected at run time and skipped with a note if missing. |
-| Explainable | Each finding carries its rule, CWE, engines, confidence and, when traced, the fact that user input reaches the line. The ML model is linear so its weights can be inspected. |
-| AI assists, static decides | AI can re-label and re-rank findings. It never deletes one. |
-| Easy to extend | Rules are YAML files. Engines share one interface: files in, findings out. |
+| Works without optional parts | Every external tool and the AI provider are detected at run time and skipped with a note if missing. |
+| The user chooses where code goes | One client interface for a local model (Ollama) and for cloud APIs. The dashboard binds to `localhost`. A warning is shown before code is sent to a cloud provider. |
+| AI is never trusted blindly | An AI verdict re-labels a finding, never deletes it. An AI discovery needs a second confirming request. An AI-written rule needs automatic validation and human approval. |
+| Explainable | Each finding carries its rules, engines, confidence and the evidence that confirms it. The ML model is linear. Learned rules are readable YAML. |
+| Learns from use | Reviews adjust rule confidence, retrain the classifier and tighten the validation of new rules. |
 
 ## 2. Data model (`sca/models.py`)
 
-`Finding` is the single unit that flows through the system: location (`file`, `line`),
-classification (`rule_id`, `cwe`, `owasp`, `severity`), evidence (`snippet`, `context`,
-`engines`, `tainted`), belief (`confidence`, `ml_score`, `ai_verdict`, `ai_confidence`),
-explanation (`description`, `fix`, `ai_explanation`, `ai_fix`) and assessment (`risk_score`,
+`Finding`: location (`file`, `line`), classification (`rule_id`, `rule_ids`, `cwe`, `owasp`,
+`severity`), evidence (`snippet`, `context`, `engines`, `tainted`, `evidence`, `tier`),
+belief (`confidence`, `ml_score`, `ai_verdict`, `ai_confidence`, `user_verdict`),
+explanation (`description`, `fix`, `ai_explanation`, `ai_fix`), assessment (`risk_score`,
 `status`).
 
-`fingerprint` = SHA-256 of file + CWE + whitespace-normalized code line. It does not include
-the line number, so a finding keeps its identity when code above it changes. It is used as
-the LLM cache key and exported to SARIF.
+`status` is one of `open` (counted), `needs_review` (strict mode, unconfirmed),
+`likely_false_positive` (AI verdict), `dismissed` (reviewer verdict).
 
-`ScanResult` holds the findings plus scan metadata, the project score and grade.
+`fingerprint` = SHA-256 of file + CWE + whitespace-normalized code line. It has no line
+number, so a finding keeps its identity when code above it changes. It keys reviewer
+feedback, the LLM cache and SARIF export.
 
 ## 3. Pipeline (`sca/pipeline.py`)
 
 ```
-walk -> detect (engines) -> merge -> ML -> LLM -> assess -> store
+walk -> detect -> refine -> merge -> ML -> LLM -> assess -> store
 ```
 
 Each engine runs inside a guard: an exception or a missing tool is written to
-`engine_notes` and the scan continues. The secrets engine always runs first, even when its
-findings are switched off, because the values it finds are masked in every snippet, report
-and LLM prompt.
+`engine_notes` and the scan continues. The secrets engine always runs first, because the
+values it finds are masked in every snippet, report and LLM prompt.
 
 ## 4. Static engines
 
-### 4.1 Pattern rules (`sca/engines/rules_engine.py`, `sca/rules/*.yaml`)
+### 4.1 Pattern rules (`sca/engines/rules_engine.py`)
 
-A rule is a regular expression that marks a vulnerable line plus an optional `exclude`
-expression that cancels the match (for example a sanitizer on the same line). Comment
-lines and block comments are skipped. Lines longer than 600 characters are skipped as
-minified code. TypeScript shares the JavaScript rules; C++ shares the C rules.
+Sources of rules: `sca/rules/*.yaml` (built-in), `learned/rules.yaml` (approved learned
+rules), `learned/overrides.yaml` (approved extra exclusions per rule). A broken learned
+entry is skipped so that a bad learned rule can never stop a scan. The loaded set is cached
+and reloaded when any rule file changes.
 
-Strength: fast, language-independent, easy to write. Weakness: no understanding of data
-flow, one line at a time.
+A rule is a regular expression for a vulnerable line plus an optional `exclude`. Comment
+lines, block comments and lines over 600 characters are skipped. `RULE_LANGUAGE` maps
+TypeScript to the JavaScript rules, C++ to C, and Kotlin/Scala/Groovy to the Java API rules.
 
 ### 4.2 Python AST taint engine (`sca/engines/python_ast.py`)
 
-The code is parsed with Python's `ast` module, then analysed per function:
+Sources: request objects, `input()`, `sys.argv`, parameters of route handlers.
+Propagation: assignments, loops, `with`, string building, calls with tainted arguments.
+Sanitizers: `int`, `shlex.quote`, `escape`, `secure_filename`, `basename` and similar.
+Sinks: SQL, shell, `eval`/`exec`, templates, files, HTTP requests, redirects, HTML output,
+deserialization.
 
-- **Sources**: `request.args/form/json/...`, `input()`, `sys.argv`, parameters of functions
-  decorated as web routes.
-- **Propagation**: assignments, augmented assignments, `for` targets, `with ... as`,
-  f-strings, `+`, `%`, `.format()`, calls with tainted arguments, attribute and index access.
-  Assignments are processed repeatedly until no new tainted name appears (at most 3 passes).
-- **Sanitizers**: `int`, `float`, `shlex.quote`, `escape`, `secure_filename`,
-  `os.path.basename`, `url_for` and similar.
-- **Sinks**: SQL execution, shell commands, `eval`/`exec`, template rendering, file access,
-  outgoing HTTP requests, redirects, HTML responses, deserialization.
+Three passes:
 
-Two kinds of sink exist. Sinks that are dangerous with any dynamic string (SQL, shell,
-`eval`) are reported with confidence 0.85 when the data is traced to a source and about 0.5
-when the string is dynamic but its origin is unknown. Sinks that are only dangerous with
-user data (`open`, `requests.get`, `redirect`) are reported only when tainted.
+1. **Intra-procedural.** Each function is analysed on its own. Sinks that are dangerous
+   with any dynamic string (SQL, shell, `eval`) are reported with confidence 0.85 when the
+   data is traced to a source and about 0.5 otherwise. Sinks that are dangerous only with
+   user data (`open`, `requests.get`, `redirect`) are reported only when traced.
+2. **Function summaries.** For every non-route function and every parameter: assume the
+   parameter is tainted and record which sinks it reaches.
+3. **Call sites.** A call that passes tainted data to a summarized parameter (by position
+   or keyword, as a plain call or `self.method(...)`) reports the sink in the callee as
+   traced, or upgrades the existing untraced finding.
 
-Import aliases are resolved (`import subprocess as sp`, `from os import system`).
+Limits: one call deep, one file, flow-insensitive inside a function, no precise modelling of
+containers or object fields.
 
-Limits, stated plainly: the analysis is intra-procedural (taint does not follow a call into
-another function), flow-insensitive within a function, and it does not model containers or
-object fields precisely. Sample `K25` in the ground truth is a miss caused by the first limit.
+### 4.3 Taint-lite (`sca/engines/taint_lite.py`)
 
-### 4.3 Secrets (`sca/engines/secrets.py`)
+For injection-type findings of the pattern rules in languages without an AST engine. It
+scans up to 60 lines above the finding, follows simple assignments (including JavaScript
+destructuring and Go multi-assignment), and checks whether an identifier on the flagged
+line was assigned from a known source without passing a known sanitizer. A table lookup
+(`$pages[$_GET['page']]`) is treated as trusted. A traced finding gets `tainted = True` and
++0.15 confidence. Nothing is removed. It is a heuristic and is documented as one.
 
-1. Known formats: AWS, GitHub, Google, Slack, Stripe keys, private key blocks, JWTs,
-   passwords inside connection URLs.
-2. Assignments: a sensitive variable name (`password`, `api_key`, `token`, ...) assigned a
-   string literal. Placeholders (`changeme`, `${VAR}`, `<your key>`), natural-language labels
-   and names such as `token_url` are ignored. For keys and tokens the value must be at least
-   12 characters with Shannon entropy H >= 3.2 bits per character, where
-   `H = -sum(p_i * log2(p_i))` over the character frequencies.
+### 4.4 Secrets (`sca/engines/secrets.py`)
 
-### 4.4 External adapters (`sca/engines/external.py`)
+Known key formats, and sensitive variable names assigned a literal. Placeholders, labels in
+natural language and names such as `token_url` are ignored. Keys and tokens need at least 12
+characters and Shannon entropy `H = -sum(p_i * log2(p_i)) >= 3.2` bits per character.
 
-Bandit, Opengrep/Semgrep and Gitleaks are executed as subprocesses with JSON output. Each
-has a pure `parse_*` function that converts the tool's JSON into `Finding` objects. A small
-table aligns Bandit's CWE numbers with the internal ones so that duplicates merge.
+### 4.5 External adapters (`sca/engines/external.py`)
 
-## 5. Merge (`sca/merge.py`)
+Bandit, Opengrep/Semgrep and Gitleaks run as subprocesses with JSON output; pure `parse_*`
+functions convert the output to findings.
 
-Two findings are the same issue when they are in the same file, have the same canonical CWE
-and are at most one line apart, and they come from different engines (one engine reporting
-two adjacent lines means two issues).
+## 5. Refinement and merge
 
-Confidence is combined with a noisy-OR over the engines:
+**Rule track record** (`sca/learn/feedback.py`). With `tp` confirmed and `fp` dismissed
+findings of a rule, its confidence becomes the mean of a Beta posterior whose prior is the
+written confidence `c` with strength `K = 4`:
 
 ```
-c = 1 - (1 - c_1)(1 - c_2)...(1 - c_n)        capped at 0.97
+c' = (tp + K*c) / (tp + fp + K)
 ```
 
-Example: the AST engine reports 0.85 and Bandit 0.60, so `c = 1 - 0.15 * 0.40 = 0.94`.
-The assumption is that engines err independently; this is only approximately true, which is
-why the result is capped.
+A rule with `fp >= 3` and `c' < 0.35` is quarantined: its findings are dropped and the fact
+is reported in the scan notes.
 
-Lines containing `nosec`, `sca:ignore` or `nosemgrep` are suppressed.
+**Merge** (`sca/merge.py`). Same file, same canonical CWE, at most one line apart, different
+engines. Confidence is a noisy-OR over the engines, capped at 0.97:
+
+```
+c = 1 - (1 - c_1)(1 - c_2)...(1 - c_n)
+```
+
+Earlier reviewer verdicts are re-applied by fingerprint: `fp` sets `dismissed`, `tp` marks
+the finding confirmed.
 
 ## 6. AI layer
 
-### 6.1 ML classifier (`sca/ai/classifier.py`)
+### 6.1 Providers (`sca/ai/providers.py`, `sca/ai/llm.py`)
 
-Pipeline: code tokenizer (identifiers, numbers as `<num>`, every operator and punctuation
-mark as its own token) -> TF-IDF over 1 to 3-grams -> logistic regression with balanced
-class weights. Output: probability that a line is vulnerable. It contributes 25% of the
-final confidence:
+One interface: `check()`, `models()`, `chat_json(system, user)`, `label`, `is_local`.
 
-```
-confidence = 0.75 * static_confidence + 0.25 * ml_score
-```
+| Client | Protocol | Notes |
+|---|---|---|
+| `OllamaClient` | Ollama `/api/chat`, `format: json` | local |
+| `OpenAICompatClient` | `POST {base}/chat/completions`, bearer key | on HTTP 400 it retries without `response_format`, then without `temperature`, because servers differ |
+| `AnthropicClient` | `POST /v1/messages`, `x-api-key`, `anthropic-version` | sends no sampling parameters; falls back to a request without the top-level `system` field on HTTP 400 |
 
-Default training data is a synthetic corpus built from templates
-(`sca/ai/seed_corpus.py`). It makes the feature work out of the box and must not be reported
-as a research result. `python -m sca train --dataset file.jsonl` trains on a real dataset
-(PrimeVul, DiverseVul, Devign and BigVul field names are accepted) and prints held-out
-precision, recall, F1 and ROC-AUC.
+HTTP 429 and 5xx are retried up to twice, honouring `Retry-After`. Only the standard
+library is used. Settings come from the environment or the git-ignored `.env` file; the key
+is never written to the database, reports or error messages. Answers are cached in SQLite
+by provider, model, language and fingerprint.
 
-### 6.2 LLM (`sca/ai/llm.py`)
+### 6.2 Review and deep scan
 
-Transport: Ollama's HTTP API (`/api/tags`, `/api/chat` with `format: json`,
-`temperature: 0`). No third-party client library is needed.
+- **Triage**: title, CWE, whether taint was proven, and up to 28 lines of context. Answer:
+  verdict, confidence, explanation, fix.
+- **Deep scan**: a whole file with line numbers plus the findings already known. Answer: new
+  findings. Each one is then reviewed by a separate triage request (second pass). Without
+  that confirmation it stays `probable`.
 
-- **Triage**: for each finding the model receives the title, CWE, whether taint was proven,
-  and up to 28 lines of surrounding code. It must answer with a JSON object: verdict
-  (`true_positive`, `false_positive`, `uncertain`), confidence, explanation, fix.
-- **Deep scan**: the model receives a whole file with line numbers and the list of findings
-  already known, and returns new ones.
+Defences against prompt injection from scanned code: the system prompt declares the code as
+data; only JSON is accepted and each field is validated (line inside the file, well-formed
+CWE); verdicts re-label and never delete; secrets are masked before sending.
 
-Defences, because the scanned code is untrusted input to the model (prompt injection):
+### 6.3 ML classifier (`sca/ai/classifier.py`)
 
-1. The system prompt states that the code is data and must not be obeyed.
-2. Only strict JSON is accepted; every field is validated. Deep-scan findings whose line
-   number is outside the file or whose CWE is malformed are dropped.
-3. A `false_positive` verdict re-labels a finding as `likely_false_positive` only when the
-   model's confidence is at least 0.6. The finding stays in every report.
-4. Secrets are masked before any text is sent.
+Code tokenizer, TF-IDF over 1-3-grams, logistic regression. It contributes 25% of the
+confidence: `confidence = 0.75 * static + 0.25 * ml`. Reviewed code lines are added to the
+training data with weight 3 and the model is retrained at the next scan. The default
+training data is synthetic; `python -m sca train --dataset` trains on a real dataset.
 
-Answers are cached in SQLite by model + language + fingerprint, so repeating a scan does not
-repeat the slow model calls.
-
-## 7. Assessment (`sca/scoring.py`)
-
-Per finding, on a 0-10 scale (the same range as CVSS, but not a CVSS score):
+## 7. Rule learning (`sca/learn/`)
 
 ```
-risk = base(severity) * (0.6 + 0.4 * confidence)
-base: critical 9.5, high 8.0, medium 5.5, low 3.0, info 1.0
+LLM-only finding, confirmed by the second pass  ->  propose_rule
+finding judged false by the LLM (>= 0.8) or the reviewer  ->  propose_exclude
+no rule for (language, CWE)  ->  propose_bootstrap_rule
+        |
+validate  --fail-->  reasons sent back to the model, one retry
+        |
+pending  --human-->  approved  ->  learned/rules.yaml | learned/overrides.yaml
 ```
 
-Per project:
+**Proposal** (`propose.py`). The model returns strict JSON: title, CWE, severity, pattern,
+exclude, message, fix, three vulnerable and three safe examples. The answer is data: it is
+never executed.
+
+**Sandbox** (`sandbox.py`). Python cannot interrupt a running regular expression, so every
+untrusted pattern is run in a child process (`python -I sandbox.py`) that is killed after 6
+seconds.
+
+**Validation** (`validate.py`), for a new rule:
+
+| Check | Fails when |
+|---|---|
+| schema | missing field, malformed CWE, unknown language, pattern over 400 characters, nested quantifier |
+| compiles | the regular expression is invalid |
+| fast | the sandbox times out on the stress lines (long runs, repeated literals from the pattern) |
+| specific | no literal word of 3+ letters, or it matches everyday lines such as `x = 1` |
+| evidence | it does not match the line it was learned from |
+| examples | it misses its vulnerable examples or matches a safe one |
+| clean corpus | it matches known-safe code: the safe samples, the safe training lines, lines the reviewer dismissed |
+| blast radius | more than 25 matches, or more than 2% of the lines of that language in the project |
+| novelty | an active rule with the same CWE already matches the evidence, or the pattern is a duplicate |
+
+For an exclusion: compiles, fast, specific, matches the false positive, and matches none of
+the known-vulnerable lines that the target rule reports (so recall cannot silently drop).
+
+**Approval** (`store.py`). Only a candidate whose validation passed can be approved.
+`--auto-approve` exists for unattended use and applies only to rules learned from real code;
+exclusions and bootstrap rules always wait for a person. A learned rule starts at
+confidence 0.55 and is then moved by its track record.
+
+## 8. Assessment (`sca/scoring.py`)
+
+**Tier.** A finding is `confirmed` when at least one holds: reviewer confirmed it; AI review
+says real with confidence >= 0.7; two or more independent static engine families reported
+it (built-in and learned pattern rules are one family); user input was traced to the line;
+a single engine with confidence >= 0.85. An AI `false_positive` verdict blocks confirmation
+unless the reviewer confirmed. Otherwise the finding is `probable`.
+
+**Strict mode.** Unconfirmed open findings get the status `needs_review` and do not count.
+
+**Risk and score.**
 
 ```
-penalty = sum over open findings of weight(severity) * confidence
-weight: critical 10, high 5, medium 2, low 0.5
-density = penalty / max(KLOC, 0.5)
-score   = round(100 * exp(-density / 25))
+risk    = base(severity) * (0.6 + 0.4 * confidence)       base: 9.5, 8.0, 5.5, 3.0, 1.0
+penalty = sum over open findings of weight(severity) * confidence     weight: 10, 5, 2, 0.5
+score   = round(100 * exp(-(penalty / max(KLOC, 0.5)) / 25))
 grade:  A >= 90, B >= 75, C >= 60, D >= 40, F below
 ```
 
-Dividing by size makes projects comparable. The exponential keeps the score within 0-100
-and makes the first serious findings cost the most. The constants are design choices; a
-sensitivity analysis of them is a reasonable thesis experiment.
+The constants are design choices; a sensitivity analysis is a reasonable thesis experiment.
 
-## 8. Storage and reports
+## 9. Storage and reports
 
-`sca/storage.py`: SQLite database `data/sca.db` with a `scans` table (summary columns plus
-the full result as JSON) and an `llm_cache` table.
+`sca/storage.py`, SQLite `data/sca.db`: `scans`, `llm_cache`, `feedback`, `rule_candidates`.
+`sca/report/`: HTML (self-contained, light and dark, filters by severity and status), PDF
+(Latin text only), JSON, SARIF 2.1.0.
 
-`sca/report/`: HTML (one self-contained file, light and dark themes, filter buttons,
-print-friendly), PDF (fpdf2; Latin text only), JSON (full data), SARIF 2.1.0 (accepted by
-GitHub code scanning and VS Code).
+## 10. Security of the tool itself
 
-## 9. Security of the tool itself
-
-- The dashboard listens on `localhost` only (`.streamlit/config.toml`).
-- Scanned code is never executed. External scanners are started with argument lists, never
-  through a shell.
-- Secrets are masked in snippets, reports and prompts.
+- The dashboard listens on `localhost` only.
+- Scanned code is never executed. External scanners are started with argument lists.
+- LLM output is parsed as data. Proposed regular expressions run in a killable sandbox
+  before they can ever run inside a scan.
+- Secrets detected by the tool are masked in snippets, reports and prompts. Secrets it does
+  not detect are not masked.
+- The API key lives in `.env` (git-ignored, mode 600 where supported).
 - A model file given to `--ml-model` is a pickle: load only models you trained yourself.
 
-## 10. Extending
+## 11. Extending
 
-- **New rule**: add an entry to a file in `sca/rules/` and a test line in
-  `tests/test_engines.py`.
-- **New language**: add the extension to `LANG_BY_EXT` in `sca/walker.py` and a rules file.
-- **New engine**: write `scan(files) -> List[Finding]` and add one `run_engine(...)` line in
-  `sca/pipeline.py`.
-- **Another LLM provider**: implement `available()`, `models()` and `chat_json()` like
-  `OllamaClient`.
+- **New rule**: an entry in `sca/rules/` plus test lines in `tests/test_engines.py`.
+- **New language**: extension in `LANG_BY_EXT`, name in `CODE_LANGUAGES`, comment prefix in
+  `COMMENT_PREFIXES` (`sca/walker.py`); sources in `taint_lite.SOURCES` if wanted.
+- **New engine**: `scan(files) -> List[Finding]` and one `run_engine(...)` line.
+- **New provider**: a preset in `PRESETS` if it is OpenAI-compatible; otherwise a client
+  class with `check`, `models` and `chat_json`.

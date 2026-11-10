@@ -2,9 +2,11 @@
 
 **Intelligent Source Code Vulnerability Detection and Security Assessment Platform**
 
-A local tool: choose a project folder, and it scans the source code with several static
-analysis engines, reviews the results with AI, scores the project, and produces reports.
-The code never leaves your computer.
+Choose a project folder. The tool scans the source code with several static analysis
+engines, reviews the results with AI (a cloud API or a local model), separates confirmed
+findings from probable ones, scores the project, and **learns**: what the AI discovers
+becomes a proposed rule that is validated automatically and activated only after you
+approve it.
 
 > الشرح الكامل بالعربية: **[docs/GUIDE_AR.md](docs/GUIDE_AR.md)** ·
 > هيكل بحث التخرج: **[docs/THESIS_OUTLINE_AR.md](docs/THESIS_OUTLINE_AR.md)** ·
@@ -31,51 +33,99 @@ The first run creates a virtual environment and installs the requirements (a few
 The dashboard then opens at <http://localhost:8501>. Press **Use sample**, then **Run scan**
 to see a full example on the deliberately vulnerable app in `samples/vulnerable_app`.
 
-Manual installation, if you prefer:
+Command line:
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate            # Windows   (Linux/macOS: source .venv/bin/activate)
-pip install -r requirements.txt
-python -m sca ui                  # dashboard
-python -m sca scan path/to/project --format html,json,sarif,pdf    # command line
-python -m sca doctor              # shows which engines and AI parts are available
+python -m sca scan path/to/project --format html,json,sarif,pdf
+python -m sca scan path/to/project --llm --deep --strict --lang ar
+python -m sca doctor       # which engines and AI parts are available
 ```
 
-## What it does
+## Connecting an AI provider
 
-```mermaid
-flowchart TD
-    A[Project folder] --> B[File walker<br/>language detection]
-    B --> C1[Pattern rules<br/>JS, PHP, Java, C/C++, Go, C#]
-    B --> C2[Python AST<br/>taint analysis]
-    B --> C3[Secrets<br/>formats + entropy]
-    B --> C4[Bandit / Opengrep / Gitleaks<br/>optional adapters]
-    C1 & C2 & C3 & C4 --> D[Merge<br/>dedupe, noisy-OR confidence, CWE + OWASP]
-    D --> E[ML classifier<br/>second opinion]
-    E --> F[Local LLM via Ollama<br/>verify, explain, fix, deep scan]
-    F --> G[Assessment<br/>risk per finding, score 0-100, grade]
-    G --> H[Dashboard, HTML, PDF, JSON, SARIF, history]
+The static scan and the ML classifier work with no setup. For AI review, deep scan and rule
+learning, choose a provider in the sidebar (section 3) or on the command line:
+
+```bash
+python -m sca config --provider openai --model <model-name>     # asks for the API key
+python -m sca config --provider anthropic --model <model-name>
+python -m sca config --provider gemini --model <model-name>
+python -m sca config --provider ollama --model qwen2.5-coder:7b # local, no key
 ```
 
-| Stage | What happens | Code |
+| Provider | Kind | Notes |
 |---|---|---|
-| Static engines | 69 pattern rules for JavaScript/TypeScript, PHP, Java, C/C++, Go and C#; a Python AST engine that traces user input from sources to dangerous sinks; a secrets detector (known key formats + Shannon entropy); adapters for Bandit, Opengrep/Semgrep and Gitleaks | `sca/engines/`, `sca/rules/` |
-| Merge | The same issue found by several engines becomes one finding; confidences are combined with a noisy-OR | `sca/merge.py` |
-| ML classifier | TF-IDF + logistic regression gives each finding a probability; trainable on PrimeVul / DiverseVul | `sca/ai/classifier.py` |
-| LLM review | A local model (Ollama) judges each finding, explains it in English or Arabic and proposes a fix; an optional deep scan audits whole files | `sca/ai/llm.py` |
-| Assessment | Risk score 0-10 per finding, project score 0-100 with a grade A-F, CWE and OWASP Top 10 (2021) mapping | `sca/scoring.py`, `sca/cwe.py` |
-| Output | Web dashboard, self-contained HTML report, PDF, JSON, SARIF 2.1.0, scan history in SQLite | `app.py`, `sca/report/` |
+| `openai`, `gemini`, `openrouter`, `groq`, `deepseek`, `mistral` | cloud API | OpenAI chat-completions format |
+| `anthropic` | cloud API | Claude Messages API |
+| `custom` | any OpenAI-compatible server | LM Studio, vLLM, a company gateway |
+| `ollama` | local model | nothing leaves the computer |
 
-## Enabling the AI review (optional)
+The key is stored in `.env` in the project folder (git-ignored, never written to reports or
+the database). **Privacy:** with a cloud provider, the code under review is sent to that
+provider. Secrets the tool detects are masked first; secrets it does not detect are not.
+Use Ollama when the code must stay on the machine. Cloud APIs are billed by their provider:
+one request per reviewed finding, one per file in a deep scan, up to two per proposed rule.
 
-The static scan and the ML classifier work out of the box. For LLM review:
+## How it works
 
-1. Install [Ollama](https://ollama.com).
-2. Download a code model: `ollama pull qwen2.5-coder:7b` (about 5 GB; on a machine with
-   little RAM use `qwen2.5-coder:1.5b`).
-3. Restart the dashboard and tick **LLM review of findings**, or on the command line:
-   `python -m sca scan path/to/project --llm --lang ar`
+![Full pipeline](docs/images/pipeline.png)
+
+Click the image to enlarge it. The diagram source is [docs/diagrams/pipeline.mmd](docs/diagrams/pipeline.mmd).
+
+| Stage | Code | Tools and techniques |
+|---|---|---|
+| 0. Input | `app.py`, `sca/__main__.py` | Streamlit dashboard, argparse command line, tkinter folder dialog |
+| 1. Collect | `sca/walker.py` | `os.walk`, extension-to-language map (54 extensions, 22 languages), binary/minified/size filters |
+| 2. Detect | `sca/engines/`, `sca/rules/` | Secrets: regex key formats + Shannon entropy. Pattern rules: 98 YAML rules (PyYAML, Python `re`) + learned rules. Python: `ast` module, taint analysis with function summaries. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
+| 3. Refine | `sca/learn/feedback.py`, `sca/engines/taint_lite.py` | Beta-posterior rule confidence and quarantine from your reviews; heuristic input tracing for 9 more languages |
+| 4. Merge | `sca/merge.py`, `sca/cwe.py` | Deduplication, noisy-OR confidence, CWE normalization, OWASP Top 10 (2021) mapping, English/Arabic knowledge base, SHA-256 fingerprints |
+| 5. ML | `sca/ai/classifier.py` | scikit-learn: code tokenizer, TF-IDF 1-3-grams, logistic regression; retrained with reviewed lines |
+| 6. AI review | `sca/ai/providers.py`, `sca/ai/llm.py` | OpenAI-compatible and Anthropic APIs or Ollama over `urllib`; JSON-only prompts; deep scan with second-pass verification; SQLite answer cache; secret masking |
+| 7. Assess | `sca/scoring.py` | Confirmed/probable tier, strict mode, risk 0-10, exponential project score 0-100, grade A-F |
+| 8. Store and report | `sca/storage.py`, `sca/report/` | SQLite, pandas, self-contained HTML, fpdf2 (PDF), JSON, SARIF 2.1.0 |
+| 9. Learn | `sca/learn/` | LLM-written rules as JSON, 9 automatic checks, regex sandbox in a killable child process, human approval, YAML rule store |
+
+### The learning loop
+
+1. **Discover.** The AI deep scan reads whole files and reports weaknesses that no rule
+   found. A second, separate request must confirm each one.
+2. **Propose.** For each confirmed discovery the model writes a detection rule (a regular
+   expression with examples) as strict JSON. For each false positive it writes a narrow
+   exclusion instead.
+3. **Validate.** Nine automatic checks: the pattern compiles, finishes on stress input
+   (it runs in a separate process that is killed on timeout), is specific, matches the line
+   it was learned from, matches its vulnerable examples and none of its safe ones, matches
+   nothing in the known-safe corpus, does not flag an implausible share of the project, and
+   is not a duplicate. On failure the reasons go back to the model once for a correction.
+4. **Approve.** A validated candidate waits in the Learning tab. Nothing is active until a
+   person approves it.
+5. **Use.** The approved rule is written to `learned/rules.yaml`. The next scan finds that
+   weakness statically: fast, offline, with no AI call.
+6. **Track.** Every "real" / "false positive" review adjusts the confidence of the rule
+   behind the finding. A rule that keeps producing false positives is quarantined.
+
+![Learning loop](docs/images/learning-loop.png)
+
+Diagram source: [docs/diagrams/learning-loop.mmd](docs/diagrams/learning-loop.mmd). The Learning tab of the dashboard:
+
+![Learning tab](docs/images/learning.png)
+
+(The candidates in this screenshot were produced by the scripted test model, not by a real
+AI service.)
+
+### Fewer false alarms
+
+No static analyzer can guarantee zero false alarms; deciding whether arbitrary code is
+vulnerable is undecidable in general. What the tool does instead:
+
+| Layer | Effect |
+|---|---|
+| Exclusions and sanitizer lists in the rules | safe variants are not reported |
+| Taint tracing (AST for Python, taint-lite for 7 more language families) | separates "user input reaches this line" from "a pattern matched" |
+| Several engines + noisy-OR | agreement raises confidence |
+| AI review with a second-pass check | false positives are labelled, AI discoveries need confirmation |
+| Your reviews | dismissed findings stay dismissed; noisy rules lose confidence and are quarantined; exclusions are learned |
+| **Strict mode** | only findings backed by independent evidence are counted; the rest move to *Needs review* |
 
 ## Measured results
 
@@ -87,40 +137,48 @@ second folder with no vulnerabilities at all).
 |---|---:|---:|---:|---:|---:|---:|
 | Bandit only (Python baseline) | 15 | 4 | 56 | 0.789 | 0.211 | 0.333 |
 | Pattern rules + secrets | 48 | 3 | 23 | 0.941 | 0.676 | 0.787 |
-| + Python AST taint engine | 65 | 3 | 6 | 0.956 | 0.915 | 0.935 |
-| All static engines | 65 | 7 | 6 | 0.903 | 0.915 | 0.909 |
+| + Python AST taint engine | 66 | 3 | 5 | 0.957 | 0.930 | 0.943 |
+| All static engines | 66 | 7 | 5 | 0.904 | 0.930 | 0.917 |
+| All static, strict mode (confirmed only) | 44 | 0 | 27 | 1.000 | 0.620 | 0.765 |
 
-Read these numbers with care: the samples were written together with the tool, so they
-show that the pipeline works, not how it performs on unseen code. The six misses are cases
-static analysis is known to struggle with (a missing access check, a data flow across two
-functions, an unchecked `memcpy` length, an integer overflow, prototype pollution, a
-password passed as a positional argument). The full list of misses and false positives is in
-[evaluation/results.md](evaluation/results.md). For the thesis, repeat the measurement on a
-public benchmark; the guide explains how.
+Read these numbers with care:
+
+- The samples were written together with the tool, and some heuristics were adjusted while
+  looking at them. They show that the pipeline works, not how it performs on unseen code.
+- Strict mode reached zero false positives **on these samples** by giving up a third of the
+  recall: the 22 real findings it set aside are in *Needs review*, not lost. An AI review is
+  what moves them back; that experiment needs your API key and is described in the guide.
+- The five misses of the normal mode are a missing access check, an unchecked `memcpy`
+  length, an integer overflow, prototype pollution and a password passed as a positional
+  argument. The first four are exactly what the AI deep scan and the learning loop are for.
 
 ## What was and was not tested
 
-- Tested here (Linux, Python 3.13): 132 automated tests, the command line, the dashboard
-  (driven headlessly and in a real browser), all four report formats, the evaluation.
-- The LLM layer was tested against a **fake Ollama server** that imitates the API. It has
-  not been run against a real model in the build environment, so verdict quality depends on
-  the model you install.
-- The Opengrep/Semgrep and Gitleaks adapters were tested on sample tool output only; the
-  real binaries were not installed in the build environment.
-- `experiments/train_codebert.py` is an optional, clearly marked experiment that was not
-  executed.
-- Windows is covered by the CI workflow (`.github/workflows/ci.yml`); check the Actions tab
-  for its status.
+- Tested (Linux and Windows through GitHub Actions, Python 3.10 and 3.12; locally 3.13):
+  230 automated tests covering every engine, the pipeline, reports, the dashboard, the
+  provider clients, the learning loop, feedback, quarantine and strict mode.
+- **No real AI service was called.** The provider clients and the learning loop were tested
+  against local scripted servers that imitate the Ollama, OpenAI and Anthropic HTTP
+  formats. The request format for the Claude API was checked against its current
+  documentation; the other providers' addresses and formats are from their public
+  documentation and were not exercised. The quality of reviews and of learned rules depends
+  on the model you connect and is yours to measure.
+- The Opengrep/Semgrep and Gitleaks adapters were tested on sample tool output only.
+- `experiments/train_codebert.py` is an optional script that was not executed.
 
 ## Limits
 
-Static analysis cannot prove that code is secure. This tool misses logic flaws and most
-data flows that cross functions or files, its rules for languages other than Python work
-line by line, and AI reviews can be wrong. The security score is a heuristic of this tool,
-not an official CVSS score. Use it to find and prioritise problems, not as a certificate.
+- Static analysis cannot prove that code is secure, and it cannot be free of false alarms.
+- Python data flow is followed across functions one call deep and within one file. Other
+  languages are checked line by line, with a heuristic tracer for user input.
+- A learned rule is a single-line regular expression. It cannot express multi-line or
+  data-flow conditions; such weaknesses remain the job of the AI deep scan.
+- AI answers can be wrong in both directions. The design assumes this: nothing an AI says is
+  acted on without validation, and nothing is ever deleted on its word.
+- The security score is a heuristic of this tool, not an official CVSS score.
 
 `samples/vulnerable_app` is intentionally insecure and exists only as test input. Never
-deploy it. Some antivirus products may flag it.
+deploy it.
 
 ## Project layout
 
@@ -128,20 +186,22 @@ deploy it. Some antivirus products may flag it.
 app.py                 Streamlit dashboard
 run.bat / run.sh       one-click launchers
 sca/
-  __main__.py          command line (scan, ui, doctor, history, train)
+  __main__.py          command line: scan, config, learn, rules, feedback, coverage, ...
   pipeline.py          runs every stage in order
   walker.py            file discovery, language detection, secret masking
-  engines/             rules_engine, python_ast, secrets, external (Bandit/Semgrep/Gitleaks)
-  rules/               YAML rules: javascript, php, java, c_cpp, other (Go, C#)
+  engines/             rules_engine, python_ast, taint_lite, secrets, external
+  rules/               built-in YAML rules: javascript, php, java, c_cpp, ruby, shell, other
   merge.py             deduplication and noisy-OR confidence
   cwe.py               CWE + OWASP knowledge base (English and Arabic)
-  ai/                  classifier (ML), llm (Ollama), seed_corpus
-  scoring.py           risk score, project score, grade
-  storage.py           SQLite history and LLM cache
+  ai/                  providers (API clients), llm (prompts), classifier (ML), seed_corpus
+  learn/               propose, sandbox, validate, store, feedback, loop
+  scoring.py           confirmed/probable tier, risk score, project score, grade
+  storage.py           SQLite: history, LLM cache, reviews, rule candidates
   report/              HTML, PDF, SARIF, JSON
+learned/               rules and exclusions this installation has learned (YAML)
 samples/               vulnerable_app, safe_app, ground_truth.json
 evaluation/            evaluate.py, results.md
-tests/                 132 tests
+tests/                 230 tests
 docs/                  Arabic guide, thesis outline, architecture
 experiments/           optional CodeBERT fine-tuning script (not executed)
 ```

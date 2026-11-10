@@ -110,17 +110,36 @@ def run_config(name: str, options: ScanOptions, truth: List[Dict]) -> Dict:
 
 
 def static_options(**overrides) -> ScanOptions:
+    # use_feedback=False: the measurement must not depend on reviews stored on this machine
     base = dict(use_rules=False, use_ast=False, use_secrets=False, use_bandit=False,
-                use_semgrep=False, use_gitleaks=False, use_ml=False, use_llm=False)
+                use_semgrep=False, use_gitleaks=False, use_ml=False, use_llm=False,
+                use_feedback=False)
     base.update(overrides)
     return ScanOptions(**base)
 
 
+def load_llm_settings(args) -> Dict:
+    """Provider settings: saved configuration (python -m sca config), --provider/--model win."""
+    from sca.ai.llm import DEFAULT_MODEL
+    from sca.ai.providers import load_config
+
+    config = load_config()
+    provider = args.provider or config.preset
+    same = provider == config.preset
+    model = args.model or (config.model if same else "") or \
+        (DEFAULT_MODEL if provider == "ollama" else "")
+    return {"llm_provider": provider, "llm_model": model,
+            "llm_base_url": config.base_url if same else "",
+            "llm_api_key": config.api_key if same else ""}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--llm", action="store_true", help="add a run reviewed by the local LLM")
-    parser.add_argument("--deep", action="store_true", help="LLM run also audits whole files")
-    parser.add_argument("--model", default="qwen2.5-coder:7b")
+    parser.add_argument("--llm", action="store_true",
+                        help="add runs reviewed by the configured AI provider")
+    parser.add_argument("--deep", action="store_true", help="the AI also audits whole files")
+    parser.add_argument("--provider", help="AI provider (default: saved setting)")
+    parser.add_argument("--model", help="model name (default: saved setting)")
     parser.add_argument("--out", default=str(ROOT / "evaluation" / "results"))
     args = parser.parse_args()
 
@@ -140,11 +159,18 @@ def main() -> int:
                                               use_bandit=True, use_semgrep=True,
                                               use_gitleaks=True)),
     ]
+    everything = dict(use_rules=True, use_secrets=True, use_ast=True, use_bandit=True,
+                      use_semgrep=True, use_gitleaks=True)
+    configs.append(("All static, strict mode (confirmed only)",
+                    static_options(strict=True, **everything)))
     if args.llm or args.deep:
-        configs.append(("All static + LLM review", static_options(
-            use_rules=True, use_secrets=True, use_ast=True, use_bandit=True, use_semgrep=True,
-            use_gitleaks=True, use_ml=True, use_llm=True, llm_model=args.model,
-            llm_max_findings=500, llm_deep_scan=args.deep)))
+        settings = load_llm_settings(args)
+        configs.append(("All static + AI review", static_options(
+            use_ml=True, use_llm=True, llm_max_findings=500, llm_deep_scan=args.deep,
+            **everything, **settings)))
+        configs.append(("All static + AI review, strict mode", static_options(
+            use_ml=True, use_llm=True, llm_max_findings=500, llm_deep_scan=args.deep,
+            strict=True, **everything, **settings)))
 
     results = [run_config(name, options, truth) for name, options in configs]
 
@@ -156,7 +182,7 @@ def main() -> int:
     table = "\n".join(lines)
     print(table)
 
-    last = results[-1]
+    last = next(r for r in results if r["name"] == "All static engines")
     print("\nMissed by '%s':" % last["name"])
     for m in last["missed"]:
         print("  %s %s:%d %s%s - %s" % (m["tag"], m["file"], m["line"], m["cwe"],
@@ -165,8 +191,8 @@ def main() -> int:
     for f in last["false_positives"]:
         print("  %s:%d %s %s (%s)" % (f["file"], f["line"], f["cwe"], f["title"],
                                      "+".join(f["engines"])))
-    if any("LLM" in r["name"] for r in results):
-        print("\nLLM status: %s" % results[-1]["ai"].get("llm"))
+    if any("AI review" in r["name"] for r in results):
+        print("\nAI status: %s" % results[-1]["ai"].get("llm"))
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

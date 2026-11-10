@@ -8,3 +8,5 @@ data/
 reports/
 *.joblib
 .DS_Store
+# AI provider settings and API key
+.env

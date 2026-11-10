@@ -52,12 +52,13 @@ def to_sarif(result: ScanResult) -> Dict[str, Any]:
                 "cwe": finding.cwe, "owasp": finding.owasp, "engines": finding.engines,
                 "riskScore": finding.risk_score, "status": finding.status,
                 "aiVerdict": finding.ai_verdict, "mlScore": finding.ml_score,
+                "tier": finding.tier, "evidence": finding.evidence,
+                "reviewerVerdict": finding.user_verdict,
             },
         }
         if finding.status != "open":
             entry["suppressions"] = [{"kind": "external",
-                                      "justification": "Judged a likely false positive by "
-                                                       "the AI review"}]
+                                      "justification": finding.status.replace("_", " ")}]
         results.append(entry)
     return {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",

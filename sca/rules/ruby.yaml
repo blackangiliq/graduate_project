@@ -1,0 +1,92 @@
+# Rules for Ruby (including Rails).
+
+- id: RB-SQLI-001
+  title: SQL built with string interpolation
+  languages: [ruby]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: '\.(where|find_by_sql|execute|exec_query|select_all|order|group|having|joins|pluck)\s*\(?\s*"[^"]*#\{'
+
+- id: RB-SQLI-002
+  title: SQL built with string concatenation
+  languages: [ruby]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.7
+  pattern: '\.(where|find_by_sql|execute|exec_query|select_all)\s*\(?\s*("[^"]*"|''[^'']*'')\s*\+'
+
+- id: RB-CMDI-001
+  title: Shell command built with interpolation
+  languages: [ruby]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.75
+  pattern: '(^|[^\w.:])(system|exec|spawn)\s*\(?\s*"[^"]*#\{|(IO\.popen|Open3\.\w+)\s*\(\s*"[^"]*#\{|`[^`]*#\{[^`]*`|%x[\(\{\[][^\)\}\]]*#\{'
+
+- id: RB-EVAL-001
+  title: eval on dynamic data
+  languages: [ruby]
+  cwe: CWE-95
+  severity: high
+  confidence: 0.6
+  pattern: '(^|[^\w.])(eval|instance_eval|class_eval)\s*\(?\s*(?!["''])(?!do\b)[a-z_@]'
+
+- id: RB-DESER-001
+  title: Unsafe deserialization
+  languages: [ruby]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.65
+  pattern: '\bMarshal\.load\s*\(|\bYAML\.load\s*\(|\bOj\.load\s*\('
+  exclude: 'permitted_classes|safe_load'
+
+- id: RB-PATH-001
+  title: File path taken from request parameters
+  languages: [ruby]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.7
+  pattern: '(send_file|File\.(open|read|delete|new)|IO\.read)\s*\(?[^#]*params\['
+  exclude: 'File\.basename'
+
+- id: RB-REDIRECT-001
+  title: Redirect target taken from request parameters
+  languages: [ruby]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.75
+  pattern: 'redirect_to\s*\(?\s*params\['
+
+- id: RB-XSS-001
+  title: Request data marked as safe HTML
+  languages: [ruby]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.75
+  pattern: 'params\[[^\]]+\]\S*\.html_safe|(^|[^\w.])raw\s*\(?\s*params\[|<%==\s*params\['
+
+- id: RB-CRYPTO-001
+  title: Weak hash algorithm (MD5 / SHA-1)
+  languages: [ruby]
+  cwe: CWE-327
+  severity: medium
+  confidence: 0.65
+  pattern: 'Digest::(MD5|SHA1)\b|OpenSSL::Digest(::|\.new\s*\(\s*["''])(MD5|SHA1)'
+
+- id: RB-TLS-001
+  title: TLS certificate verification disabled
+  languages: [ruby]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.85
+  pattern: 'VERIFY_NONE'
+
+- id: RB-RANDOM-001
+  title: Predictable random value used for a security token
+  languages: [ruby]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.65
+  pattern: '(token|secret|password|otp|nonce|salt|session)\w*\s*=[^=]*\b(rand\s*\(|Random\.(rand|new))'
+  ignore_case: true

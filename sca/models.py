@@ -37,6 +37,10 @@ class Finding:
     language: str = ""
     owasp: str = ""
     tainted: bool = False          # user-controlled data was traced to the sink
+    rule_ids: List[str] = field(default_factory=list)   # every rule that reported this issue
+    evidence: List[str] = field(default_factory=list)   # reasons the finding counts as confirmed
+    tier: str = ""                 # confirmed | probable
+    user_verdict: str = ""         # true_positive | false_positive (set by the reviewer)
     # --- filled by the AI layer ---
     ml_score: Optional[float] = None
     ai_verdict: str = ""           # true_positive | false_positive | uncertain | ""
@@ -46,9 +50,15 @@ class Finding:
     ai_model: str = ""
     # --- filled by scoring ---
     risk_score: float = 0.0        # 0..10
-    status: str = "open"           # open | likely_false_positive
+    # open                  counted in the score
+    # needs_review          strict mode: not confirmed by independent evidence
+    # likely_false_positive judged false by the AI review
+    # dismissed             marked false positive by the reviewer
+    status: str = "open"
 
     def __post_init__(self) -> None:
+        if not self.rule_ids:
+            self.rule_ids = [self.rule_id]
         self.severity = normalize_severity(self.severity)
         self.file = self.file.replace("\\", "/")
         self.confidence = max(0.0, min(1.0, float(self.confidence)))
@@ -93,6 +103,9 @@ class ScanResult:
     def open_findings(self) -> List[Finding]:
         return [f for f in self.findings if f.status == "open"]
 
+    def status_count(self, status: str) -> int:
+        return sum(1 for f in self.findings if f.status == status)
+
     def counts(self, only_open: bool = True) -> Dict[str, int]:
         out = {s: 0 for s in SEVERITIES}
         for f in (self.open_findings if only_open else self.findings):
@@ -113,7 +126,9 @@ class ScanResult:
             "score": self.score,
             "grade": self.grade,
             "summary": self.counts(),
-            "likely_false_positives": len(self.findings) - len(self.open_findings),
+            "needs_review": self.status_count("needs_review"),
+            "likely_false_positives": self.status_count("likely_false_positive"),
+            "dismissed": self.status_count("dismissed"),
             "ai": self.ai,
             "findings": [f.to_dict() for f in self.findings],
         }

@@ -1,0 +1,60 @@
+# Rules for shell scripts and PowerShell.
+
+- id: SH-EVAL-001
+  title: eval on a variable
+  languages: [shell]
+  cwe: CWE-95
+  severity: high
+  confidence: 0.6
+  pattern: '(^|[;&|]\s*|\s)eval\s+["'']?[^#]*\$'
+
+- id: SH-PIPE-001
+  title: Downloaded script piped straight into a shell
+  languages: [shell]
+  cwe: CWE-494
+  severity: medium
+  confidence: 0.7
+  pattern: '\b(curl|wget)\b[^|]*\|\s*(sudo\s+)?(ba|z|da)?sh\b'
+
+- id: SH-TLS-001
+  title: TLS certificate verification disabled
+  languages: [shell]
+  cwe: CWE-295
+  severity: medium
+  confidence: 0.8
+  pattern: '\bcurl\b.*\s(-k|--insecure)\b|\bwget\b.*--no-check-certificate'
+
+- id: SH-PERM-001
+  title: File made writable by every user
+  languages: [shell]
+  cwe: CWE-732
+  severity: medium
+  confidence: 0.75
+  pattern: '\bchmod\s+(-R\s+)?(0?777|a\+rwx|o\+w)\b'
+
+- id: PS-EVAL-001
+  title: Invoke-Expression on a variable
+  languages: [powershell]
+  cwe: CWE-95
+  severity: high
+  confidence: 0.65
+  pattern: '\b(Invoke-Expression|iex)\b\s+[^#]*\$'
+  ignore_case: true
+
+- id: PS-TLS-001
+  title: TLS certificate verification disabled
+  languages: [powershell]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.85
+  pattern: '-SkipCertificateCheck\b|ServerCertificateValidationCallback\s*=\s*\{\s*\$true'
+  ignore_case: true
+
+- id: PS-SECRET-001
+  title: Password written in the script as plain text
+  languages: [powershell]
+  cwe: CWE-798
+  severity: high
+  confidence: 0.75
+  pattern: 'ConvertTo-SecureString\s+["''][^"''$]+["'']\s+-AsPlainText'
+  ignore_case: true

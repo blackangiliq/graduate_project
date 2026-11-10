@@ -140,8 +140,8 @@
         "file": "app.py",
         "line": 147,
         "cwe": "CWE-22",
-        "hard": true,
-        "note": "path traversal across two functions (inter-procedural)"
+        "hard": false,
+        "note": "path traversal across two functions (needs inter-procedural analysis)"
       },
       {
         "tag": "Y01",
@@ -645,8 +645,8 @@
         "file": "app.py",
         "line": 147,
         "cwe": "CWE-22",
-        "hard": true,
-        "note": "path traversal across two functions (inter-procedural)"
+        "hard": false,
+        "note": "path traversal across two functions (needs inter-procedural analysis)"
       },
       {
         "tag": "K26",
@@ -736,12 +736,12 @@
     }
   },
   {
-    "tp": 65,
+    "tp": 66,
     "fp": 3,
-    "fn": 6,
-    "precision": 0.956,
-    "recall": 0.915,
-    "f1": 0.935,
+    "fn": 5,
+    "precision": 0.957,
+    "recall": 0.93,
+    "f1": 0.943,
     "missed": [
       {
         "tag": "K24",
@@ -750,14 +750,6 @@
         "cwe": "CWE-639",
         "hard": true,
         "note": "missing ownership check (IDOR) - a logic flaw"
-      },
-      {
-        "tag": "K25",
-        "file": "app.py",
-        "line": 147,
-        "cwe": "CWE-22",
-        "hard": true,
-        "note": "path traversal across two functions (inter-procedural)"
       },
       {
         "tag": "P02",
@@ -831,12 +823,12 @@
     }
   },
   {
-    "tp": 65,
+    "tp": 66,
     "fp": 7,
-    "fn": 6,
-    "precision": 0.903,
-    "recall": 0.915,
-    "f1": 0.909,
+    "fn": 5,
+    "precision": 0.904,
+    "recall": 0.93,
+    "f1": 0.917,
     "missed": [
       {
         "tag": "K24",
@@ -845,14 +837,6 @@
         "cwe": "CWE-639",
         "hard": true,
         "note": "missing ownership check (IDOR) - a logic flaw"
-      },
-      {
-        "tag": "K25",
-        "file": "app.py",
-        "line": 147,
-        "cwe": "CWE-22",
-        "hard": true,
-        "note": "path traversal across two functions (inter-procedural)"
       },
       {
         "tag": "P02",
@@ -960,6 +944,238 @@
       }
     ],
     "name": "All static engines",
+    "ai": {
+      "ml": "disabled",
+      "llm": "disabled"
+    }
+  },
+  {
+    "tp": 44,
+    "fp": 0,
+    "fn": 27,
+    "precision": 1.0,
+    "recall": 0.62,
+    "f1": 0.765,
+    "missed": [
+      {
+        "tag": "A01",
+        "file": "LoginServlet.java",
+        "line": 20,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded password"
+      },
+      {
+        "tag": "A08",
+        "file": "LoginServlet.java",
+        "line": 38,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5"
+      },
+      {
+        "tag": "A09",
+        "file": "LoginServlet.java",
+        "line": 43,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "DES in ECB mode"
+      },
+      {
+        "tag": "A10",
+        "file": "LoginServlet.java",
+        "line": 49,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "java.util.Random token"
+      },
+      {
+        "tag": "A11",
+        "file": "LoginServlet.java",
+        "line": 54,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "Java deserialization"
+      },
+      {
+        "tag": "K24",
+        "file": "app.py",
+        "line": 142,
+        "cwe": "CWE-639",
+        "hard": true,
+        "note": "missing ownership check (IDOR) - a logic flaw"
+      },
+      {
+        "tag": "Y01",
+        "file": "config/settings.yaml",
+        "line": 2,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "password inside a connection URL"
+      },
+      {
+        "tag": "Y02",
+        "file": "config/settings.yaml",
+        "line": 3,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded API key"
+      },
+      {
+        "tag": "F04",
+        "file": "frontend.js",
+        "line": 18,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "document.write with dynamic content"
+      },
+      {
+        "tag": "F05",
+        "file": "frontend.js",
+        "line": 22,
+        "cwe": "CWE-95",
+        "hard": false,
+        "note": "setTimeout with a string built at run time"
+      },
+      {
+        "tag": "P01",
+        "file": "index.php",
+        "line": 3,
+        "cwe": "CWE-209",
+        "hard": false,
+        "note": "errors displayed to users"
+      },
+      {
+        "tag": "P02",
+        "file": "index.php",
+        "line": 4,
+        "cwe": "CWE-798",
+        "hard": true,
+        "note": "password passed as a positional argument: no variable name to recognize"
+      },
+      {
+        "tag": "P12",
+        "file": "index.php",
+        "line": 27,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5 for passwords"
+      },
+      {
+        "tag": "P13",
+        "file": "index.php",
+        "line": 28,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "predictable token"
+      },
+      {
+        "tag": "C03",
+        "file": "parser.c",
+        "line": 14,
+        "cwe": "CWE-120",
+        "hard": false,
+        "note": "strcpy overflow"
+      },
+      {
+        "tag": "C04",
+        "file": "parser.c",
+        "line": 15,
+        "cwe": "CWE-134",
+        "hard": false,
+        "note": "format string"
+      },
+      {
+        "tag": "C05",
+        "file": "parser.c",
+        "line": 20,
+        "cwe": "CWE-120",
+        "hard": false,
+        "note": "sprintf overflow"
+      },
+      {
+        "tag": "C07",
+        "file": "parser.c",
+        "line": 25,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "system with a caller-supplied command"
+      },
+      {
+        "tag": "C08",
+        "file": "parser.c",
+        "line": 30,
+        "cwe": "CWE-120",
+        "hard": false,
+        "note": "scanf %s"
+      },
+      {
+        "tag": "C10",
+        "file": "parser.c",
+        "line": 36,
+        "cwe": "CWE-120",
+        "hard": true,
+        "note": "memcpy with an unchecked length"
+      },
+      {
+        "tag": "C11",
+        "file": "parser.c",
+        "line": 40,
+        "cwe": "CWE-190",
+        "hard": true,
+        "note": "integer overflow in the allocation size"
+      },
+      {
+        "tag": "J01",
+        "file": "server.js",
+        "line": 12,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded database password"
+      },
+      {
+        "tag": "J02",
+        "file": "server.js",
+        "line": 13,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded JWT secret"
+      },
+      {
+        "tag": "J11",
+        "file": "server.js",
+        "line": 49,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5 for passwords"
+      },
+      {
+        "tag": "J12",
+        "file": "server.js",
+        "line": 53,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "Math.random token"
+      },
+      {
+        "tag": "J13",
+        "file": "server.js",
+        "line": 58,
+        "cwe": "CWE-347",
+        "hard": false,
+        "note": "JWT 'none' algorithm accepted"
+      },
+      {
+        "tag": "J16",
+        "file": "server.js",
+        "line": 72,
+        "cwe": "CWE-1321",
+        "hard": true,
+        "note": "prototype pollution in a recursive merge"
+      }
+    ],
+    "false_positives": [],
+    "name": "All static, strict mode (confirmed only)",
     "ai": {
       "ml": "disabled",
       "llm": "disabled"

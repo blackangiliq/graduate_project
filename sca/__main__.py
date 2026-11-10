@@ -1,9 +1,14 @@
 """Command line interface.
 
-    python -m sca scan <folder> [--llm] [--deep] [--format html,json,sarif,pdf]
+    python -m sca scan <folder> [--llm] [--deep] [--strict] [--format html,json,sarif,pdf]
+    python -m sca config              # choose the AI provider and store the API key
+    python -m sca learn <folder>      # let the AI propose new rules from a project
+    python -m sca rules list          # review, approve or reject proposed rules
+    python -m sca feedback fp <id>    # mark a finding as a false positive (or tp = real)
+    python -m sca coverage            # rules per language and weakness
     python -m sca doctor              # show which engines and AI components are available
     python -m sca history             # list previous scans
-    python -m sca train --dataset data.jsonl --out data/model.joblib
+    python -m sca train --dataset data.jsonl
     python -m sca ui                  # start the web dashboard
 """
 from __future__ import annotations
@@ -13,7 +18,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from . import __version__
 from .models import SEVERITIES, SEVERITY_RANK
@@ -30,6 +35,66 @@ def _safe_stdout() -> None:
             pass
 
 
+# ------------------------------------------------------------------ shared LLM options
+def _add_llm_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--provider", help="AI provider: ollama, openai, anthropic, gemini, "
+                        "openrouter, groq, deepseek, mistral, custom (default: saved setting)")
+    parser.add_argument("--model", help="model name (default: saved setting)")
+    parser.add_argument("--base-url", help="address of the provider's API")
+    parser.add_argument("--llm-host", help="Ollama address (same as --base-url for Ollama)")
+
+
+def _llm_settings(args: argparse.Namespace) -> Dict[str, Any]:
+    """Provider settings: command line first, then environment / .env, then defaults.
+    The API key is only read from the environment or the .env file, never from the
+    command line (it would end up in the shell history)."""
+    from .ai.llm import DEFAULT_MODEL
+    from .ai.providers import PRESETS, load_config
+
+    config = load_config()
+    provider = (getattr(args, "provider", None) or config.preset).lower()
+    if provider not in PRESETS:
+        raise SystemExit("Unknown provider '%s'. Choose one of: %s"
+                         % (provider, ", ".join(PRESETS)))
+    same = provider == config.preset
+    model = getattr(args, "model", None) or (config.model if same else "")
+    if not model and provider == "ollama":
+        model = DEFAULT_MODEL
+    base_url = getattr(args, "base_url", None) or getattr(args, "llm_host", None) or \
+        (config.base_url if same else "")
+    api_key = config.api_key if same else ""
+    if not same:
+        import os
+        api_key = os.environ.get("SCA_LLM_API_KEY") or \
+            os.environ.get(PRESETS[provider]["key_env"] or "-", "")
+    return {"llm_provider": provider, "llm_model": model, "llm_base_url": base_url or "",
+            "llm_api_key": api_key}
+
+
+def _client(args: argparse.Namespace):
+    from .pipeline import ScanOptions, client_from_options
+
+    client = client_from_options(ScanOptions(**_llm_settings(args)))
+    ready, message = client.check()
+    if not ready:
+        print("The AI provider is not ready: %s" % message, file=sys.stderr)
+        print("Run `python -m sca config` to set the provider, model and API key.",
+              file=sys.stderr)
+        return None
+    if not client.is_local:
+        print("Note: code snippets will be sent to %s (secrets are masked)." % client.base_url,
+              file=sys.stderr)
+    return client
+
+
+def _progress(args: argparse.Namespace):
+    def progress(message: str, fraction: float) -> None:
+        if not getattr(args, "quiet", False):
+            print("[%3d%%] %s" % (round(fraction * 100), message), file=sys.stderr)
+    return progress
+
+
+# ------------------------------------------------------------------ scan
 def cmd_scan(args: argparse.Namespace) -> int:
     from .pipeline import ScanOptions, run_scan
     from .report import write_reports
@@ -40,17 +105,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
         use_gitleaks=not args.no_gitleaks, semgrep_config=args.semgrep_config,
         exclude_dirs=[d for d in args.exclude.split(",") if d],
         use_ml=not args.no_ml, ml_model_path=args.ml_model,
-        use_llm=args.llm or args.deep, llm_host=args.llm_host, llm_model=args.model,
-        llm_max_findings=args.llm_max, llm_deep_scan=args.deep, lang=args.lang,
-        save=not args.no_save,
-    )
-
-    def progress(message: str, fraction: float) -> None:
-        if not args.quiet:
-            print("[%3d%%] %s" % (round(fraction * 100), message), file=sys.stderr)
-
+        use_llm=args.llm or args.deep, llm_max_findings=args.llm_max,
+        llm_deep_scan=args.deep, lang=args.lang, save=not args.no_save,
+        strict=args.strict, use_feedback=not args.no_feedback, **_llm_settings(args))
     try:
-        result = run_scan(args.path, options, progress)
+        result = run_scan(args.path, options, _progress(args))
     except FileNotFoundError as exc:
         print("Error: %s" % exc, file=sys.stderr)
         return 2
@@ -67,13 +126,18 @@ def cmd_scan(args: argparse.Namespace) -> int:
         if not note.startswith("ok"):
             print("  - %s: %s" % (name, note))
     for name, note in result.ai.items():
-        print("AI %-4s: %s" % (name, note))
+        print("AI %-8s: %s" % (name, note))
     print()
     print("Score  : %d / 100   Grade %s" % (result.score, result.grade))
     print("Open   : " + "   ".join("%s %d" % (s, counts[s]) for s in SEVERITIES))
-    hidden = len(result.findings) - len(result.open_findings)
-    if hidden:
-        print("         %d more judged likely false positives by the AI review" % hidden)
+    confirmed = sum(1 for f in result.open_findings if f.tier == "confirmed")
+    print("         %d confirmed by independent evidence, %d probable"
+          % (confirmed, len(result.open_findings) - confirmed))
+    for status, label in (("needs_review", "not confirmed, moved to 'needs review' (strict mode)"),
+                          ("likely_false_positive", "judged likely false positives by the AI review"),
+                          ("dismissed", "dismissed by earlier reviews")):
+        if result.status_count(status):
+            print("         %d %s" % (result.status_count(status), label))
     print()
     shown = result.open_findings[: args.top]
     for finding in shown:
@@ -81,8 +145,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
                                    finding.file, finding.line))
         print("         %s  (confidence %d%%, %s)" % (
             finding.title, round(finding.confidence * 100), "+".join(finding.engines)))
+        print("         %s%s   id %s" % (
+            finding.tier, ": " + "; ".join(finding.evidence) if finding.evidence else "",
+            finding.fingerprint))
         if finding.ai_verdict:
-            print("         LLM: %s" % finding.ai_verdict.replace("_", " "))
+            print("         AI: %s" % finding.ai_verdict.replace("_", " "))
     if len(result.open_findings) > len(shown):
         print("... %d more in the report" % (len(result.open_findings) - len(shown)))
 
@@ -100,17 +167,64 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------------ config / doctor
+def cmd_config(args: argparse.Namespace) -> int:
+    import getpass
+
+    from .ai.providers import PRESETS, LLMConfig, env_file, load_config, make_client, save_config
+
+    config = load_config()
+    if args.show or not (args.provider or args.model or args.base_url or args.set_key):
+        print("Provider : %s (%s)" % (config.preset, PRESETS[config.preset]["label"]))
+        print("Address  : %s" % config.resolved_base_url())
+        print("Model    : %s" % (config.model or "(not set)"))
+        print("API key  : %s" % ("set" if config.api_key else "not set"))
+        print("Stored in: %s" % env_file())
+        print("\nProviders: %s" % ", ".join(PRESETS))
+        print("Example  : python -m sca config --provider openai --model <model-name>")
+        return 0
+    provider = (args.provider or config.preset).lower()
+    if provider not in PRESETS:
+        print("Unknown provider. Choose one of: %s" % ", ".join(PRESETS), file=sys.stderr)
+        return 2
+    changed = provider != config.preset
+    new = LLMConfig(preset=provider,
+                    base_url=args.base_url or ("" if changed else config.base_url),
+                    api_key="" if changed else config.api_key,
+                    model=args.model or ("" if changed else config.model))
+    needs_key = PRESETS[provider]["kind"] != "ollama"
+    if needs_key and (args.set_key or not new.api_key):
+        key = getpass.getpass("API key for %s (input is hidden, Enter to skip): "
+                              % PRESETS[provider]["label"]).strip()
+        if key:
+            new.api_key = key
+    path = save_config(new)
+    print("Saved to %s (this file is git-ignored; do not share it)." % path)
+    client = make_client(new)
+    ready, message = client.check()
+    print("Connection: %s" % ("ready" if ready else "NOT ready - " + message))
+    if ready and not new.model:
+        names = client.models()
+        if names:
+            print("Available models: %s" % ", ".join(names[:30]))
+    return 0 if ready else 1
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     from .ai.classifier import SKLEARN_AVAILABLE
-    from .ai.llm import OllamaClient
+    from .ai.providers import PRESETS, load_config, make_client
     from .engines import external
     from .engines.rules_engine import load_rules
 
+    rules = load_rules()
+    learned = sum(1 for r in rules if r.origin == "learned")
     print("Secure Code Analyzer %s on Python %s" % (__version__, sys.version.split()[0]))
     print()
     print("Static engines")
-    print("  [ok] rules      %d rules loaded" % len(load_rules()))
-    print("  [ok] ast        Python taint analysis (built in)")
+    print("  [ok] rules      %d rules loaded (%d built in, %d learned)"
+          % (len(rules), len(rules) - learned, learned))
+    print("  [ok] ast        Python taint analysis, inter-procedural within a file (built in)")
+    print("  [ok] taint-lite input tracing for JS, PHP, Java, Go, C#, Ruby, C (built in)")
     print("  [ok] secrets    key formats + entropy (built in)")
     tools = external.availability()
     hints = {"bandit": "pip install bandit",
@@ -124,14 +238,15 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print("  [%s] ML classifier (scikit-learn)%s" % (
         "ok" if SKLEARN_AVAILABLE else "--",
         "" if SKLEARN_AVAILABLE else " - pip install scikit-learn"))
-    client = OllamaClient(args.llm_host)
-    if client.available():
-        models = client.models()
-        print("  [ok] Ollama at %s" % args.llm_host)
-        print("       models: %s" % (", ".join(models) or "none - run: ollama pull qwen2.5-coder:7b"))
-    else:
-        print("  [--] Ollama not reachable at %s" % args.llm_host)
-        print("       install from https://ollama.com then run: ollama pull qwen2.5-coder:7b")
+    config = load_config()
+    client = make_client(config)
+    ready, message = client.check()
+    print("  [%s] LLM provider: %s, model %s" % ("ok" if ready else "--",
+                                                PRESETS[config.preset]["label"],
+                                                client.model or "(not set)"))
+    if not ready:
+        print("       %s" % message)
+        print("       set it up with: python -m sca config --provider <name> --model <model>")
     try:
         import fpdf  # noqa: F401
         print("  [ok] PDF export (fpdf2)")
@@ -140,6 +255,179 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------------ learning
+def _print_candidates(candidates: List[Dict[str, Any]]) -> None:
+    for c in candidates:
+        failed = [x for x in (c.get("validation") or {}).get("checks", []) if not x["passed"]]
+        print("%-22s %-14s %-9s %s" % (c["id"], c["status"], c.get("cwe", ""), c.get("title", "")))
+        for check in failed:
+            print("      failed %s: %s" % (check["name"], check["detail"]))
+
+
+def cmd_learn(args: argparse.Namespace) -> int:
+    from .learn import loop
+    from .pipeline import ScanOptions, scan_project
+    from .storage import Storage
+
+    if not (args.path or args.bootstrap or args.from_feedback):
+        print("Give a project folder, or --bootstrap <language>, or --from-feedback.",
+              file=sys.stderr)
+        return 2
+    client = _client(args)
+    if client is None:
+        return 2
+    storage = Storage()
+    created: List[Dict[str, Any]] = []
+    if args.path:
+        options = ScanOptions(use_llm=True, llm_deep_scan=True,
+                              llm_deep_max_files=args.max_files, llm_max_findings=args.llm_max,
+                              save=False, **_llm_settings(args))
+        try:
+            result, files = scan_project(args.path, options, _progress(args), storage)
+        except FileNotFoundError as exc:
+            print("Error: %s" % exc, file=sys.stderr)
+            return 2
+        print("AI: %s" % result.ai.get("llm"))
+        created += loop.learn_from_scan(result, files, client, storage, args.max_rules,
+                                        _progress(args))
+    if args.from_feedback:
+        created += loop.learn_from_feedback(client, storage, args.max_rules)
+    if args.bootstrap:
+        cwes = [c for c in args.cwe.split(",") if c] if args.cwe else None
+        created += loop.bootstrap(client, storage, args.bootstrap, cwes, _progress(args))
+
+    pending = [c for c in created if c["status"] == "pending"]
+    print("\n%d candidate(s) proposed: %d passed validation, %d rejected automatically."
+          % (len(created), len(pending), len(created) - len(pending)))
+    _print_candidates(created)
+    if args.auto_approve:
+        approved = loop.auto_approve(storage, created)
+        print("\nAuto-approved %d rule(s): %s" % (len(approved), ", ".join(approved) or "-"))
+    elif pending:
+        print("\nReview them:  python -m sca rules show <id>")
+        print("Approve    :  python -m sca rules approve <id>   (or: approve all)")
+    return 0
+
+
+def cmd_rules(args: argparse.Namespace) -> int:
+    from .engines.rules_engine import load_rules
+    from .learn import feedback, store
+    from .storage import Storage
+
+    storage = Storage()
+    action = args.action
+    if action == "list":
+        status = None if args.status == "all" else args.status
+        candidates = storage.list_candidates(status)
+        if not candidates:
+            print("No candidates with status '%s'." % args.status)
+        _print_candidates(candidates)
+        learned = store.read_learned()
+        print("\nActive learned rules: %d" % len(learned))
+        for rule in learned:
+            print("  %-22s %-9s %s" % (rule["id"], rule.get("cwe", ""), rule.get("title", "")))
+        return 0
+    if action == "stats":
+        stats = storage.rule_stats()
+        confidences = {r.id: r.confidence for r in load_rules()}
+        if not stats:
+            print("No reviewer feedback yet. Mark findings with: python -m sca feedback fp|tp <id>")
+            return 0
+        print("%-24s %4s %4s  %-10s %s" % ("Rule", "TP", "FP", "Confidence", "State"))
+        for rule_id, s in sorted(stats.items(), key=lambda kv: -kv[1]["fp"]):
+            base = confidences.get(rule_id, 0.6)
+            print("%-24s %4d %4d  %.2f->%.2f %s" % (
+                rule_id, s["tp"], s["fp"], base,
+                feedback.adjusted_confidence(base, s["tp"], s["fp"]),
+                "QUARANTINED" if feedback.is_quarantined(base, s["tp"], s["fp"]) else "active"))
+        return 0
+    if not args.ids:
+        print("Give a candidate id.", file=sys.stderr)
+        return 2
+    ids = args.ids
+    if action == "approve" and ids == ["all"]:
+        ids = [c["id"] for c in storage.list_candidates("pending")]
+    code = 0
+    for candidate_id in ids:
+        try:
+            if action == "show":
+                candidate = storage.get_candidate(candidate_id)
+                if candidate is None:
+                    raise KeyError("No candidate with id %s" % candidate_id)
+                print(json.dumps(candidate, indent=2, ensure_ascii=False))
+            elif action == "approve":
+                store.approve(storage, candidate_id)
+                print("Approved %s. It is active from the next scan." % candidate_id)
+            elif action == "reject":
+                store.reject(storage, candidate_id)
+                print("Rejected %s." % candidate_id)
+            elif action == "remove":
+                removed = store.remove_learned_rule(candidate_id)
+                print("Removed %s." % candidate_id if removed
+                      else "No learned rule with id %s." % candidate_id)
+        except (KeyError, ValueError) as exc:
+            print("Error: %s" % str(exc).strip("'\""), file=sys.stderr)
+            code = 1
+    return code
+
+
+def cmd_feedback(args: argparse.Namespace) -> int:
+    from .storage import Storage
+
+    storage = Storage()
+    if args.verdict == "list":
+        rows = storage.feedback_rows()
+        if not rows:
+            print("No feedback recorded yet.")
+        for row in rows:
+            print("%s  %-2s  %-9s %s  %s" % (row["fingerprint"], row["verdict"], row["cwe"],
+                                             row["file"], (row["snippet"] or "")[:70]))
+        return 0
+    if not args.id:
+        print("Give the finding id printed by `scan` (the 16-character id).", file=sys.stderr)
+        return 2
+    if args.verdict == "clear":
+        storage.clear_feedback(args.id)
+        print("Cleared.")
+        return 0
+    for row in storage.list_scans(30):
+        scan = storage.load_scan(row["id"])
+        match = next((f for f in scan.findings if f.fingerprint.startswith(args.id)), None)
+        if match is not None:
+            storage.set_feedback(match, args.verdict)
+            print("Recorded: %s is a %s (%s:%d %s)." % (
+                match.fingerprint, "false positive" if args.verdict == "fp" else "real finding",
+                match.file, match.line, match.title))
+            print("Later scans apply this verdict and adjust the confidence of rule(s): %s"
+                  % ", ".join(match.rule_ids))
+            return 0
+    print("No finding with id %s in the saved scans. Run a scan first (without --no-save)."
+          % args.id, file=sys.stderr)
+    return 1
+
+
+def cmd_coverage(args: argparse.Namespace) -> int:
+    from .cwe import info
+    from .learn.loop import coverage_matrix
+
+    matrix = coverage_matrix()
+    cwes = sorted({c for row in matrix.values() for c in row}, key=lambda c: int(c.split("-")[1]))
+    print("Active pattern rules per language and weakness "
+          "(Python is also covered by the AST engine):\n")
+    print("%-12s %5s  %s" % ("Language", "Rules", "Weaknesses covered"))
+    for language, row in matrix.items():
+        covered = ", ".join("%s(%d)" % (c.replace("CWE-", ""), row[c]) for c in cwes if row.get(c))
+        if language == "python" and not covered:
+            covered = "AST taint engine (no pattern rules needed)"
+        print("%-12s %5d  %s" % (language, sum(row.values()), covered or "- none yet -"))
+    print("\nNumbers are CWE ids:")
+    for c in cwes:
+        print("  %-9s %s" % (c, info(c)["name"]))
+    print("\nFill gaps with:  python -m sca learn --bootstrap <language>")
+    return 0
+
+
+# ------------------------------------------------------------------ history / train / ui
 def cmd_history(args: argparse.Namespace) -> int:
     from .storage import Storage
 
@@ -213,7 +501,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="sca", description="Secure Code Analyzer: local static + AI vulnerability scanner")
+        prog="sca", description="Secure Code Analyzer: static + AI vulnerability scanner "
+                                "that learns new rules")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command")
 
@@ -228,22 +517,65 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--top", type=int, default=25, help="findings to print (default 25)")
     scan.add_argument("--fail-on", choices=["low", "medium", "high", "critical"],
                       help="exit with code 1 if a finding of this severity or higher exists")
+    scan.add_argument("--strict", action="store_true",
+                      help="count only findings confirmed by independent evidence; the rest "
+                           "go to 'needs review'")
     scan.add_argument("--quiet", action="store_true", help="no progress messages")
     scan.add_argument("--no-save", action="store_true", help="do not store in history")
+    scan.add_argument("--no-feedback", action="store_true",
+                      help="ignore earlier reviewer verdicts and rule track records")
     for name in ("rules", "ast", "secrets", "bandit", "semgrep", "gitleaks", "ml"):
         scan.add_argument("--no-%s" % name, action="store_true", help="disable the %s engine" % name)
     scan.add_argument("--semgrep-config", default="auto", help="Semgrep/Opengrep rule config")
     scan.add_argument("--ml-model", help="path to a model trained with 'sca train'")
-    scan.add_argument("--llm", action="store_true", help="review findings with a local LLM")
+    scan.add_argument("--llm", action="store_true", help="review findings with the AI provider")
     scan.add_argument("--deep", action="store_true",
-                      help="also let the LLM audit whole files (slower; implies --llm)")
-    scan.add_argument("--model", default="qwen2.5-coder:7b", help="Ollama model name")
-    scan.add_argument("--llm-host", default="http://localhost:11434")
-    scan.add_argument("--llm-max", type=int, default=30, help="max findings the LLM reviews")
+                      help="also let the AI audit whole files (slower; implies --llm)")
+    scan.add_argument("--llm-max", type=int, default=30, help="max findings the AI reviews")
+    _add_llm_arguments(scan)
     scan.set_defaults(func=cmd_scan)
 
+    config = sub.add_parser("config", help="choose the AI provider and store the API key")
+    config.add_argument("--provider")
+    config.add_argument("--model")
+    config.add_argument("--base-url")
+    config.add_argument("--set-key", action="store_true", help="ask for a new API key")
+    config.add_argument("--show", action="store_true")
+    config.set_defaults(func=cmd_config)
+
+    learn = sub.add_parser("learn", help="let the AI propose new rules")
+    learn.add_argument("path", nargs="?", help="project to learn from")
+    learn.add_argument("--bootstrap", metavar="LANGUAGE",
+                       help="write rules for the weaknesses this language has no rule for")
+    learn.add_argument("--cwe", default="", help="with --bootstrap: comma list of CWE ids")
+    learn.add_argument("--from-feedback", action="store_true",
+                       help="propose exclusions for findings you marked as false positives")
+    learn.add_argument("--auto-approve", action="store_true",
+                       help="activate validated rules learned from real code without asking "
+                            "(bootstrap rules and exclusions still wait for you)")
+    learn.add_argument("--max-files", type=int, default=10, help="files the AI audits")
+    learn.add_argument("--max-rules", type=int, default=20, help="candidates per run")
+    learn.add_argument("--llm-max", type=int, default=60, help="max findings the AI reviews")
+    learn.add_argument("--quiet", action="store_true")
+    _add_llm_arguments(learn)
+    learn.set_defaults(func=cmd_learn)
+
+    rules = sub.add_parser("rules", help="review proposed rules")
+    rules.add_argument("action", choices=["list", "show", "approve", "reject", "remove", "stats"])
+    rules.add_argument("ids", nargs="*", help="candidate id(s); 'approve all' is allowed")
+    rules.add_argument("--status", default="pending",
+                       choices=["pending", "approved", "rejected", "rejected_auto", "all"])
+    rules.set_defaults(func=cmd_rules)
+
+    feedback = sub.add_parser("feedback", help="tell the tool whether a finding is real")
+    feedback.add_argument("verdict", choices=["fp", "tp", "clear", "list"])
+    feedback.add_argument("id", nargs="?", help="finding id printed by scan")
+    feedback.set_defaults(func=cmd_feedback)
+
+    coverage = sub.add_parser("coverage", help="rules per language and weakness")
+    coverage.set_defaults(func=cmd_coverage)
+
     doctor = sub.add_parser("doctor", help="check which components are available")
-    doctor.add_argument("--llm-host", default="http://localhost:11434")
     doctor.set_defaults(func=cmd_doctor)
 
     history = sub.add_parser("history", help="list previous scans")

@@ -1,5 +1,5 @@
-"""Runs the Streamlit dashboard headlessly: start page, a full scan of the sample, and
-loading a scan from history. Fails if the app raises any exception."""
+"""Runs the Streamlit dashboard headlessly: start page, a full scan of the sample, reviews,
+the Learning tab, and loading a scan from history. Fails if the app raises any exception."""
 from pathlib import Path
 
 import pytest
@@ -8,6 +8,16 @@ pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+@pytest.fixture(autouse=True)
+def home(tmp_path, monkeypatch):
+    monkeypatch.setenv("SCA_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("SCA_LEARNED_DIR", str(tmp_path / "learned"))
+    monkeypatch.setenv("SCA_ENV_FILE", str(tmp_path / "env"))
+    import streamlit as st
+    st.cache_resource.clear()
+    st.cache_data.clear()
 
 
 def button(app: AppTest, label: str):
@@ -31,15 +41,58 @@ def test_dashboard_scan_flow():
     assert result.grade == "F" and len(result.findings) > 50
     labels = [m.label for m in app.metric]
     assert "Security score (grade F)" in labels and "Critical" in labels
+    assert "Learned rules" in labels and "Waiting for approval" in labels
     assert len(app.expander) >= 50                  # one per finding in the Findings tab
+
+    # review the first finding as a false positive, then take it back
+    first = result.findings[0]
+    open_before = len(result.open_findings)
+    next(b for b in app.button if b.key == "fp_0").click().run()
+    assert not app.exception
+    assert first.status == "dismissed" and len(result.open_findings) == open_before - 1
+    assert "Your reviews" in [m.label for m in app.metric]
+    next(b for b in app.button if b.key == "tp_1").click().run()
+    assert result.findings[1].tier == "confirmed"
+    assert not app.exception
 
     # switch explanations to Arabic and rerun: must not raise
     app.radio[0].set_value("العربية").run()
     assert not app.exception
 
-    load = button(app, "Load this scan")
-    load.click().run()
+    button(app, "Load this scan").click().run()
     assert not app.exception
+
+
+def test_dashboard_strict_mode_and_remembered_reviews():
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
+    app.run()
+    button(app, "Use sample").click().run()
+    button(app, "Run scan").click().run()
+    next(b for b in app.button if b.key == "fp_0").click().run()
+    dismissed = app.session_state["result"].findings[0].fingerprint
+
+    strict = next(c for c in app.checkbox if c.label.startswith("Strict mode"))
+    strict.check().run()
+    button(app, "Run scan").click().run()
+    assert not app.exception
+    result = app.session_state["result"]
+    assert result.status_count("needs_review") > 0
+    assert all(f.tier == "confirmed" for f in result.open_findings)
+    again = next(f for f in result.findings if f.fingerprint == dismissed)
+    assert again.status == "dismissed"              # the review was remembered
+
+
+def test_dashboard_api_provider_settings():
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    app.run()
+    provider = next(s for s in app.selectbox if s.label == "AI provider")
+    provider.set_value("openai").run()
+    assert not app.exception
+    assert any(t.label == "API key" for t in app.text_input)
+    assert any("sent to api.openai.com" in w.value for w in app.warning)
+    assert any("not ready: no API key is set" in c.value for c in app.caption)
+    review = next(c for c in app.checkbox if c.label == "AI review of findings")
+    assert review.disabled                          # nothing is sent without a key
 
 
 def test_dashboard_rejects_missing_folder():

@@ -16,6 +16,7 @@ from __future__ import annotations
 import math
 from typing import Iterable, List, Tuple
 
+from .cwe import FLOW_CWES, canonical
 from .models import Finding
 
 BASE_RISK = {"critical": 9.5, "high": 8.0, "medium": 5.5, "low": 3.0, "info": 1.0}
@@ -65,30 +66,39 @@ def project_score(findings: Iterable[Finding], lines_of_code: int) -> Tuple[int,
 
 def assign_tier(finding: Finding) -> None:
     """Decide whether a finding is CONFIRMED (independent evidence supports it) or only
-    PROBABLE (one rule matched and nothing else backs it up).
+    PROBABLE (a rule matched and nothing else backs it up).
 
-    Evidence that confirms a finding:
+    Always confirms:
       * the reviewer confirmed it,
-      * the AI review judged it real with confidence >= 0.7,
-      * two or more independent static engines reported it,
-      * user input was traced to the line (taint analysis),
+      * the AI review judged it real with confidence >= 0.7.
+    Confirms outside test code:
+      * user input was traced to the line (taint analysis).
+    Confirms only weaknesses that are a property of the line itself (weak algorithm,
+    disabled TLS check, hard-coded secret, gets() ...), outside test code:
+      * two or more independent static engine families reported it,
       * a single engine with confidence >= 0.85 (for example a known key format).
+
+    For the injection family (FLOW_CWES) engine agreement is deliberately NOT enough: two
+    engines that both notice a call to pickle.loads() or eval() have seen the same thing,
+    and neither has shown that attacker-controlled data reaches it.
     A finding the AI review judged false is never confirmed unless the reviewer says so.
     A finding that only the LLM reported is confirmed only by its second (verification) pass.
     """
     # built-in and learned pattern rules are one family: two regex rules are not independent
     static = sorted({"rules" if e == "learned" else e for e in finding.engines if e != "llm"})
+    needs_flow = canonical(finding.cwe) in FLOW_CWES
     evidence: List[str] = []
     if finding.user_verdict == "true_positive":
         evidence.append("confirmed by the reviewer")
     if finding.ai_verdict == "true_positive" and (finding.ai_confidence or 0) >= AI_CONFIRM:
         evidence.append("confirmed by the AI review")
-    if len(static) >= 2:
-        evidence.append("%d independent engines agree" % len(static))
-    if finding.tainted:
-        evidence.append("user input was traced to this line")
-    if static and finding.confidence >= CONFIRM_CONFIDENCE:
-        evidence.append("high-confidence rule")
+    if not finding.test_code:
+        if finding.tainted:
+            evidence.append("user input was traced to this line")
+        if not needs_flow and len(static) >= 2:
+            evidence.append("%d independent engines agree" % len(static))
+        if not needs_flow and static and finding.confidence >= CONFIRM_CONFIDENCE:
+            evidence.append("high-confidence rule")
     contradicted = finding.ai_verdict == "false_positive" and \
         finding.user_verdict != "true_positive"
     finding.evidence = evidence

@@ -1,0 +1,55 @@
+%%{init: {"flowchart": {"wrappingWidth": 560}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% حلقة التعلّم بالتفصيل: كيف يتحول اكتشاف الذكاء الاصطناعي إلى قاعدة ستاتيكية فعّالة.
+%% Render:  mmdc -i docs/diagrams/learning-loop.ar.mmd -o docs/images/learning-loop.ar.png -w 1600 -s 2 -b white
+flowchart TD
+    SCAN["<b>الفحص الستاتيكي — Static scan</b><br/>القواعد المدمجة والمتعلَّمة، محرك AST، الأسرار"] --> DEEP["<b>الفحص العميق — AI deep scan</b><br/>النموذج يقرأ الملفات كاملة"]
+    DEEP --> Q1{"هل بلّغ النموذج عن شيء<br/>لم تبلّغ عنه أي قاعدة؟"}
+    Q1 -- لا --> DONE(["لا شيء يُتعلَّم من هذا الملف"])
+    Q1 -- نعم --> VERIFY["<b>المرور الثاني — Second pass</b><br/>طلب مستقل يراجع الاكتشاف"]
+    VERIFY --> Q2{"هل تأكد أنه حقيقي<br/>بثقة 0.7 فأكثر؟"}
+    Q2 -- لا --> PROB["يبقى نتيجة محتملة probable<br/>ولا تُتعلَّم منه قاعدة"]
+    Q2 -- نعم --> PROPOSE["<b>اقتراح قاعدة — Propose a rule</b><br/>يُرسَل: اللغة، رقم CWE، السطر المصاب، السياق<br/>الإجابة JSON: العنوان، CWE، الخطورة، pattern، exclude،<br/>الشرح، الإصلاح، 3 أمثلة مصابة و3 أمثلة آمنة"]
+
+    FP["<b>نتيجة حُكم بأنها كاذبة — False positive</b><br/>منك، أو من الذكاء الاصطناعي بثقة 0.8 فأكثر"] --> EXCL["<b>اقتراح استثناء — Propose an exclusion</b><br/>تعبير نمطي ضيق للأسطر<br/>الآمنة للسبب نفسه"]
+
+    GAP["<b>فجوة تغطية — Coverage gap</b><br/>لغة ليس فيها قاعدة لثغرة معينة"] --> BOOT["<b>قاعدة أولية — Bootstrap</b><br/>تُكتب من معرفة النموذج نفسه،<br/>ودليلها الوحيد أمثلته هو"]
+
+    PROPOSE --> V1
+    EXCL --> V1
+    BOOT --> V1
+    subgraph VAL["التحقق الآلي — Automatic validation  ·  لا يصلك شيء قبل أن ينجح فيه"]
+        V1["<b>الفحص 1 — schema</b><br/>الحقول كاملة، صيغة رقم الثغرة صحيحة، اللغة معروفة،<br/>الطول أقل من 400 حرف، بلا مكرِّرات متداخلة"]
+        V2["<b>الفحص 2 — compiles</b>: التعبير النمطي صالح<br/><b>الفحص 3 — fast</b>: يُجرَّب في عملية معزولة تُقتل بعد 6 ثوانٍ،<br/>على أسطر إجهاد: تكرارات طويلة ونصوص مأخوذة من النمط نفسه"]
+        V3["<b>الفحص 4 — specific</b>: فيه كلمة ثابتة يرتكز عليها،<br/>ولا يطابق أسطراً عادية من أي برنامج"]
+        V4["<b>الفحص 5 — evidence</b>: يطابق السطر المصاب الذي تعلّم منه<br/><b>الفحص 6 — examples</b>: يطابق أمثلته المصابة ولا يطابق أياً من أمثلته الآمنة"]
+        V5["<b>الفحص 7 — clean corpus</b>: لا يطابق أي سطر في الكود المعروف أنه آمن:<br/>العينات الآمنة، وأسطر التدريب الآمنة، والأسطر التي رفضتَها أنت"]
+        V6["<b>الفحص 8 — blast radius</b>: لا يبلّغ عن أكثر من 25 سطراً ولا عن أكثر من 2% من المشروع<br/><b>الفحص 9 — novelty</b>: لا توجد قاعدة فعّالة تبلّغ عن السطر نفسه، وليس نمطاً مكرراً"]
+        VX["<b>للاستثناءات فحوص أخرى</b>: يجب أن يطابق الإنذار الكاذب، وألّا يطابق<br/>أي سطر مصاب معروف تكتشفه القاعدة، حتى لا ينخفض الاكتشاف دون علمك"]
+        V1 --> V2 --> V3 --> V4 --> V5 --> V6
+        V1 -.-> VX
+    end
+
+    V6 --> Q3{"هل نجحت كل الفحوص؟"}
+    VX --> Q3
+    Q3 -- "لا، في المحاولة الأولى" --> RETRY["تُعاد أسباب الرفض إلى النموذج<br/>محاولة تصحيح ذاتي واحدة"]
+    RETRY --> V1
+    Q3 -- "لا، في المحاولة الثانية" --> REJ["<b>rejected_auto</b> رفض آلي<br/>تُحفظ مع الفحوص الفاشلة للاطلاع"]
+    Q3 -- نعم --> PENDING["<b>pending</b> بانتظار المصادقة<br/>تظهر في تبويب Learning مع النمط والأمثلة<br/>ونتائج الفحوص والأسطر التي ستبلّغ عنها"]
+    PENDING --> Q4{"قرارك — Your decision"}
+    Q4 -- رفض --> REJ2["<b>rejected</b> مرفوضة"]
+    Q4 -- مصادقة --> ACTIVE["<b>approved</b> مصادَق عليها<br/>تُكتب في learned/rules.yaml أو learned/overrides.yaml<br/>وتبدأ بثقة 0.55 (فترة اختبار)"]
+    ACTIVE --> NEXT["<b>الفحص التالي — Next scan</b><br/>الثغرة تُكتشف ستاتيكياً:<br/>بسرعة، بلا إنترنت، وبلا طلب للذكاء الاصطناعي"]
+    NEXT --> REVIEW["مراجعاتك لنتائج هذه القاعدة"]
+    REVIEW --> Q5{"3 إنذارات كاذبة أو أكثر<br/>والثقة المعدّلة أقل من 0.35؟"}
+    Q5 -- لا --> ADJ["confidence = (tp + 4c) / (tp + fp + 4)<br/>الثقة ترتفع مع المصادقات وتنخفض مع الرفض"]
+    Q5 -- نعم --> QUAR["<b>الحجر — Quarantine</b><br/>القاعدة تُعطَّل وتظهر في rules stats"]
+
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    class PROPOSE,EXCL,BOOT,DEEP,VERIFY ai
+    class PENDING,ACTIVE,NEXT,ADJ learn
+    class REJ,REJ2,QUAR stop
+    class SCAN,FP,GAP,PROB,RETRY,REVIEW,V1,V2,V3,V4,V5,V6,VX,DONE plain
+    style VAL fill:#fbfaf7,stroke:#c9c7bd

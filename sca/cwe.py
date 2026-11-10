@@ -198,6 +198,13 @@ _KB = {
                  "ارفض المفاتيح __proto__ و constructor و prototype أو انسخ إلى كائنات منشأة بـ Object.create(null)."),
 }
 
+# Weaknesses that are only real when attacker-controlled data reaches the line (injection
+# family). For these, a matching pattern is not proof: the data flow has to be shown.
+# The others (weak algorithm, disabled TLS check, hard-coded secret, gets() ...) are a
+# property of the line itself.
+FLOW_CWES = {"CWE-89", "CWE-78", "CWE-79", "CWE-95", "CWE-22", "CWE-98", "CWE-601", "CWE-918",
+             "CWE-943", "CWE-502", "CWE-1336", "CWE-134", "CWE-120", "CWE-434", "CWE-621"}
+
 _EQUIVALENT = {  # CWEs that describe the same weakness for merging purposes
     "CWE-94": "CWE-95", "CWE-96": "CWE-95",
     "CWE-328": "CWE-327", "CWE-326": "CWE-327", "CWE-916": "CWE-327",

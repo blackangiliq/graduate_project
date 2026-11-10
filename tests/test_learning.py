@@ -631,3 +631,92 @@ def test_cli_learn_and_approve(teacher, home, capsys):
     assert cli(["scan", str(VULN), "--quiet", "--format", "", "--top", "200"]) == 0
     assert "+learned" in capsys.readouterr().out or store.read_learned()
     assert cli(["rules", "remove", candidate_id]) == 0
+
+
+# ====================================================================== confirmation rules
+def test_engine_agreement_does_not_confirm_injection_findings(home, tmp_path):
+    from sca.engines import external
+    project = tmp_path / "lib"
+    (project / "tests").mkdir(parents=True)
+    (project / "cache.py").write_text(
+        "import hashlib\nimport pickle\n\n\ndef load(blob):\n    return pickle.loads(blob)\n\n\n"
+        "def digest(data):\n    return hashlib.md5(data).hexdigest()\n")
+    (project / "tests" / "test_cache.py").write_text(
+        "import hashlib\n\n\ndef test_digest():\n    assert hashlib.md5(b'x').hexdigest()\n")
+    result = run_scan(str(project), ScanOptions(save=False), storage=home)
+    by = {(f.file, f.cwe): f for f in result.findings}
+    unpickle, weak_hash = by[("cache.py", "CWE-502")], by[("cache.py", "CWE-327")]
+    in_test = by[("tests/test_cache.py", "CWE-327")]
+
+    # two engines noticing pickle.loads() is not evidence that attacker data reaches it
+    assert unpickle.tier == "probable" and unpickle.evidence == []
+    if external.bandit_available():
+        assert set(unpickle.engines) == {"ast", "bandit"}
+        # a weak algorithm is a property of the line: agreement is enough
+        assert weak_hash.tier == "confirmed"
+        assert "2 independent engines agree" in weak_hash.evidence
+    # the same weakness in test code: kept, weaker, never confirmed automatically
+    assert in_test.test_code and not weak_hash.test_code
+    assert in_test.tier == "probable" and in_test.confidence < weak_hash.confidence
+    assert "test code" in result.engine_notes
+
+    skipped = run_scan(str(project), ScanOptions(save=False, include_tests=False), storage=home)
+    assert {f.file for f in skipped.findings} == {"cache.py"}
+    assert "skipped 1 test files" in skipped.engine_notes["test code"]
+
+
+def test_test_path_detection():
+    from sca.walker import is_test_path
+    for path in ("tests/test_x.py", "pkg/tests/io/helpers.py", "src/app.test.js", "a/b.spec.ts",
+                 "handlers_test.go", "conftest.py", "spec/models/user_spec.rb", "__tests__/a.js"):
+        assert is_test_path(path), path
+    for path in ("src/app.js", "contest.py", "latest/build.py", "testimonials/view.php",
+                 "attest.go", "protest_handler.py"):
+        assert not is_test_path(path), path
+
+
+# ====================================================================== configuration command
+def test_cli_config_stores_provider_and_key(openai_server, home, capsys, monkeypatch):
+    monkeypatch.setattr("getpass.getpass", lambda prompt="": "sk-test")
+    assert cli(["config", "--provider", "custom", "--base-url", openai_server,
+                "--model", "model-a"]) == 0
+    out = capsys.readouterr().out
+    assert "Connection: ready" in out and "sk-test" not in out
+    config = load_config()
+    assert (config.preset, config.api_key, config.model) == ("custom", "sk-test", "model-a")
+    assert cli(["config", "--show"]) == 0
+    out = capsys.readouterr().out
+    assert "API key  : set" in out and "sk-test" not in out
+
+    # the saved provider is used by scan without repeating the settings
+    assert cli(["scan", str(VULN), "--quiet", "--format", "", "--llm", "--llm-max", "3"]) == 0
+    out = capsys.readouterr().out
+    assert "custom/model-a reviewed 3 findings" in out and "sk-test" not in out
+    assert cli(["doctor"]) == 0 and "[ok] LLM provider" in capsys.readouterr().out
+    assert cli(["config", "--provider", "nonsense"]) == 2
+
+    monkeypatch.setattr("getpass.getpass", lambda prompt="": "sk-wrong")
+    assert cli(["config", "--set-key"]) == 1                # saved, but reported as not ready
+    assert "NOT ready" in capsys.readouterr().out
+
+
+def test_evaluation_script_with_an_ai_provider(teacher, home, tmp_path):
+    import os
+    import subprocess
+    import sys
+    save_config(LLMConfig(preset="ollama", base_url=teacher, model="teacher:1"))
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "evaluation" / "evaluate.py"), "--deep",
+         "--out", str(tmp_path / "results")],
+        capture_output=True, text=True, timeout=300, env=dict(os.environ))
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    rows = json.loads((tmp_path / "results.json").read_text())
+    names = [r["name"] for r in rows]
+    assert names[-2:] == ["All static + AI review", "All static + AI review, strict mode"]
+    static = next(r for r in rows if r["name"] == "All static engines")
+    with_ai, with_ai_strict = rows[-2], rows[-1]
+    # the scripted model finds the unchecked memcpy that no rule reports ...
+    assert with_ai["tp"] == static["tp"] + 1
+    # ... and its review confirms the findings strict mode had set aside
+    assert with_ai_strict["tp"] == with_ai["tp"]
+    assert "deep scan added" in with_ai["ai"]["llm"]

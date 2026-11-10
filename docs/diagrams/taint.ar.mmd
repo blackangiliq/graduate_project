@@ -1,0 +1,41 @@
+%%{init: {"flowchart": {"wrappingWidth": 560}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% تحليل التلوّث (Taint analysis): من المصدر إلى المصب، والمراحل الثلاث لمحرك بايثون.
+%% Render:  mmdc -i docs/diagrams/taint.ar.mmd -o docs/images/taint.ar.png -w 1600 -s 2 -b white
+flowchart TD
+    subgraph IDEA["الفكرة — The idea: هل تصل بيانات المستخدم إلى عملية خطرة؟"]
+        SRC["<b>1. المصدر — Source</b><br/>user_id = request.args.get(#quot;id#quot;)<br/>المتغير user_id يحمل بيانات المستخدم: نعلّمه ملوّثاً tainted"]
+        PROP["<b>2. الانتشار — Propagation</b><br/>query = #quot;SELECT * FROM users WHERE id = #quot; + user_id<br/>العلامة تنتقل إلى المتغير query لأنه بُني من متغير ملوّث"]
+        SAN{"<b>3. هل مرّت القيمة بمطهّر؟ — Sanitizer</b><br/>مثل int()‎ أو shlex.quote()‎ أو secure_filename()‎"}
+        SINK["<b>4. المصب — Sink</b><br/>cursor.execute(query)<br/>عملية خطرة استقبلت قيمة ملوّثة"]
+        FIND["<b>النتيجة — Finding</b><br/>SQL Injection · CWE-89 · tainted = True<br/>الثقة 0.85 وتُصنَّف مؤكَّدة confirmed"]
+        SAFE["<b>لا تبليغ</b><br/>القيمة أصبحت آمنة"]
+        SRC --> PROP --> SAN
+        SAN -- لا --> SINK --> FIND
+        SAN -- نعم --> SAFE
+    end
+
+    subgraph PASSES["محرك بايثون — Python AST engine: ثلاث مراحل  ·  sca/engines/python_ast.py"]
+        P1["<b>المرور 1: داخل كل دالة — Intra-procedural</b><br/>يحلل كل دالة وحدها: مصادرها، انتشار التلوّث فيها، ومصبّاتها<br/>يكتشف المثال أعلاه لأن المصدر والمصب في الدالة نفسها"]
+        P2["<b>المرور 2: ملخص الدالة — Function summary</b><br/>لكل معامل parameter يسأل: لو كان ملوّثاً، هل يصل إلى مصب؟<br/>مثال: في الدالة read_template(name) المعامل name يصل إلى open()‎"]
+        P3["<b>المرور 3: مواقع الاستدعاء — Call sites</b><br/>الاستدعاء read_template(request.args.get(#quot;tpl#quot;)) يمرّر قيمة ملوّثة إلى name<br/>فتُبلَّغ ثغرة Path Traversal عند open()‎ داخل الدالة المستدعاة<br/>الحدود: بعمق استدعاء واحد وداخل الملف نفسه"]
+        P1 --> P2 --> P3
+    end
+
+    subgraph LITE["اللغات الأخرى — Taint-lite  ·  sca/engines/taint_lite.py"]
+        L1["<b>السؤال نفسه بطريقة مبسّطة</b><br/>لكل نتيجة حقن من محرك القواعد: ينظر 60 سطراً للخلف<br/>ويتبع الإسنادات البسيطة من مصادر مثل ‎$_POST و req.query و getParameter()‎"]
+        L2["<b>مثال PHP</b><br/>$name = $_POST['name'];<br/>$sql = #quot;SELECT * FROM users WHERE name = '$name'#quot;;<br/>السطر الثاني يستخدم $name الملوّث: النتيجة تُعلَّم tainted وترتفع ثقتها 0.15"]
+        L3["<b>تقريب وليس تحليلاً كاملاً</b><br/>داخل ملف واحد، قائمة ثابتة من المصادر والمطهّرات<br/>إن لم يثبت المسار تبقى النتيجة كما هي ولا يُحذف شيء"]
+        L1 --> L2 --> L3
+    end
+
+    IDEA --> PASSES --> LITE
+
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef good fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    class SRC,PROP,P1,P2,P3,L1,L2,L3 plain
+    class SAFE good
+    class SINK,FIND stop
+    style IDEA fill:#fbfaf7,stroke:#c9c7bd
+    style PASSES fill:#fbfaf7,stroke:#c9c7bd
+    style LITE fill:#fbfaf7,stroke:#c9c7bd

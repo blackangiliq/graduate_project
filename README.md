@@ -8,7 +8,8 @@ findings from probable ones, scores the project, and **learns**: what the AI dis
 becomes a proposed rule that is validated automatically and activated only after you
 approve it.
 
-> الشرح الكامل بالعربية: **[docs/GUIDE_AR.md](docs/GUIDE_AR.md)** ·
+> الشرح المصوَّر بكل المخططات (عربي + إنجليزي): **[docs/DIAGRAMS_AR.md](docs/DIAGRAMS_AR.md)** ·
+> الدليل الكامل بالعربية: **[docs/GUIDE_AR.md](docs/GUIDE_AR.md)** ·
 > هيكل بحث التخرج: **[docs/THESIS_OUTLINE_AR.md](docs/THESIS_OUTLINE_AR.md)** ·
 > Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -70,7 +71,7 @@ one request per reviewed finding, one per file in a deep scan, up to two per pro
 
 ![Full pipeline](docs/images/pipeline.png)
 
-Click the image to enlarge it. The diagram source is [docs/diagrams/pipeline.mmd](docs/diagrams/pipeline.mmd).
+Click the image to enlarge it. Source: [docs/diagrams/pipeline.mmd](docs/diagrams/pipeline.mmd). Arabic version: [docs/images/pipeline.ar.png](docs/images/pipeline.ar.png). All diagrams (overview, usage steps, taint analysis, finding status, learning loop) with a detailed walk-through are in [docs/DIAGRAMS_AR.md](docs/DIAGRAMS_AR.md).
 
 | Stage | Code | Tools and techniques |
 |---|---|---|
@@ -125,7 +126,10 @@ vulnerable is undecidable in general. What the tool does instead:
 | Several engines + noisy-OR | agreement raises confidence |
 | AI review with a second-pass check | false positives are labelled, AI discoveries need confirmation |
 | Your reviews | dismissed findings stay dismissed; noisy rules lose confidence and are quarantined; exclusions are learned |
+| Test code | findings in `tests/`, `test_*.py`, `*.spec.js` get a lower confidence and are never auto-confirmed; `--skip-tests` leaves them out |
 | **Strict mode** | only findings backed by independent evidence are counted; the rest move to *Needs review* |
+
+A finding is *confirmed* by your review, by the AI review, or by a traced flow of user input. Agreement between engines (or a single high-confidence rule) confirms only weaknesses that are a property of the line itself, such as a weak algorithm or a hard-coded key. For the injection family it does not: two engines that both notice a call to `pickle.loads()` have seen the same thing, and neither has shown that attacker data reaches it.
 
 ## Measured results
 
@@ -139,24 +143,44 @@ second folder with no vulnerabilities at all).
 | Pattern rules + secrets | 48 | 3 | 23 | 0.941 | 0.676 | 0.787 |
 | + Python AST taint engine | 66 | 3 | 5 | 0.957 | 0.930 | 0.943 |
 | All static engines | 66 | 7 | 5 | 0.904 | 0.930 | 0.917 |
-| All static, strict mode (confirmed only) | 44 | 0 | 27 | 1.000 | 0.620 | 0.765 |
+| All static, strict mode (confirmed only) | 43 | 0 | 28 | 1.000 | 0.606 | 0.754 |
 
 Read these numbers with care:
 
 - The samples were written together with the tool, and some heuristics were adjusted while
   looking at them. They show that the pipeline works, not how it performs on unseen code.
 - Strict mode reached zero false positives **on these samples** by giving up a third of the
-  recall: the 22 real findings it set aside are in *Needs review*, not lost. An AI review is
+  recall: the 23 real findings it set aside are in *Needs review*, not lost. An AI review is
   what moves them back; that experiment needs your API key and is described in the guide.
 - The five misses of the normal mode are a missing access check, an unchecked `memcpy`
   length, an integer overflow, prototype pollution and a password passed as a positional
   argument. The first four are exactly what the AI deep scan and the learning loop are for.
 
+### Noise check on real code
+
+The static engines were also run on the source of four widely reviewed libraries. These are
+not labelled, so no precision or recall can be computed from them; mature libraries are
+expected to contain few real vulnerabilities, so the number of *confirmed* findings is a
+rough indicator of how noisy strict mode is.
+
+| Library | Files | Lines | Time | Findings | In test code | Confirmed |
+|---|---:|---:|---:|---:|---:|---:|
+| pandas 3.0.5 | 1423 | 636,343 | 71 s | 113 | 79 | 0 |
+| scikit-learn 1.9.1 | 687 | 389,922 | 38 s | 70 | 54 | 1 |
+| streamlit 1.67.0 | 735 | 149,134 | 11 s | 11 | 0 | 0 |
+| bandit 1.9.4 | 69 | 11,234 | 1 s | 1 | 0 | 0 |
+
+One confirmed finding in 1.19 million lines (MD5 used for a dataset checksum). This run is
+also what showed that the first version of the "two engines agree" rule was too generous:
+it marked 56 findings in pandas as confirmed, mostly `pickle.loads` and `eval` in tests.
+The rule was tightened as described under *Fewer false alarms*.
+
 ## What was and was not tested
 
 - Tested (Linux and Windows through GitHub Actions, Python 3.10 and 3.12; locally 3.13):
-  230 automated tests covering every engine, the pipeline, reports, the dashboard, the
-  provider clients, the learning loop, feedback, quarantine and strict mode.
+  235 automated tests covering every engine, the pipeline, reports, the dashboard
+  (including the learn-and-approve flow), the provider clients, the configuration command,
+  the learning loop, feedback, quarantine, strict mode and the evaluation script.
 - **No real AI service was called.** The provider clients and the learning loop were tested
   against local scripted servers that imitate the Ollama, OpenAI and Anthropic HTTP
   formats. The request format for the Claude API was checked against its current
@@ -201,8 +225,9 @@ sca/
 learned/               rules and exclusions this installation has learned (YAML)
 samples/               vulnerable_app, safe_app, ground_truth.json
 evaluation/            evaluate.py, results.md
-tests/                 230 tests
-docs/                  Arabic guide, thesis outline, architecture
+tests/                 235 tests
+docs/                  Arabic guide, illustrated walk-through, thesis outline, architecture,
+                       diagrams/ (Mermaid sources) and images/
 experiments/           optional CodeBERT fine-tuning script (not executed)
 ```
 

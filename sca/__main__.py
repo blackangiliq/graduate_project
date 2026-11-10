@@ -107,7 +107,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
         use_ml=not args.no_ml, ml_model_path=args.ml_model,
         use_llm=args.llm or args.deep, llm_max_findings=args.llm_max,
         llm_deep_scan=args.deep, lang=args.lang, save=not args.no_save,
-        strict=args.strict, use_feedback=not args.no_feedback, **_llm_settings(args))
+        strict=args.strict, use_feedback=not args.no_feedback,
+        include_tests=not args.skip_tests, **_llm_settings(args))
     try:
         result = run_scan(args.path, options, _progress(args))
     except FileNotFoundError as exc:
@@ -520,6 +521,8 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--strict", action="store_true",
                       help="count only findings confirmed by independent evidence; the rest "
                            "go to 'needs review'")
+    scan.add_argument("--skip-tests", action="store_true",
+                      help="do not scan test code (tests/, test_*.py, *.spec.js ...)")
     scan.add_argument("--quiet", action="store_true", help="no progress messages")
     scan.add_argument("--no-save", action="store_true", help="do not store in history")
     scan.add_argument("--no-feedback", action="store_true",

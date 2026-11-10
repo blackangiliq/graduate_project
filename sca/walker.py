@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Optional
@@ -48,6 +49,18 @@ SKIP_DIRS = {
 SKIP_FILES = {"package-lock.json", "yarn.lock", "poetry.lock", "pnpm-lock.yaml",
               "composer.lock", "cargo.lock", "go.sum"}
 MAX_FILE_BYTES = 1_500_000
+
+TEST_PATH = re.compile(
+    r"(^|/)(tests?|testing|__tests__|specs?|fixtures|mocks?)(/|$)"
+    r"|(^|/)(test_[^/]+|[^/]+_test|[^/]+\.(test|spec))\.[A-Za-z0-9]+$"
+    r"|(^|/)conftest\.py$", re.IGNORECASE)
+
+
+def is_test_path(rel: str) -> bool:
+    """True for test code. Weaknesses there are rarely exploitable (test input is written by
+    the developer), so they get a lower confidence and can be skipped entirely."""
+    return bool(TEST_PATH.search(rel.replace("\\", "/")))
+
 
 COMMENT_PREFIXES = {
     "python": ("#",), "shell": ("#",), "config": ("#", ";", "//"), "ruby": ("#",),

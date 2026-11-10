@@ -197,11 +197,29 @@ confidence 0.55 and is then moved by its track record.
 
 ## 8. Assessment (`sca/scoring.py`)
 
-**Tier.** A finding is `confirmed` when at least one holds: reviewer confirmed it; AI review
-says real with confidence >= 0.7; two or more independent static engine families reported
-it (built-in and learned pattern rules are one family); user input was traced to the line;
-a single engine with confidence >= 0.85. An AI `false_positive` verdict blocks confirmation
-unless the reviewer confirmed. Otherwise the finding is `probable`.
+**Tier.** A finding is `confirmed` when at least one holds:
+
+- the reviewer confirmed it;
+- the AI review says real with confidence >= 0.7;
+- user input was traced to the line, outside test code;
+- only for weaknesses that are a property of the line itself (not in `FLOW_CWES`), outside
+  test code: two or more independent static engine families reported it (built-in and
+  learned pattern rules are one family), or a single engine has confidence >= 0.85.
+
+`FLOW_CWES` (`sca/cwe.py`) is the injection family: SQL, command, XSS, eval, path, file
+inclusion, redirect, SSRF, NoSQL, deserialization, template, format string, buffer copy,
+upload, variable extraction. For these, engine agreement is deliberately not enough: two
+engines that both notice a call to `pickle.loads()` have seen the same thing, and neither has
+shown that attacker-controlled data reaches it. This rule was introduced after a run on the
+pandas source, where the earlier rule confirmed 56 findings, mostly in tests.
+
+An AI `false_positive` verdict blocks confirmation unless the reviewer confirmed. Otherwise
+the finding is `probable`.
+
+**Test code.** `walker.is_test_path` recognises `tests/`, `test_*.py`, `*_test.go`,
+`*.spec.js`, `conftest.py` and similar. Findings there keep their place in the report, get
+their confidence multiplied by 0.6, and are never confirmed automatically. `include_tests =
+False` (`--skip-tests`) leaves those files out of the scan.
 
 **Strict mode.** Unconfirmed open findings get the status `needs_review` and do not count.
 

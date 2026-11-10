@@ -1,0 +1,79 @@
+%%{init: {"flowchart": {"wrappingWidth": 300, "nodeSpacing": 26, "rankSpacing": 34}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% المخطط الشرحي الشامل: المشروع كله في صفحة واحدة (طبقات)، بالعربية والإنجليزية.
+%% Render:  mmdc -i docs/diagrams/overview.ar.mmd -o docs/images/overview.ar.png -w 2000 -s 2 -b white
+flowchart TD
+    subgraph L1["1. الواجهة — Interface  ·  كيف تستخدم المنصة"]
+        direction RL
+        A1 ~~~ A2 ~~~ A3 ~~~ A4
+        A1["<b>لوحة التحكم</b><br/>Dashboard<br/>Streamlit · app.py"]
+        A2["<b>سطر الأوامر</b><br/>Command line<br/>python -m sca"]
+        A3["<b>التشغيل بنقرة</b><br/>Launchers<br/>run.bat · run.sh"]
+        A4["<b>مجلد المشروع</b><br/>Project folder<br/>22 لغة برمجة"]
+    end
+
+    subgraph L2["2. التحليل الستاتيكي — Static analysis  ·  الكود يُقرأ ولا يُنفَّذ"]
+        direction RL
+        B1 ~~~ B2 ~~~ B3 ~~~ B4 ~~~ B5
+        B1["<b>كشف الأسرار</b><br/>Secrets<br/>regex + entropy"]
+        B2["<b>القواعد</b><br/>Pattern rules<br/>98 مدمجة + المتعلَّمة"]
+        B3["<b>محرك بايثون</b><br/>AST taint analysis<br/>تتبّع بين الدوال"]
+        B4["<b>ماسحات خارجية</b><br/>Bandit · Opengrep<br/>Gitleaks · اختياري"]
+        B5["<b>التتبّع المبسّط</b><br/>Taint-lite<br/>9 لغات أخرى"]
+    end
+
+    subgraph L3["3. الدمج والذكاء — Fusion and AI"]
+        direction RL
+        C1 ~~~ C2 ~~~ C3 ~~~ C4 ~~~ C5
+        C1["<b>الدمج</b><br/>Merge · Noisy-OR<br/>CWE + OWASP Top 10"]
+        C2["<b>المصنّف الآلي</b><br/>ML classifier<br/>TF-IDF + Logistic Regression"]
+        C3["<b>مراجعة الذكاء الاصطناعي</b><br/>AI review<br/>تحقق · شرح · إصلاح"]
+        C4["<b>الفحص العميق</b><br/>Deep scan<br/>مع مرور ثانٍ للتأكد"]
+        C5["<b>المزوّد</b><br/>API: OpenAI · Gemini<br/>Claude · أو Ollama محلياً"]
+    end
+
+    subgraph L4["4. القرار — Decision  ·  تقليل الإنذارات الكاذبة"]
+        direction RL
+        D1 ~~~ D2 ~~~ D3 ~~~ D4
+        D1["<b>مؤكَّدة أم محتملة</b><br/>Confirmed / Probable<br/>بدليل مستقل"]
+        D2["<b>الوضع الصارم</b><br/>Strict mode<br/>المؤكَّدة فقط"]
+        D3["<b>درجة الخطورة</b><br/>Risk 0-10<br/>لكل نتيجة"]
+        D4["<b>درجة المشروع</b><br/>Score 0-100<br/>التقدير A-F"]
+    end
+
+    subgraph L5["5. المخرجات — Outputs"]
+        direction RL
+        E1 ~~~ E2 ~~~ E3 ~~~ E4 ~~~ E5
+        E1["<b>لوحة النتائج</b><br/>Findings<br/>فلاتر وأزرار مراجعة"]
+        E2["<b>تقرير HTML</b><br/>ملف واحد مستقل"]
+        E3["<b>تقرير PDF</b><br/>fpdf2"]
+        E4["<b>JSON و SARIF</b><br/>GitHub · VS Code"]
+        E5["<b>التاريخ</b><br/>History · SQLite<br/>تغيّر الدرجة"]
+    end
+
+    subgraph L6["6. التعلّم — Learning  ·  الذكاء الاصطناعي يقترح، الأداة تتحقق، أنت تصادق"]
+        direction RL
+        F1 ~~~ F2 ~~~ F3 ~~~ F4 ~~~ F5
+        F1["<b>مراجعاتك</b><br/>Your reviews<br/>حقيقية / كاذبة"]
+        F2["<b>اقتراح قاعدة</b><br/>Propose<br/>النموذج يكتب JSON"]
+        F3["<b>تسعة فحوص</b><br/>Validate + sandbox<br/>عملية معزولة"]
+        F4["<b>مصادقتك</b><br/>Human approval<br/>تبويب Learning"]
+        F5["<b>قواعد متعلَّمة</b><br/>learned/rules.yaml<br/>تُستخدم في الفحص التالي"]
+    end
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+    L6 --> NEXT(["<b>الفحص التالي أذكى</b><br/>Next scan is smarter<br/>قواعد جديدة · ثقة معدّلة<br/>مصنّف مُعاد تدريبه"])
+
+    classDef stage fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef out fill:#faeeda,stroke:#854f0b,color:#412402
+    class A1,A2,A3,A4,B1,B2,B3,B4,B5,C1,D1,D2,D3,D4 stage
+    class C2,C3,C4,C5 ai
+    class F1,F2,F3,F4,F5,NEXT learn
+    class E1,E2,E3,E4,E5 out
+    style L1 fill:#fbfaf7,stroke:#c9c7bd
+    style L2 fill:#fbfaf7,stroke:#c9c7bd
+    style L3 fill:#f7f6fe,stroke:#afa9ec
+    style L4 fill:#fbfaf7,stroke:#c9c7bd
+    style L5 fill:#fffdf5,stroke:#c9a55a
+    style L6 fill:#f2fbf7,stroke:#5dcaa5

@@ -1,0 +1,23 @@
+%%{init: {"flowchart": {"wrappingWidth": 420}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% خطوات الاستخدام العملية من التنصيب إلى التعلّم.
+%% Render:  mmdc -i docs/diagrams/usage.ar.mmd -o docs/images/usage.ar.png -w 1400 -s 2 -b white
+flowchart TD
+    U1["<b>1. التنصيب — Install</b><br/>نصّب Python 3.10 أو أحدث<br/>ونزّل المستودع من GitHub"] --> U2["<b>2. التشغيل — Run</b><br/>ويندوز: انقر مرتين على run.bat<br/>لينكس وماك: ‎./run.sh<br/>يفتح المتصفح على localhost:8501"]
+    U2 --> U3{"<b>3. هل تريد الذكاء الاصطناعي؟</b><br/>اختياري"}
+    U3 -- "نعم، عبر API" --> U3A["اختر المزوّد والصق المفتاح واختر النموذج<br/>ثم Save AI settings<br/>أو: python -m sca config --provider openai --model ..."]
+    U3 -- "نعم، محلياً" --> U3B["نصّب Ollama ونزّل نموذجاً<br/>ollama pull qwen2.5-coder:7b"]
+    U3 -- لا --> U4
+    U3A --> U4
+    U3B --> U4
+    U4["<b>4. اختيار المشروع — Choose the folder</b><br/>اكتب المسار أو اضغط Browse<br/>أو Use sample للتجربة"] --> U5["<b>5. الفحص — Run scan</b><br/>ستاتيكي فقط، أو مع AI review<br/>ومع Deep scan لاكتشاف ما لا تجده القواعد<br/>ومع Strict mode لعرض المؤكَّد فقط"]
+    U5 --> U6["<b>6. قراءة النتائج — Findings</b><br/>لكل نتيجة: الكود، سبب التأكيد، الشرح، الإصلاح<br/>راجعها: Real vulnerability أو False positive"]
+    U6 --> U7["<b>7. التعلّم — Learning</b><br/>اضغط Learn from this scan<br/>افتح كل قاعدة مقترحة واقرأ فحوصها<br/>ثم Approve أو Reject"]
+    U7 --> U8["<b>8. التقرير — Reports</b><br/>نزّل HTML أو PDF أو JSON أو SARIF<br/>وتابع تغيّر الدرجة في History"]
+    U8 -. "أعد الفحص: القواعد الجديدة فعّالة ومراجعاتك محفوظة" .-> U5
+
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    class U1,U2,U4,U5,U6,U8 plain
+    class U3A,U3B ai
+    class U7 learn

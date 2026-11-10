@@ -101,3 +101,51 @@ def test_dashboard_rejects_missing_folder():
     app.text_input[0].set_value(str(ROOT / "no-such-folder")).run()
     button(app, "Run scan").click().run()
     assert any("does not exist" in e.value for e in app.error)
+
+
+def test_dashboard_learning_flow():
+    """Deep scan with a (scripted) AI provider, learn a rule, approve it in the Learning tab."""
+    from test_learning import Teacher, serve
+
+    from sca.ai.providers import LLMConfig, save_config
+    from sca.learn import store
+    from sca.storage import Storage
+
+    Teacher.log = []
+    server, url = serve(Teacher)
+    try:
+        save_config(LLMConfig(preset="ollama", base_url=url, model="teacher:1"))
+        app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=180)
+        app.run()
+        assert any("AI provider ready: teacher:1" in c.value for c in app.caption)
+        review = next(c for c in app.checkbox if c.label == "AI review of findings")
+        assert review.value and not review.disabled
+        next(c for c in app.checkbox if c.label.startswith("Deep scan")).check().run()
+        button(app, "Use sample").click().run()
+        button(app, "Run scan").click().run()
+        assert not app.exception
+        result = app.session_state["result"]
+        assert any(f.engines == ["llm"] and f.tier == "confirmed" for f in result.findings)
+        assert "deep scan added 1 (1 verified)" in result.ai["llm"]
+
+        button(app, "Learn from this scan").click().run()
+        assert not app.exception
+        pending = Storage().list_candidates("pending")
+        assert [c["cwe"] for c in pending] == ["CWE-120"]
+        assert any("Waiting for your approval (1)" in h.value for h in app.subheader)
+        assert store.read_learned() == []                      # not active before approval
+
+        next(b for b in app.button if b.key == "approve_" + pending[0]["id"]).click().run()
+        assert not app.exception
+        assert [r["id"] for r in store.read_learned()] == [pending[0]["id"]]
+        assert any("Learned rules (1)" in h.value for h in app.subheader)
+
+        # the next scan, with the AI switched off, finds the weakness through the learned rule
+        next(c for c in app.checkbox if c.label == "AI review of findings").uncheck().run()
+        button(app, "Run scan").click().run()
+        assert not app.exception
+        result = app.session_state["result"]
+        assert any(f.engines == ["learned"] and "memcpy" in f.snippet for f in result.findings)
+        assert result.ai["llm"] == "disabled"
+    finally:
+        server.shutdown()

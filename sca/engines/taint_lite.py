@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from typing import Dict, Iterable, List, Set
 
-from ..cwe import canonical
+from ..cwe import FLOW_CWES, canonical
 from ..models import Finding
 from ..walker import SourceFile
 
@@ -26,8 +26,7 @@ WINDOW = 60
 BOOST = 0.15
 
 # weaknesses where "does user input reach this line?" is the right question
-TAINT_CWES = {"CWE-89", "CWE-78", "CWE-79", "CWE-95", "CWE-22", "CWE-98", "CWE-601", "CWE-918",
-              "CWE-943", "CWE-502", "CWE-1336", "CWE-134", "CWE-120", "CWE-434", "CWE-621"}
+TAINT_CWES = FLOW_CWES
 
 SOURCES: Dict[str, "re.Pattern[str]"] = {
     "javascript": re.compile(

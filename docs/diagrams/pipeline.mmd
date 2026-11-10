@@ -67,7 +67,7 @@ flowchart TD
 
     GUARD --> TIER
     subgraph S7["7. Assess  -  sca/scoring.py"]
-        TIER["<b>Confirmed or probable</b><br/>confirmed when independent evidence exists: your review, AI review at 0.7 or more,<br/>2 or more independent engines, traced user input, or one engine at 0.85 or more<br/>strict mode: unconfirmed findings move to Needs review and are not counted"]
+        TIER["<b>Confirmed or probable</b><br/>confirmed when independent evidence exists: your review, AI review at 0.7 or more,<br/>traced user input, or (for weaknesses that need no data flow) 2 engines or confidence 0.85 or more<br/>findings in test code are never confirmed automatically<br/>strict mode: unconfirmed findings move to Needs review and are not counted"]
         SCORE["<b>Risk and score</b><br/>risk per finding = base(severity) x (0.6 + 0.4 x confidence), from 0 to 10<br/>penalty = sum of weight(severity) x confidence over open findings<br/>project score = 100 x exp(-(penalty / KLOC) / 25) - grade A to F"]
         TIER --> SCORE
     end

@@ -226,9 +226,15 @@ with st.sidebar:
     st.subheader("4. Precision")
     strict = st.checkbox("Strict mode (confirmed findings only)", value=False,
                          help="Counts a finding only when independent evidence supports it: "
-                              "two engines agree, user input was traced to the line, the AI "
-                              "review confirmed it, or you confirmed it. Everything else is "
-                              "kept under 'Needs review'.")
+                              "user input was traced to the line, the AI review confirmed "
+                              "it, you confirmed it, or (for weaknesses that need no data "
+                              "flow, such as a weak algorithm) two engines agree. Everything "
+                              "else is kept under 'Needs review'.")
+
+    skip_tests = st.checkbox("Skip test code", value=False,
+                             help="Do not scan tests/, test_*.py, *.spec.js and similar. When "
+                                  "they are scanned, findings in test code get a lower "
+                                  "confidence and are never confirmed automatically.")
 
     run = st.button("Run scan", type="primary", **WIDE)
 
@@ -247,7 +253,8 @@ if run:
             use_bandit=use_bandit, use_semgrep=use_semgrep, use_gitleaks=use_gitleaks,
             use_ml=use_ml, use_llm=use_llm, llm_provider=preset, llm_base_url=base_url,
             llm_api_key=api_key, llm_model=llm_model, llm_max_findings=llm_max,
-            llm_deep_scan=deep and use_llm, lang=lang, strict=strict)
+            llm_deep_scan=deep and use_llm, lang=lang, strict=strict,
+            include_tests=not skip_tests)
         bar = st.progress(0.0, text="Starting")
 
         def on_progress(message: str, fraction: float) -> None:
@@ -378,8 +385,8 @@ with tab_findings:
                 if f.tier == "confirmed":
                     st.success("Confirmed: " + "; ".join(f.evidence))
                 else:
-                    st.caption("Probable: one rule matched and no independent evidence "
-                               "confirms it yet.")
+                    st.caption("Probable: a rule matched and no independent evidence confirms "
+                               "it yet%s." % (" (this file is test code)" if f.test_code else ""))
                 st.code(f.context or f.snippet, language=CODE_LANG.get(f.language, "text"))
                 st.caption("Flagged line: %d - found by: %s - rule: %s" % (
                     f.line, ", ".join(f.engines), ", ".join(f.rule_ids)))

@@ -1,0 +1,38 @@
+%%{init: {"flowchart": {"wrappingWidth": 520}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% رحلة النتيجة: كيف تقرر الأداة أن النتيجة مؤكَّدة أو محتملة أو كاذبة (تقليل الإنذارات الكاذبة).
+%% Render:  mmdc -i docs/diagrams/finding-status.ar.mmd -o docs/images/finding-status.ar.png -w 1600 -s 2 -b white
+flowchart TD
+    RAW["<b>نتيجة خام — Raw finding</b><br/>قاعدة أو محرك طابق سطراً في الكود"] --> Q0{"هل القاعدة محجورة؟<br/>quarantined"}
+    Q0 -- نعم --> DROP["<b>تُسقَط</b><br/>ويُذكر ذلك في ملاحظات الفحص"]
+    Q0 -- لا --> ADJ["<b>تعديل الثقة بسجل القاعدة</b><br/>confidence = (tp + 4c) / (tp + fp + 4)"]
+    ADJ --> TL["<b>التتبّع — Taint</b><br/>هل تصل مدخلات المستخدم إلى السطر؟<br/>محرك AST لبايثون و Taint-lite لباقي اللغات"]
+    TL --> MG["<b>الدمج — Merge</b><br/>نتيجة واحدة لكل مشكلة، والثقة بقاعدة Noisy-OR"]
+    MG --> QU{"هل راجعتَ هذه النتيجة سابقاً؟<br/>مطابقة بالبصمة fingerprint"}
+    QU -- "نعم: إنذار كاذب" --> DISM["<b>dismissed</b> مرفوضة منك<br/>لا تُحسب، وتبقى ظاهرة في التقرير"]
+    QU -- "نعم: حقيقية" --> CONF
+    QU -- لا --> QA{"هل راجعها الذكاء الاصطناعي؟<br/>AI review"}
+    QA -- "حكم: كاذبة، بثقة 0.6 فأكثر" --> LFP["<b>likely_false_positive</b><br/>إنذار كاذب على الأرجح<br/>لا تُحسب، وتبقى للمراجعة البشرية"]
+    QA -- "حكم: حقيقية، بثقة 0.7 فأكثر" --> CONF
+    QA -- "لا مراجعة، أو غير متأكد" --> QT{"هل الملف كود اختبار؟<br/>tests/ · test_*.py · *.spec.js"}
+    QT -- نعم --> PROB
+    QT -- لا --> QTA{"هل ثبت وصول مدخلات المستخدم<br/>إلى السطر؟ tainted"}
+    QTA -- نعم --> CONF
+    QTA -- لا --> QF{"هل الثغرة من نوع الحقن<br/>الذي يحتاج تدفق بيانات؟<br/>SQL · command · XSS · path · eval · deserialization"}
+    QF -- نعم --> PROB
+    QF -- "لا: خاصية في السطر نفسه<br/>خوارزمية ضعيفة، TLS معطّل، سرّ مكتوب" --> QE{"هل بلّغ عنها محركان مستقلان<br/>أو محرك واحد بثقة 0.85 فأكثر؟"}
+    QE -- نعم --> CONF
+    QE -- لا --> PROB
+
+    CONF["<b>confirmed</b> مؤكَّدة<br/>يظهر معها سبب التأكيد evidence"] --> OPEN["<b>open</b> مفتوحة<br/>تُحسب في درجة المشروع"]
+    PROB["<b>probable</b> محتملة<br/>طابقت قاعدة ولا دليل مستقل يدعمها بعد"] --> QS{"هل الوضع الصارم مفعّل؟<br/>Strict mode"}
+    QS -- لا --> OPEN
+    QS -- نعم --> NR["<b>needs_review</b> تحتاج مراجعة<br/>لا تُحسب، وتنتظر مراجعتك<br/>أو مراجعة الذكاء الاصطناعي"]
+
+    classDef good fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef warn fill:#faeeda,stroke:#854f0b,color:#412402
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    class CONF,OPEN good
+    class PROB,NR warn
+    class DROP,DISM,LFP stop
+    class RAW,ADJ,TL,MG plain

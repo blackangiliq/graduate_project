@@ -10,7 +10,7 @@ These samples were written together with the tool. The numbers show that the pip
 | Pattern rules + secrets | 48 | 3 | 23 | 0.941 | 0.676 | 0.787 |
 | + Python AST taint engine | 66 | 3 | 5 | 0.957 | 0.930 | 0.943 |
 | All static engines | 66 | 7 | 5 | 0.904 | 0.930 | 0.917 |
-| All static, strict mode (confirmed only) | 44 | 0 | 27 | 1.000 | 0.620 | 0.765 |
+| All static, strict mode (confirmed only) | 43 | 0 | 28 | 1.000 | 0.606 | 0.754 |
 
 ## Missed (All static engines)
 

@@ -1,0 +1,110 @@
+%%{init: {"flowchart": {"wrappingWidth": 640, "nodeSpacing": 28, "rankSpacing": 42}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% المخطط الكامل للمشروع بالعربية والإنجليزية: كل مرحلة مع الأدوات والتقنيات المستخدمة فيها.
+%% Render:  mmdc -i docs/diagrams/pipeline.ar.mmd -o docs/images/pipeline.ar.png -w 2000 -s 2 -b white
+flowchart TD
+    USER(["<b>المستخدم — User</b><br/>واجهة الويب: Streamlit (app.py)<br/>أو سطر الأوامر: python -m sca"])
+    USER --> INPUT["<b>0. الإدخال — Input</b><br/>مجلد المشروع: كتابة المسار أو نافذة الاختيار (tkinter)<br/>الخيارات: المحركات، مزوّد الذكاء الاصطناعي والنموذج، لغة الشرح، الوضع الصارم"]
+
+    subgraph KB["المعرفة المحفوظة بين الفحوصات — Knowledge kept between scans"]
+        LEARNED[("<b>learned/rules.yaml</b><br/><b>learned/overrides.yaml</b><br/>القواعد والاستثناءات المتعلَّمة<br/>التي صادقتَ عليها، ملفات YAML")]
+        REVIEWS[("<b>SQLite: feedback</b><br/>حكمك على كل نتيجة:<br/>حقيقية أو إنذار كاذب،<br/>مفهرسة ببصمة النتيجة")]
+        CACHE[("<b>SQLite: llm_cache</b><br/>إجابات الذكاء الاصطناعي السابقة،<br/>فلا تتكرر الطلبات<br/>عند إعادة الفحص")]
+    end
+
+    INPUT --> WALK
+    subgraph S1["1. الجمع — Collect  ·  sca/walker.py"]
+        WALK["<b>قارئ الملفات — File walker</b><br/>المرور على المجلد بالدالة os.walk<br/>تجاهل المجلدات .git و node_modules و venv ومخرجات البناء<br/>تجاهل الملفات الثنائية والمصغّرة والأكبر من 1.5 ميغابايت"]
+        LANG["<b>تحديد اللغة — Language detection</b><br/>ربط 54 امتداداً بـ 22 لغة برمجة<br/>لغة TypeScript تستخدم قواعد JavaScript، ولغة C++‎ تستخدم قواعد C<br/>ولغات Kotlin و Scala و Groovy قواعد واجهات Java"]
+        WALK --> LANG
+    end
+
+    LANG --> SECRETS
+    LANG --> RULES
+    LANG --> AST
+    LANG --> EXT
+    LEARNED --> RULES
+    subgraph S2["2. الكشف — Detect  ·  محركات التحليل الستاتيكي في sca/engines/  ·  الكود يُقرأ ولا يُنفَّذ"]
+        SECRETS["<b>محرك الأسرار — Secrets engine</b>  secrets.py<br/>تعابير نمطية لصيغ المفاتيح المعروفة:<br/>AWS, GitHub, Google, Slack, Stripe, JWT, private keys<br/>اسم متغير حساس أُسند له نص ثابت<br/>إنتروبيا شانون Shannon entropy لا تقل عن 3.2 بت للحرف<br/>تجاهل القيم الوهمية مثل changeme<br/>يعمل أولاً: الأسرار المكتشفة تُخفى في كل المراحل التالية"]
+        RULES["<b>محرك القواعد — Pattern rule engine</b>  rules_engine.py<br/>عدد 98 قاعدة مدمجة في sca/rules/*.yaml (مكتبة PyYAML) مع القواعد المتعلَّمة<br/>كل قاعدة: نمط pattern واستثناء exclude اختياري (وحدة re)، سطراً سطراً<br/>التعليقات تُتجاهل<br/>JavaScript, TypeScript 22 · PHP 18 · Java, Kotlin, Scala, Groovy 13<br/>Ruby 11 · C, C++ 8 · C# 8 · Go 8 · shell 4 · Rust 3 · PowerShell 3"]
+        AST["<b>محرك بايثون — Python AST taint engine</b>  python_ast.py<br/>شجرة البنية المجردة بالوحدة ast<br/>المصادر sources: بيانات الطلب، input، sys.argv، معاملات المسارات<br/>المصبّات sinks: استعلام SQL، أوامر النظام، eval، الملفات، HTTP، القوالب<br/>المطهّرات sanitizers: الدوال int و shlex.quote و escape و secure_filename<br/>المرور 1: داخل كل دالة · المرور 2: ملخصات الدوال<br/>المرور 3: مواقع الاستدعاء (بين الدوال، بعمق استدعاء واحد)"]
+        EXT["<b>الماسحات الخارجية — External scanners</b>  external.py · اختياري<br/>الأداة Bandit: فاحص أمان بايثون<br/>الأداة Opengrep أو Semgrep: قواعد جاهزة لأكثر من 30 لغة<br/>الأداة Gitleaks: كاشف أسرار<br/>تُشغَّل كعملية فرعية subprocess ومخرجاتها JSON<br/>تُحوَّل إلى الصيغة الموحدة Finding"]
+    end
+
+    SECRETS --> TRACK
+    RULES --> TRACK
+    AST --> TRACK
+    EXT --> TRACK
+    REVIEWS --> TRACK
+    subgraph S3["3. التنقيح — Refine  ·  تقليل الإنذارات الكاذبة قبل الدمج"]
+        TRACK["<b>سجل أداء القاعدة — Rule track record</b>  learn/feedback.py<br/>الثقة الجديدة هي متوسط توزيع Beta:<br/>confidence = (tp + 4c) / (tp + fp + 4)<br/>القيمتان tp و fp: نتائج هذه القاعدة التي صادقتَ عليها أو رفضتها<br/>الحجر quarantine: عند 3 إنذارات كاذبة أو أكثر مع ثقة أقل من 0.35"]
+        TLITE["<b>التتبّع المبسّط — Taint-lite</b>  engines/taint_lite.py<br/>يعمل على اللغات:<br/>JavaScript, TypeScript, PHP, Java, Go, C#, Ruby, C, C++<br/>ينظر 60 سطراً للخلف ويتبع الإسنادات القادمة من مدخلات المستخدم<br/>يتوقف عند المطهّرات، ويعتبر القراءة من جدول ثابت موثوقة<br/>النتيجة المتتبَّعة: تُعلَّم tainted وترتفع ثقتها 0.15"]
+        TRACK --> TLITE
+    end
+
+    TLITE --> MERGE
+    subgraph S4["4. الدمج — Merge  ·  sca/merge.py و sca/cwe.py"]
+        MERGE["<b>إزالة التكرار والإثراء — Deduplicate and enrich</b><br/>المشكلة نفسها: نفس الملف ونفس CWE وفرق سطر واحد على الأكثر ومحركات مختلفة<br/>الثقة المشتركة بقاعدة Noisy-OR، بحد أقصى 0.97:<br/>c = 1 - (1-c1)(1-c2)...<br/>توحيد أرقام CWE وربطها بفئات OWASP Top 10 (2021)<br/>نص الشرح والإصلاح بالعربية والإنجليزية<br/>تعليقات التجاهل: nosec و sca:ignore<br/>إعادة تطبيق أحكامك السابقة ببصمة SHA-256"]
+    end
+
+    MERGE --> ML
+    REVIEWS --> ML
+    subgraph S5["5. التعلم الآلي — Machine learning  ·  sca/ai/classifier.py"]
+        ML["<b>المصنّف: رأي ثانٍ — ML classifier</b>  scikit-learn<br/>ترميز الكود ثم TF-IDF ثم Logistic Regression<br/>المخرج: احتمال أن السطر المبلَّغ عنه مصاب<br/>الوزن: الثقة = 0.75 × الستاتيكي + 0.25 × المصنّف<br/>يُعاد تدريبه بكل سطر تراجعه (تعلّم مستمر)<br/>يمكن تدريبه على PrimeVul أو DiverseVul بالأمر python -m sca train"]
+    end
+
+    ML --> PROV
+    CACHE --> PROV
+    subgraph S6["6. مراجعة الذكاء الاصطناعي — AI review  ·  sca/ai/providers.py و sca/ai/llm.py  ·  اختياري"]
+        PROV["<b>مزوّد الذكاء الاصطناعي — AI provider</b><br/>واجهة برمجية واحدة، واتصال HTTP بالوحدة urllib دون مكتبات إضافية<br/>سحابي متوافق مع صيغة OpenAI:<br/>OpenAI, Gemini, OpenRouter, Groq, DeepSeek, Mistral<br/>سحابي: Anthropic Messages API · محلي: Ollama<br/>المفتاح في الملف .env · إعادة المحاولة عند الخطأ 429 · التراجع عند الخطأ 400"]
+        TRIAGE["<b>مراجعة كل نتيجة — Triage</b><br/>يُرسَل: النتيجة مع 28 سطراً من السياق على الأكثر<br/>الإجابة بصيغة JSON حصراً: الحكم، الثقة،<br/>الشرح، الإصلاح (بالعربية أو الإنجليزية)"]
+        DEEP["<b>الفحص العميق للملفات — Deep scan</b><br/>النموذج يبلّغ عمّا لم تجده أي قاعدة<br/>يُتحقق من رقم السطر ومن صيغة CWE في كل إجابة<br/>المرور الثاني: كل اكتشاف يُفحص مجدداً بطلب مستقل"]
+        GUARD["<b>الضمانات — Safeguards</b><br/>الكود المفحوص بيانات وليس تعليمات: حماية من هجوم Prompt injection<br/>الأسرار تُخفى قبل الإرسال<br/>الحكم يغيّر تصنيف النتيجة ولا يحذفها"]
+        PROV --> TRIAGE
+        PROV --> DEEP
+        TRIAGE --> GUARD
+        DEEP --> GUARD
+    end
+
+    GUARD --> TIER
+    subgraph S7["7. التقييم — Assess  ·  sca/scoring.py"]
+        TIER["<b>مؤكَّدة أم محتملة — Confirmed or probable</b><br/>مؤكَّدة عند وجود دليل مستقل: مراجعتك، أو مراجعة الذكاء الاصطناعي بثقة 0.7 فأكثر،<br/>أو تتبّع مدخلات المستخدم حتى السطر، أو اتفاق محركين أو ثقة 0.85 فأكثر (للثغرات التي لا تحتاج تدفق بيانات)<br/>نتائج كود الاختبار tests لا تُؤكَّد تلقائياً<br/>الوضع الصارم Strict: غير المؤكَّدة تنتقل إلى «تحتاج مراجعة» ولا تُحسب"]
+        SCORE["<b>الخطورة والدرجة — Risk and score</b><br/>خطورة كل نتيجة، من 0 إلى 10:<br/>risk = base(severity) × (0.6 + 0.4 × confidence)<br/>عقوبة المشروع (للنتائج المفتوحة فقط) ثم درجته:<br/>penalty = sum of weight(severity) × confidence<br/>score = 100 × exp(-(penalty / KLOC) / 25)<br/>ثم التقدير من A إلى F"]
+        TIER --> SCORE
+    end
+
+    SCORE --> DB
+    subgraph S8["8. التخزين والتقارير — Store and report  ·  sca/storage.py و sca/report/"]
+        DB[("<b>SQLite</b>  data/sca.db<br/>scans, llm_cache,<br/>feedback, rule_candidates")]
+        OUT["<b>المخرجات — Outputs</b><br/>لوحة التحكم: Streamlit و pandas (رسوم، فلاتر، أزرار المراجعة)<br/>تقرير HTML: ملف واحد مستقل، فاتح وداكن<br/>تقرير PDF بمكتبة fpdf2 · ملف JSON · ملف SARIF 2.1.0<br/>التاريخ وتغيّر الدرجة لكل مشروع"]
+        DB --> OUT
+    end
+
+    OUT --> YOU(["<b>أنت تراجع النتائج — You review the findings</b><br/>ثغرة حقيقية Real vulnerability · إنذار كاذب False positive"])
+    YOU --> PROPOSE
+    DEEP -. "اكتشاف مؤكَّد<br/>لا تبلّغ عنه أي قاعدة" .-> PROPOSE
+    subgraph S9["9. التعلّم — Learn  ·  sca/learn/  ·  الذكاء الاصطناعي يقترح، الأداة تتحقق، أنت تصادق"]
+        PROPOSE["<b>الاقتراح — Propose</b>  propose.py<br/>النموذج يكتب قاعدة كشف بصيغة JSON حصراً:<br/>الحقول pattern و exclude والشرح والإصلاح و3 أمثلة مصابة و3 أمثلة آمنة<br/>أو استثناءً ضيقاً لإنذار كاذب<br/>أو قاعدة أولى للغة فيها فجوة تغطية (bootstrap)"]
+        VALIDATE["<b>التحقق — Validate</b>  validate.py و sandbox.py<br/>تسعة فحوص آلية: schema, compiles, fast, specific, evidence,<br/>examples, clean corpus, blast radius, novelty<br/>التعبير النمطي غير الموثوق يُجرَّب في عملية فرعية تُقتل بعد 6 ثوانٍ<br/>عند الفشل تُعاد الأسباب للنموذج ليصحّح مرة واحدة"]
+        APPROVE["<b>المصادقة البشرية — Human approval</b>  store.py<br/>من تبويب Learning أو بالأمر python -m sca rules approve<br/>لا يُصادَق إلا على ما نجح في التحقق<br/>القاعدة المتعلَّمة تبدأ بثقة 0.55 (فترة اختبار)"]
+        PROPOSE --> VALIDATE --> APPROVE
+    end
+    APPROVE --> SAVED(["<b>تُحفظ في المعرفة أعلى المخطط — Saved to the knowledge</b><br/>الملف learned/rules.yaml تستخدمه المرحلة 2 في الفحص التالي:<br/>فتُكتشف الثغرة ستاتيكياً، بلا إنترنت، وبلا أي طلب للذكاء الاصطناعي<br/>وأحكامك تغذّي المرحلة 3 والمرحلة 5 وفحص clean corpus في المرحلة 9"])
+
+    classDef stage fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef store fill:#faeeda,stroke:#854f0b,color:#412402
+    class INPUT,WALK,LANG,SECRETS,RULES,AST,EXT,TRACK,TLITE,MERGE,TIER,SCORE,OUT stage
+    class ML,PROV,TRIAGE,DEEP,GUARD ai
+    class PROPOSE,VALIDATE,APPROVE,SAVED,YOU learn
+    class LEARNED,REVIEWS,CACHE,DB store
+    style KB fill:#fffdf5,stroke:#c9a55a
+    style S1 fill:#fbfaf7,stroke:#c9c7bd
+    style S2 fill:#fbfaf7,stroke:#c9c7bd
+    style S3 fill:#fbfaf7,stroke:#c9c7bd
+    style S4 fill:#fbfaf7,stroke:#c9c7bd
+    style S5 fill:#f7f6fe,stroke:#afa9ec
+    style S6 fill:#f7f6fe,stroke:#afa9ec
+    style S7 fill:#fbfaf7,stroke:#c9c7bd
+    style S8 fill:#fbfaf7,stroke:#c9c7bd
+    style S9 fill:#f2fbf7,stroke:#5dcaa5

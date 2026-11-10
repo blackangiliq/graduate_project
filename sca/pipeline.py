@@ -28,9 +28,10 @@ from .engines import external, python_ast, rules_engine, secrets, taint_lite
 from .learn import feedback as feedback_module
 from .models import Finding, ScanResult, SEVERITY_RANK
 from .storage import Storage
-from .walker import SourceFile, walk_project
+from .walker import SourceFile, is_test_path, walk_project
 
 ProgressFn = Callable[[str, float], None]
+TEST_CODE_FACTOR = 0.6
 
 
 @dataclass
@@ -46,6 +47,7 @@ class ScanOptions:
     semgrep_config: str = "auto"
     exclude_dirs: List[str] = field(default_factory=list)
     # learning
+    include_tests: bool = True        # False: skip test code (tests/, test_*.py, *.spec.js)
     use_feedback: bool = True         # apply reviewer verdicts and rule track records
     strict: bool = False              # count only findings confirmed by independent evidence
     # AI
@@ -107,6 +109,11 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
     # 1. walk -------------------------------------------------------------------
     progress("Collecting source files", 0.03)
     files: List[SourceFile] = list(walk_project(str(root), options.exclude_dirs))
+    test_files = {sf.rel for sf in files if is_test_path(sf.rel)}
+    if not options.include_tests and test_files:
+        files = [sf for sf in files if sf.rel not in test_files]
+        result.engine_notes["test code"] = "skipped %d test files" % len(test_files)
+        test_files = set()
     result.files_scanned = len(files)
     result.lines_scanned = sum(len(f.lines) for f in files)
     for sf in files:
@@ -188,6 +195,17 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
     # 4. merge ------------------------------------------------------------------
     progress("Merging results", 0.55)
     findings = merge.merge_findings(raw, options.lang)
+    in_tests = 0
+    for finding in findings:
+        if finding.file in test_files:
+            # Test input is written by the developer, so a weakness in test code is rarely
+            # exploitable: it is kept, with a lower confidence, and is never auto-confirmed.
+            finding.test_code = True
+            finding.confidence *= TEST_CODE_FACTOR
+            in_tests += 1
+    if in_tests:
+        result.engine_notes["test code"] = (
+            "ok (%d findings are in test code: lower confidence, not auto-confirmed)" % in_tests)
     if verdicts:
         dismissed, confirmed = feedback_module.apply_verdicts(findings, verdicts)
         if dismissed or confirmed:

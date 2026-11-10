@@ -40,6 +40,7 @@ class Finding:
     rule_ids: List[str] = field(default_factory=list)   # every rule that reported this issue
     evidence: List[str] = field(default_factory=list)   # reasons the finding counts as confirmed
     tier: str = ""                 # confirmed | probable
+    test_code: bool = False        # the file is test code (tests/, test_*.py, *.spec.js ...)
     user_verdict: str = ""         # true_positive | false_positive (set by the reviewer)
     # --- filled by the AI layer ---
     ml_score: Optional[float] = None

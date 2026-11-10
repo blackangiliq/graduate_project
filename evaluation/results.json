@@ -950,12 +950,12 @@
     }
   },
   {
-    "tp": 44,
+    "tp": 43,
     "fp": 0,
-    "fn": 27,
+    "fn": 28,
     "precision": 1.0,
-    "recall": 0.62,
-    "f1": 0.765,
+    "recall": 0.606,
+    "f1": 0.754,
     "missed": [
       {
         "tag": "A01",
@@ -1004,6 +1004,14 @@
         "cwe": "CWE-639",
         "hard": true,
         "note": "missing ownership check (IDOR) - a logic flaw"
+      },
+      {
+        "tag": "K26",
+        "file": "app.py",
+        "line": 158,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL built from a parameter of unknown origin"
       },
       {
         "tag": "Y01",

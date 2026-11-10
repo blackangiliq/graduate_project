@@ -1,0 +1,112 @@
+# Rules for Java.
+
+- id: JAVA-SQLI-001
+  title: SQL statement executed with string concatenation
+  languages: [java]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.8
+  pattern: '\.(executeQuery|executeUpdate|execute|prepareStatement|createQuery|createNativeQuery|addBatch)\s*\(\s*[^;]*"\s*\+'
+
+- id: JAVA-SQLI-002
+  title: SQL string assembled from variables
+  languages: [java]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.65
+  pattern: '"\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^"]*"\s*\+\s*[A-Za-z_]'
+  exclude: '\.(executeQuery|executeUpdate|execute|prepareStatement|createQuery|createNativeQuery)\s*\('
+  ignore_case: true
+
+- id: JAVA-CMDI-001
+  title: OS command built from dynamic data
+  languages: [java]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.75
+  pattern: 'Runtime\.getRuntime\(\)\.exec\s*\([^;]*\+|new\s+ProcessBuilder\s*\([^;]*\+'
+
+- id: JAVA-CMDI-002
+  title: OS command executed with a non-constant argument
+  languages: [java]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.5
+  pattern: 'Runtime\.getRuntime\(\)\.exec\s*\(\s*[A-Za-z_]\w*\s*[,)]'
+
+- id: JAVA-XSS-001
+  title: Request data written to the response without encoding
+  languages: [java]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.7
+  pattern: '\.getWriter\(\)\.(print|println|write|append)\s*\([^;]*(getParameter\s*\(|"\s*\+\s*[A-Za-z_])'
+  exclude: 'escapeHtml|encodeForHTML|HtmlUtils\.htmlEscape'
+
+- id: JAVA-PATH-001
+  title: File path built from request data or concatenation
+  languages: [java]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.6
+  pattern: 'new\s+(File|FileInputStream|FileReader|FileOutputStream|FileWriter)\s*\([^;]*(getParameter\s*\(|"\s*\+\s*[A-Za-z_]|[A-Za-z_]\w*\s*\+\s*")'
+  exclude: 'getName\(\)|normalize\(\)'
+
+- id: JAVA-REDIRECT-001
+  title: Redirect target taken from the request
+  languages: [java]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.8
+  pattern: '\.sendRedirect\s*\([^;]*getParameter\s*\('
+
+- id: JAVA-DESER-001
+  title: Java native deserialization
+  languages: [java]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.6
+  pattern: 'new\s+ObjectInputStream\s*\(|\bXMLDecoder\s*\('
+
+- id: JAVA-XXE-001
+  title: XML parser created without disabling external entities
+  languages: [java]
+  cwe: CWE-611
+  severity: medium
+  confidence: 0.4
+  pattern: '\b(DocumentBuilderFactory|SAXParserFactory|XMLInputFactory)\.newInstance\s*\('
+
+- id: JAVA-CRYPTO-001
+  title: Weak hash algorithm (MD5 / SHA-1)
+  languages: [java]
+  cwe: CWE-327
+  severity: medium
+  confidence: 0.8
+  pattern: 'MessageDigest\.getInstance\s*\(\s*"(MD2|MD4|MD5|SHA-?1)"'
+  ignore_case: true
+
+- id: JAVA-CRYPTO-002
+  title: Weak cipher or ECB mode
+  languages: [java]
+  cwe: CWE-327
+  severity: high
+  confidence: 0.8
+  pattern: 'Cipher\.getInstance\s*\(\s*"(DES|DESede|RC4|RC2|Blowfish|ARCFOUR)\b|Cipher\.getInstance\s*\(\s*"[^"]*/ECB/|Cipher\.getInstance\s*\(\s*"AES"\s*\)'
+  ignore_case: true
+
+- id: JAVA-RANDOM-001
+  title: java.util.Random used for a security value
+  languages: [java]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.65
+  pattern: '(token|secret|password|session|otp|nonce|salt|key)\w*\s*=[^;]*\bnew\s+Random\s*\(|\bnew\s+Random\s*\([^;]*(token|secret|password|session|otp|nonce|salt)'
+  ignore_case: true
+
+- id: JAVA-TLS-001
+  title: TLS hostname or certificate verification disabled
+  languages: [java]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.8
+  pattern: 'ALLOW_ALL_HOSTNAME_VERIFIER|NoopHostnameVerifier|setHostnameVerifier\s*\(\s*\([^)]*\)\s*->\s*true|checkServerTrusted\s*\([^)]*\)\s*\{\s*\}'

@@ -1,0 +1,7 @@
+# The dashboard is a local tool: listen on this computer only and send no usage statistics.
+[server]
+address = "localhost"
+headless = true
+
+[browser]
+gatherUsageStats = false

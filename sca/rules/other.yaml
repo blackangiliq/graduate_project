@@ -1,0 +1,65 @@
+# Rules for Go and C#.
+
+- id: GO-SQLI-001
+  title: SQL query built with fmt.Sprintf or concatenation
+  languages: [go]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: '\.(Query|QueryRow|Exec|QueryContext|ExecContext)\s*\(\s*([\w.]+\s*,\s*)?(fmt\.Sprintf\s*\(|"[^"]*"\s*\+)'
+
+- id: GO-CMDI-001
+  title: Shell invoked through exec.Command
+  languages: [go]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.55
+  pattern: 'exec\.Command\s*\(\s*"(sh|bash|cmd|cmd\.exe|powershell)"'
+
+- id: GO-TLS-001
+  title: TLS certificate verification disabled
+  languages: [go]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.9
+  pattern: 'InsecureSkipVerify\s*:\s*true'
+
+- id: GO-CRYPTO-001
+  title: Weak hash algorithm (MD5 / SHA-1)
+  languages: [go]
+  cwe: CWE-327
+  severity: medium
+  confidence: 0.7
+  pattern: '\b(md5|sha1)\.(New|Sum)\s*\('
+
+- id: CS-SQLI-001
+  title: SQL command built with concatenation or interpolation
+  languages: [csharp]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: 'new\s+(Sql|MySql|Npgsql|OleDb|Sqlite)Command\s*\([^;]*("\s*\+|\$")|\.CommandText\s*=[^;]*("\s*\+|\$")'
+
+- id: CS-CMDI-001
+  title: Process started with a dynamic command line
+  languages: [csharp]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.6
+  pattern: 'Process\.Start\s*\([^;]*("\s*\+|\$")'
+
+- id: CS-CRYPTO-001
+  title: Weak hash algorithm (MD5 / SHA-1)
+  languages: [csharp]
+  cwe: CWE-327
+  severity: medium
+  confidence: 0.8
+  pattern: '\b(MD5|SHA1)\.Create\s*\(|new\s+(MD5|SHA1)(CryptoServiceProvider|Managed)\s*\('
+
+- id: CS-DESER-001
+  title: BinaryFormatter deserialization
+  languages: [csharp]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.75
+  pattern: '\bnew\s+BinaryFormatter\s*\('

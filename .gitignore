@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+# local data: scan history, trained models, generated reports
+data/
+reports/
+*.joblib
+.DS_Store

@@ -1,0 +1,5 @@
+# Deliberately insecure configuration. FOR TESTING THE ANALYZER ONLY.
+database_url: postgres://shop:Tr1ckyPass99@db.internal:5432/shop  # [Y01]
+api_key: "9f8e7d6c5b4a39281706f5e4d3c2b1a0"  # [Y02]
+smtp_password: "${SMTP_PASSWORD}"  # [Y03]
+debug: false

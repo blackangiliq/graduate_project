@@ -1,0 +1,968 @@
+[
+  {
+    "tp": 15,
+    "fp": 4,
+    "fn": 56,
+    "precision": 0.789,
+    "recall": 0.211,
+    "f1": 0.333,
+    "missed": [
+      {
+        "tag": "A01",
+        "file": "LoginServlet.java",
+        "line": 20,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded password"
+      },
+      {
+        "tag": "A02",
+        "file": "LoginServlet.java",
+        "line": 26,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection"
+      },
+      {
+        "tag": "A04",
+        "file": "LoginServlet.java",
+        "line": 31,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "reflected XSS"
+      },
+      {
+        "tag": "A05",
+        "file": "LoginServlet.java",
+        "line": 32,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "command injection"
+      },
+      {
+        "tag": "A06",
+        "file": "LoginServlet.java",
+        "line": 33,
+        "cwe": "CWE-22",
+        "hard": false,
+        "note": "path traversal"
+      },
+      {
+        "tag": "A07",
+        "file": "LoginServlet.java",
+        "line": 34,
+        "cwe": "CWE-601",
+        "hard": false,
+        "note": "open redirect"
+      },
+      {
+        "tag": "A08",
+        "file": "LoginServlet.java",
+        "line": 38,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5"
+      },
+      {
+        "tag": "A09",
+        "file": "LoginServlet.java",
+        "line": 43,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "DES in ECB mode"
+      },
+      {
+        "tag": "A10",
+        "file": "LoginServlet.java",
+        "line": 49,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "java.util.Random token"
+      },
+      {
+        "tag": "A11",
+        "file": "LoginServlet.java",
+        "line": 54,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "Java deserialization"
+      },
+      {
+        "tag": "K11",
+        "file": "app.py",
+        "line": 79,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "reflected XSS"
+      },
+      {
+        "tag": "K12",
+        "file": "app.py",
+        "line": 85,
+        "cwe": "CWE-1336",
+        "hard": false,
+        "note": "server-side template injection"
+      },
+      {
+        "tag": "K13",
+        "file": "app.py",
+        "line": 91,
+        "cwe": "CWE-22",
+        "hard": false,
+        "note": "path traversal"
+      },
+      {
+        "tag": "K14",
+        "file": "app.py",
+        "line": 97,
+        "cwe": "CWE-918",
+        "hard": false,
+        "note": "SSRF"
+      },
+      {
+        "tag": "K15",
+        "file": "app.py",
+        "line": 103,
+        "cwe": "CWE-601",
+        "hard": false,
+        "note": "open redirect"
+      },
+      {
+        "tag": "K24",
+        "file": "app.py",
+        "line": 142,
+        "cwe": "CWE-639",
+        "hard": true,
+        "note": "missing ownership check (IDOR) - a logic flaw"
+      },
+      {
+        "tag": "K25",
+        "file": "app.py",
+        "line": 147,
+        "cwe": "CWE-22",
+        "hard": true,
+        "note": "path traversal across two functions (inter-procedural)"
+      },
+      {
+        "tag": "Y01",
+        "file": "config/settings.yaml",
+        "line": 2,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "password inside a connection URL"
+      },
+      {
+        "tag": "Y02",
+        "file": "config/settings.yaml",
+        "line": 3,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded API key"
+      },
+      {
+        "tag": "F01",
+        "file": "frontend.js",
+        "line": 6,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "DOM XSS through innerHTML"
+      },
+      {
+        "tag": "F04",
+        "file": "frontend.js",
+        "line": 18,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "document.write with dynamic content"
+      },
+      {
+        "tag": "F05",
+        "file": "frontend.js",
+        "line": 22,
+        "cwe": "CWE-95",
+        "hard": false,
+        "note": "setTimeout with a string built at run time"
+      },
+      {
+        "tag": "P01",
+        "file": "index.php",
+        "line": 3,
+        "cwe": "CWE-209",
+        "hard": false,
+        "note": "errors displayed to users"
+      },
+      {
+        "tag": "P02",
+        "file": "index.php",
+        "line": 4,
+        "cwe": "CWE-798",
+        "hard": true,
+        "note": "password passed as a positional argument: no variable name to recognize"
+      },
+      {
+        "tag": "P03",
+        "file": "index.php",
+        "line": 6,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection, request data in the query"
+      },
+      {
+        "tag": "P04",
+        "file": "index.php",
+        "line": 9,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection by interpolation"
+      },
+      {
+        "tag": "P06",
+        "file": "index.php",
+        "line": 16,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "reflected XSS"
+      },
+      {
+        "tag": "P08",
+        "file": "index.php",
+        "line": 20,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "command injection"
+      },
+      {
+        "tag": "P10",
+        "file": "index.php",
+        "line": 23,
+        "cwe": "CWE-98",
+        "hard": false,
+        "note": "file inclusion"
+      },
+      {
+        "tag": "P11",
+        "file": "index.php",
+        "line": 25,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "unserialize on cookie"
+      },
+      {
+        "tag": "P12",
+        "file": "index.php",
+        "line": 27,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5 for passwords"
+      },
+      {
+        "tag": "P13",
+        "file": "index.php",
+        "line": 28,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "predictable token"
+      },
+      {
+        "tag": "P14",
+        "file": "index.php",
+        "line": 30,
+        "cwe": "CWE-601",
+        "hard": false,
+        "note": "open redirect"
+      },
+      {
+        "tag": "P15",
+        "file": "index.php",
+        "line": 32,
+        "cwe": "CWE-621",
+        "hard": false,
+        "note": "extract on request data"
+      },
+      {
+        "tag": "P16",
+        "file": "index.php",
+        "line": 34,
+        "cwe": "CWE-434",
+        "hard": false,
+        "note": "unrestricted upload"
+      },
+      {
+        "tag": "C01",
+        "file": "parser.c",
+        "line": 8,
+        "cwe": "CWE-242",
+        "hard": false,
+        "note": "gets"
+      },
+      {
+        "tag": "C03",
+        "file": "parser.c",
+        "line": 14,
+        "cwe": "CWE-120",
+        "hard": false,
+        "note": "strcpy overflow"
+      },
+      {
+        "tag": "C04",
+        "file": "parser.c",
+        "line": 15,
+        "cwe": "CWE-134",
+        "hard": false,
+        "note": "format string"
+      },
+      {
+        "tag": "C05",
+        "file": "parser.c",
+        "line": 20,
+        "cwe": "CWE-120",
+        "hard": false,
+        "note": "sprintf overflow"
+      },
+      {
+        "tag": "C07",
+        "file": "parser.c",
+        "line": 25,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "system with a caller-supplied command"
+      },
+      {
+        "tag": "C08",
+        "file": "parser.c",
+        "line": 30,
+        "cwe": "CWE-120",
+        "hard": false,
+        "note": "scanf %s"
+      },
+      {
+        "tag": "C10",
+        "file": "parser.c",
+        "line": 36,
+        "cwe": "CWE-120",
+        "hard": true,
+        "note": "memcpy with an unchecked length"
+      },
+      {
+        "tag": "C11",
+        "file": "parser.c",
+        "line": 40,
+        "cwe": "CWE-190",
+        "hard": true,
+        "note": "integer overflow in the allocation size"
+      },
+      {
+        "tag": "J01",
+        "file": "server.js",
+        "line": 12,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded database password"
+      },
+      {
+        "tag": "J02",
+        "file": "server.js",
+        "line": 13,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded JWT secret"
+      },
+      {
+        "tag": "J03",
+        "file": "server.js",
+        "line": 16,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection by concatenation"
+      },
+      {
+        "tag": "J04",
+        "file": "server.js",
+        "line": 20,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection by template literal"
+      },
+      {
+        "tag": "J06",
+        "file": "server.js",
+        "line": 28,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "command injection"
+      },
+      {
+        "tag": "J07",
+        "file": "server.js",
+        "line": 32,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "reflected XSS"
+      },
+      {
+        "tag": "J08",
+        "file": "server.js",
+        "line": 36,
+        "cwe": "CWE-22",
+        "hard": false,
+        "note": "path traversal"
+      },
+      {
+        "tag": "J09",
+        "file": "server.js",
+        "line": 40,
+        "cwe": "CWE-601",
+        "hard": false,
+        "note": "open redirect"
+      },
+      {
+        "tag": "J10",
+        "file": "server.js",
+        "line": 44,
+        "cwe": "CWE-95",
+        "hard": false,
+        "note": "eval on request data"
+      },
+      {
+        "tag": "J11",
+        "file": "server.js",
+        "line": 49,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5 for passwords"
+      },
+      {
+        "tag": "J12",
+        "file": "server.js",
+        "line": 53,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "Math.random token"
+      },
+      {
+        "tag": "J13",
+        "file": "server.js",
+        "line": 58,
+        "cwe": "CWE-347",
+        "hard": false,
+        "note": "JWT 'none' algorithm accepted"
+      },
+      {
+        "tag": "J16",
+        "file": "server.js",
+        "line": 72,
+        "cwe": "CWE-1321",
+        "hard": true,
+        "note": "prototype pollution in a recursive merge"
+      }
+    ],
+    "false_positives": [
+      {
+        "file": "safe_app/app.py",
+        "line": 116,
+        "cwe": "CWE-78",
+        "title": "subprocess call with shell=True seems safe, but may be changed in the future, consider rewriting without shell",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "file": "safe_app/app.py",
+        "line": 25,
+        "cwe": "CWE-798",
+        "title": "Possible hardcoded password: 'Enter your password'",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "file": "safe_app/app.py",
+        "line": 26,
+        "cwe": "CWE-798",
+        "title": "Possible hardcoded password: 'https://auth.example.com/oauth/token'",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "file": "app.py",
+        "line": 131,
+        "cwe": "CWE-338",
+        "title": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.8
+      }
+    ],
+    "name": "Bandit only (Python baseline)",
+    "ai": {
+      "ml": "disabled",
+      "llm": "disabled"
+    }
+  },
+  {
+    "tp": 48,
+    "fp": 3,
+    "fn": 23,
+    "precision": 0.941,
+    "recall": 0.676,
+    "f1": 0.787,
+    "missed": [
+      {
+        "tag": "K04",
+        "file": "app.py",
+        "line": 32,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection by concatenation"
+      },
+      {
+        "tag": "K05",
+        "file": "app.py",
+        "line": 40,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection through an f-string built one line earlier"
+      },
+      {
+        "tag": "K07",
+        "file": "app.py",
+        "line": 53,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "command injection (os.popen)"
+      },
+      {
+        "tag": "K08",
+        "file": "app.py",
+        "line": 60,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "command injection (shell=True)"
+      },
+      {
+        "tag": "K10",
+        "file": "app.py",
+        "line": 73,
+        "cwe": "CWE-95",
+        "hard": false,
+        "note": "eval on request data"
+      },
+      {
+        "tag": "K11",
+        "file": "app.py",
+        "line": 79,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "reflected XSS"
+      },
+      {
+        "tag": "K12",
+        "file": "app.py",
+        "line": 85,
+        "cwe": "CWE-1336",
+        "hard": false,
+        "note": "server-side template injection"
+      },
+      {
+        "tag": "K13",
+        "file": "app.py",
+        "line": 91,
+        "cwe": "CWE-22",
+        "hard": false,
+        "note": "path traversal"
+      },
+      {
+        "tag": "K14",
+        "file": "app.py",
+        "line": 97,
+        "cwe": "CWE-918",
+        "hard": false,
+        "note": "SSRF"
+      },
+      {
+        "tag": "K15",
+        "file": "app.py",
+        "line": 103,
+        "cwe": "CWE-601",
+        "hard": false,
+        "note": "open redirect"
+      },
+      {
+        "tag": "K16",
+        "file": "app.py",
+        "line": 108,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "pickle on request data"
+      },
+      {
+        "tag": "K17",
+        "file": "app.py",
+        "line": 114,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "yaml.load without safe loader"
+      },
+      {
+        "tag": "K18",
+        "file": "app.py",
+        "line": 119,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5 for passwords"
+      },
+      {
+        "tag": "K19",
+        "file": "app.py",
+        "line": 123,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "predictable reset token"
+      },
+      {
+        "tag": "K20",
+        "file": "app.py",
+        "line": 127,
+        "cwe": "CWE-295",
+        "hard": false,
+        "note": "TLS verification disabled"
+      },
+      {
+        "tag": "K24",
+        "file": "app.py",
+        "line": 142,
+        "cwe": "CWE-639",
+        "hard": true,
+        "note": "missing ownership check (IDOR) - a logic flaw"
+      },
+      {
+        "tag": "K25",
+        "file": "app.py",
+        "line": 147,
+        "cwe": "CWE-22",
+        "hard": true,
+        "note": "path traversal across two functions (inter-procedural)"
+      },
+      {
+        "tag": "K26",
+        "file": "app.py",
+        "line": 158,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL built from a parameter of unknown origin"
+      },
+      {
+        "tag": "K23",
+        "file": "app.py",
+        "line": 162,
+        "cwe": "CWE-489",
+        "hard": false,
+        "note": "debug mode in production"
+      },
+      {
+        "tag": "P02",
+        "file": "index.php",
+        "line": 4,
+        "cwe": "CWE-798",
+        "hard": true,
+        "note": "password passed as a positional argument: no variable name to recognize"
+      },
+      {
+        "tag": "C10",
+        "file": "parser.c",
+        "line": 36,
+        "cwe": "CWE-120",
+        "hard": true,
+        "note": "memcpy with an unchecked length"
+      },
+      {
+        "tag": "C11",
+        "file": "parser.c",
+        "line": 40,
+        "cwe": "CWE-190",
+        "hard": true,
+        "note": "integer overflow in the allocation size"
+      },
+      {
+        "tag": "J16",
+        "file": "server.js",
+        "line": 72,
+        "cwe": "CWE-1321",
+        "hard": true,
+        "note": "prototype pollution in a recursive merge"
+      }
+    ],
+    "false_positives": [
+      {
+        "file": "safe_app/index.php",
+        "line": 17,
+        "cwe": "CWE-98",
+        "title": "File inclusion using a variable path",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "file": "safe_app/index.php",
+        "line": 23,
+        "cwe": "CWE-327",
+        "title": "Weak hash function (MD5 / SHA-1)",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.4
+      },
+      {
+        "file": "safe_app/safe.c",
+        "line": 34,
+        "cwe": "CWE-338",
+        "title": "rand() is not suitable for security values",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.45
+      }
+    ],
+    "name": "Pattern rules + secrets",
+    "ai": {
+      "ml": "disabled",
+      "llm": "disabled"
+    }
+  },
+  {
+    "tp": 65,
+    "fp": 3,
+    "fn": 6,
+    "precision": 0.956,
+    "recall": 0.915,
+    "f1": 0.935,
+    "missed": [
+      {
+        "tag": "K24",
+        "file": "app.py",
+        "line": 142,
+        "cwe": "CWE-639",
+        "hard": true,
+        "note": "missing ownership check (IDOR) - a logic flaw"
+      },
+      {
+        "tag": "K25",
+        "file": "app.py",
+        "line": 147,
+        "cwe": "CWE-22",
+        "hard": true,
+        "note": "path traversal across two functions (inter-procedural)"
+      },
+      {
+        "tag": "P02",
+        "file": "index.php",
+        "line": 4,
+        "cwe": "CWE-798",
+        "hard": true,
+        "note": "password passed as a positional argument: no variable name to recognize"
+      },
+      {
+        "tag": "C10",
+        "file": "parser.c",
+        "line": 36,
+        "cwe": "CWE-120",
+        "hard": true,
+        "note": "memcpy with an unchecked length"
+      },
+      {
+        "tag": "C11",
+        "file": "parser.c",
+        "line": 40,
+        "cwe": "CWE-190",
+        "hard": true,
+        "note": "integer overflow in the allocation size"
+      },
+      {
+        "tag": "J16",
+        "file": "server.js",
+        "line": 72,
+        "cwe": "CWE-1321",
+        "hard": true,
+        "note": "prototype pollution in a recursive merge"
+      }
+    ],
+    "false_positives": [
+      {
+        "file": "safe_app/index.php",
+        "line": 17,
+        "cwe": "CWE-98",
+        "title": "File inclusion using a variable path",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "file": "safe_app/index.php",
+        "line": 23,
+        "cwe": "CWE-327",
+        "title": "Weak hash function (MD5 / SHA-1)",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.4
+      },
+      {
+        "file": "safe_app/safe.c",
+        "line": 34,
+        "cwe": "CWE-338",
+        "title": "rand() is not suitable for security values",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.45
+      }
+    ],
+    "name": "+ Python AST taint engine",
+    "ai": {
+      "ml": "disabled",
+      "llm": "disabled"
+    }
+  },
+  {
+    "tp": 65,
+    "fp": 7,
+    "fn": 6,
+    "precision": 0.903,
+    "recall": 0.915,
+    "f1": 0.909,
+    "missed": [
+      {
+        "tag": "K24",
+        "file": "app.py",
+        "line": 142,
+        "cwe": "CWE-639",
+        "hard": true,
+        "note": "missing ownership check (IDOR) - a logic flaw"
+      },
+      {
+        "tag": "K25",
+        "file": "app.py",
+        "line": 147,
+        "cwe": "CWE-22",
+        "hard": true,
+        "note": "path traversal across two functions (inter-procedural)"
+      },
+      {
+        "tag": "P02",
+        "file": "index.php",
+        "line": 4,
+        "cwe": "CWE-798",
+        "hard": true,
+        "note": "password passed as a positional argument: no variable name to recognize"
+      },
+      {
+        "tag": "C10",
+        "file": "parser.c",
+        "line": 36,
+        "cwe": "CWE-120",
+        "hard": true,
+        "note": "memcpy with an unchecked length"
+      },
+      {
+        "tag": "C11",
+        "file": "parser.c",
+        "line": 40,
+        "cwe": "CWE-190",
+        "hard": true,
+        "note": "integer overflow in the allocation size"
+      },
+      {
+        "tag": "J16",
+        "file": "server.js",
+        "line": 72,
+        "cwe": "CWE-1321",
+        "hard": true,
+        "note": "prototype pollution in a recursive merge"
+      }
+    ],
+    "false_positives": [
+      {
+        "file": "safe_app/index.php",
+        "line": 17,
+        "cwe": "CWE-98",
+        "title": "File inclusion using a variable path",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "file": "safe_app/app.py",
+        "line": 116,
+        "cwe": "CWE-78",
+        "title": "subprocess call with shell=True seems safe, but may be changed in the future, consider rewriting without shell",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "file": "safe_app/app.py",
+        "line": 25,
+        "cwe": "CWE-798",
+        "title": "Possible hardcoded password: 'Enter your password'",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "file": "safe_app/app.py",
+        "line": 26,
+        "cwe": "CWE-798",
+        "title": "Possible hardcoded password: 'https://auth.example.com/oauth/token'",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "file": "safe_app/index.php",
+        "line": 23,
+        "cwe": "CWE-327",
+        "title": "Weak hash function (MD5 / SHA-1)",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.4
+      },
+      {
+        "file": "safe_app/safe.c",
+        "line": 34,
+        "cwe": "CWE-338",
+        "title": "rand() is not suitable for security values",
+        "engines": [
+          "rules"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "file": "app.py",
+        "line": 131,
+        "cwe": "CWE-338",
+        "title": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+        "engines": [
+          "bandit"
+        ],
+        "confidence": 0.8
+      }
+    ],
+    "name": "All static engines",
+    "ai": {
+      "ml": "disabled",
+      "llm": "disabled"
+    }
+  }
+]

@@ -1,0 +1,186 @@
+# Rules for JavaScript and TypeScript (Node.js and browser code).
+
+- id: JS-SQLI-001
+  title: SQL query built with string concatenation or template literal
+  languages: [javascript]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: '\.(query|execute|raw|all|run|get|exec)\s*\(\s*(`[^`]*\$\{|"[^"]*\b(SELECT|INSERT|UPDATE|DELETE)\b[^"]*"\s*\+|''[^'']*\b(SELECT|INSERT|UPDATE|DELETE)\b[^'']*''\s*\+)'
+  ignore_case: true
+
+- id: JS-SQLI-002
+  title: SQL string assembled from variables
+  languages: [javascript]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.6
+  pattern: '"\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^"]*"\s*\+\s*[A-Za-z_$]|''\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^'']*''\s*\+\s*[A-Za-z_$]|`\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^`]*\$\{'
+  exclude: '\.(query|execute|raw|all|run|get|exec)\s*\('
+
+- id: JS-CMDI-001
+  title: Shell command built from dynamic data
+  languages: [javascript]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.75
+  pattern: '((^|[^\w.$])|child_process\.|cp\.)(exec|execSync)\s*\(\s*(`[^`]*\$\{|[^)]*["''`]\s*\+|[A-Za-z_$][\w$.]*\s*\+)'
+
+- id: JS-EVAL-001
+  title: eval() on dynamic data
+  languages: [javascript]
+  cwe: CWE-95
+  severity: high
+  confidence: 0.7
+  pattern: '(^|[^\w.$])eval\s*\(\s*(?!["''`][^"''`]*["''`]\s*\))'
+
+- id: JS-EVAL-002
+  title: Function constructor used to run dynamic code
+  languages: [javascript]
+  cwe: CWE-95
+  severity: high
+  confidence: 0.6
+  pattern: '\bnew\s+Function\s*\('
+
+- id: JS-EVAL-003
+  title: setTimeout/setInterval called with a string built at run time
+  languages: [javascript]
+  cwe: CWE-95
+  severity: medium
+  confidence: 0.55
+  pattern: '\bset(Timeout|Interval)\s*\(\s*(["''`][^"''`]*["''`]\s*\+|`[^`]*\$\{)'
+
+- id: JS-XSS-001
+  title: innerHTML assigned from a non-constant value
+  languages: [javascript]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.6
+  pattern: '\.(innerHTML|outerHTML)\s*\+?=\s*(?!\s*(["''`])[^"''`$+]*\2\s*;?\s*(//.*)?$)'
+  exclude: 'DOMPurify\.sanitize|escapeHtml|sanitize\('
+
+- id: JS-XSS-002
+  title: document.write with dynamic content
+  languages: [javascript]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.5
+  pattern: '\bdocument\.write(ln)?\s*\(\s*(?!\s*(["''])[^"'']*\2\s*\))'
+
+- id: JS-XSS-003
+  title: Request data sent back in the HTTP response without encoding
+  languages: [javascript]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.75
+  pattern: '\bres\.(send|write|end)\s*\([^)]*\breq\.(query|params|body|headers)'
+  exclude: 'escape\(|encodeURIComponent\(|sanitize'
+
+- id: JS-XSS-004
+  title: dangerouslySetInnerHTML used
+  languages: [javascript]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.45
+  pattern: 'dangerouslySetInnerHTML\s*=\s*\{\{'
+  exclude: 'DOMPurify\.sanitize'
+
+- id: JS-PATH-001
+  title: File path taken from the request
+  languages: [javascript]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.75
+  pattern: '\b(readFile|readFileSync|createReadStream|sendFile|writeFile|writeFileSync|unlink|unlinkSync|download)\s*\([^)]*\breq\.(query|params|body)'
+
+- id: JS-REDIRECT-001
+  title: Redirect target taken from the request
+  languages: [javascript]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.75
+  pattern: '\bres\.redirect\s*\([^)]*\breq\.(query|params|body)'
+
+- id: JS-NOSQL-001
+  title: Request object passed directly to a database query
+  languages: [javascript]
+  cwe: CWE-943
+  severity: high
+  confidence: 0.65
+  pattern: '\.(find|findOne|findOneAndUpdate|updateOne|updateMany|deleteOne|deleteMany|count|countDocuments)\s*\(\s*(req\.(body|query)\s*[,)]|\{[^}]*:\s*req\.(body|query)\.\w+\s*[,}])'
+
+- id: JS-SSRF-001
+  title: Outgoing request to a URL taken from the request
+  languages: [javascript]
+  cwe: CWE-918
+  severity: high
+  confidence: 0.65
+  pattern: '\b(fetch|axios(\.(get|post|put|delete|request))?|got|request|http\.get|https\.get)\s*\(\s*req\.(query|params|body)'
+
+- id: JS-CRYPTO-001
+  title: Weak hash algorithm (MD5 / SHA-1)
+  languages: [javascript]
+  cwe: CWE-327
+  severity: medium
+  confidence: 0.75
+  pattern: '\bcreateHash\s*\(\s*["''](md5|sha1)["'']'
+  ignore_case: true
+
+- id: JS-CRYPTO-002
+  title: Weak or deprecated cipher
+  languages: [javascript]
+  cwe: CWE-327
+  severity: high
+  confidence: 0.75
+  pattern: '\bcreateCipher(iv)?\s*\(\s*["''](des|des-ede|rc4|rc2|bf|[a-z0-9-]*-ecb)[a-z0-9-]*["'']|\bcreateCipher\s*\('
+  ignore_case: true
+
+- id: JS-RANDOM-001
+  title: Math.random() used for a security value
+  languages: [javascript]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.7
+  pattern: '(token|secret|password|passwd|session|otp|nonce|salt|apikey|api_key|csrf)\w*\s*[:=][^=].*\bMath\.random\s*\('
+  ignore_case: true
+
+- id: JS-TLS-001
+  title: TLS certificate verification disabled
+  languages: [javascript]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.85
+  pattern: 'rejectUnauthorized\s*:\s*false|NODE_TLS_REJECT_UNAUTHORIZED\s*[''"\]]*\s*=\s*["'']?0'
+
+- id: JS-JWT-001
+  title: JWT accepted without signature verification
+  languages: [javascript]
+  cwe: CWE-347
+  severity: high
+  confidence: 0.8
+  pattern: 'algorithms?\s*:\s*(\[[^\]]*)?["'']none["'']'
+  ignore_case: true
+
+- id: JS-DESER-001
+  title: Unsafe deserialization
+  languages: [javascript]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.7
+  pattern: '\b(unserialize|deserialize)\s*\(\s*req\.|require\s*\(\s*["'']node-serialize["'']\s*\)'
+
+- id: JS-CORS-001
+  title: CORS allows every origin
+  languages: [javascript]
+  cwe: CWE-942
+  severity: low
+  confidence: 0.7
+  pattern: 'Access-Control-Allow-Origin["'']\s*,\s*["'']\*["'']|origin\s*:\s*["'']\*["'']'
+
+- id: JS-COOKIE-001
+  title: Cookie readable from JavaScript (httpOnly disabled)
+  languages: [javascript]
+  cwe: CWE-1004
+  severity: low
+  confidence: 0.75
+  pattern: 'httpOnly\s*:\s*false'

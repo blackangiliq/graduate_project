@@ -1,0 +1,220 @@
+"""Knowledge base: CWE names, OWASP Top 10 (2021) mapping, explanations and fixes
+in English and Arabic. Used to describe findings even when no LLM is available."""
+from __future__ import annotations
+
+from typing import Dict
+
+OWASP_2021 = {
+    "A01": "A01:2021 Broken Access Control",
+    "A02": "A02:2021 Cryptographic Failures",
+    "A03": "A03:2021 Injection",
+    "A04": "A04:2021 Insecure Design",
+    "A05": "A05:2021 Security Misconfiguration",
+    "A06": "A06:2021 Vulnerable and Outdated Components",
+    "A07": "A07:2021 Identification and Authentication Failures",
+    "A08": "A08:2021 Software and Data Integrity Failures",
+    "A09": "A09:2021 Security Logging and Monitoring Failures",
+    "A10": "A10:2021 Server-Side Request Forgery",
+    "MEM": "Memory safety (outside the OWASP Top 10)",
+    "OTHER": "Other",
+}
+
+# cwe -> (name, owasp key, description_en, fix_en, description_ar, fix_ar)
+_KB = {
+    "CWE-89": ("SQL Injection", "A03",
+               "User-controlled data is concatenated into an SQL query, so an attacker can change the query and read or modify the database.",
+               "Use parameterized queries / prepared statements and pass values separately from the SQL text.",
+               "يتم دمج بيانات يتحكم بها المستخدم داخل نص استعلام SQL، فيستطيع المهاجم تغيير الاستعلام وقراءة أو تعديل قاعدة البيانات.",
+               "استخدم الاستعلامات المُعدّة مسبقاً (Prepared Statements) ومرّر القيم بشكل منفصل عن نص الاستعلام."),
+    "CWE-78": ("OS Command Injection", "A03",
+               "A shell command is built from dynamic data, so an attacker can append their own commands.",
+               "Avoid the shell: pass arguments as a list (no shell=True), and validate input against an allow-list.",
+               "يتم بناء أمر نظام التشغيل من بيانات متغيرة، فيستطيع المهاجم إضافة أوامره الخاصة.",
+               "تجنّب استخدام الـ shell: مرّر المعاملات كقائمة، وتحقق من المدخلات مقابل قائمة مسموحة."),
+    "CWE-79": ("Cross-Site Scripting (XSS)", "A03",
+               "Untrusted data is written into an HTML page without encoding, so an attacker can run JavaScript in the victim's browser.",
+               "HTML-encode output (use the template engine's auto-escaping) and prefer textContent over innerHTML.",
+               "تُكتب بيانات غير موثوقة داخل صفحة HTML دون ترميز، فيستطيع المهاجم تنفيذ JavaScript في متصفح الضحية.",
+               "رمّز المخرجات قبل عرضها (استخدم الترميز التلقائي في محرك القوالب) واستخدم textContent بدل innerHTML."),
+    "CWE-95": ("Code Injection (eval)", "A03",
+               "Dynamic data is executed as code (eval/exec), which lets an attacker run arbitrary code.",
+               "Remove eval/exec. Parse data with a safe parser (json, ast.literal_eval) or use a lookup table.",
+               "تُنفَّذ بيانات متغيرة ككود (eval/exec)، مما يسمح للمهاجم بتنفيذ أي كود.",
+               "احذف eval/exec واستخدم محللاً آمناً مثل json أو ast.literal_eval أو جدول اختيارات ثابت."),
+    "CWE-1336": ("Server-Side Template Injection", "A03",
+                 "User input is used as a template, so template expressions written by the attacker are evaluated on the server.",
+                 "Never build templates from user input; render a fixed template and pass the data as variables.",
+                 "تُستخدم مدخلات المستخدم كقالب، فتُنفَّذ تعابير القالب التي يكتبها المهاجم على الخادم.",
+                 "لا تبنِ القوالب من مدخلات المستخدم؛ استخدم قالباً ثابتاً ومرّر البيانات كمتغيرات."),
+    "CWE-943": ("NoSQL Injection", "A03",
+                "A request object is passed directly as a database query, so an attacker can inject query operators.",
+                "Build the query from validated scalar fields and cast values to the expected type.",
+                "يُمرَّر كائن الطلب مباشرة كاستعلام لقاعدة البيانات، فيستطيع المهاجم حقن معاملات الاستعلام.",
+                "ابنِ الاستعلام من حقول محددة تم التحقق منها وحوّل القيم إلى النوع المتوقع."),
+    "CWE-98": ("Remote/Local File Inclusion", "A03",
+               "A file path taken from the request is included and executed.",
+               "Include only files from a fixed allow-list; never pass request data to include/require.",
+               "يتم تضمين وتنفيذ ملف مساره مأخوذ من الطلب.",
+               "ضمّن فقط ملفات من قائمة ثابتة مسموحة ولا تمرّر بيانات الطلب إلى include/require."),
+    "CWE-22": ("Path Traversal", "A01",
+               "A file path is built from user input, so '../' sequences can reach files outside the intended folder.",
+               "Normalize the path, check it stays inside the base folder, or use a safe-filename helper.",
+               "يُبنى مسار الملف من مدخلات المستخدم، فيمكن استخدام '../' للوصول إلى ملفات خارج المجلد المقصود.",
+               "وحّد المسار وتحقق أنه يبقى داخل المجلد الأساسي، أو استخدم دالة تنظيف اسم الملف."),
+    "CWE-601": ("Open Redirect", "A01",
+                "The redirect target comes from the request, which lets attackers send victims to malicious sites.",
+                "Redirect only to relative paths or to hosts in an allow-list.",
+                "وجهة إعادة التوجيه تأتي من الطلب، مما يسمح للمهاجم بتحويل الضحايا إلى مواقع خبيثة.",
+                "أعد التوجيه فقط إلى مسارات نسبية أو إلى نطاقات ضمن قائمة مسموحة."),
+    "CWE-918": ("Server-Side Request Forgery (SSRF)", "A10",
+                "The server fetches a URL supplied by the user, which can be abused to reach internal services.",
+                "Validate the URL against an allow-list of hosts and block private address ranges.",
+                "الخادم يجلب رابطاً يحدده المستخدم، ويمكن استغلال ذلك للوصول إلى الخدمات الداخلية.",
+                "تحقق من الرابط مقابل قائمة نطاقات مسموحة وامنع عناوين الشبكة الداخلية."),
+    "CWE-502": ("Insecure Deserialization", "A08",
+                "Deserializing untrusted data with an unsafe format can execute attacker-controlled code.",
+                "Use a data-only format such as JSON, or a safe loader (yaml.safe_load).",
+                "فك تسلسل بيانات غير موثوقة بصيغة غير آمنة قد يؤدي إلى تنفيذ كود يتحكم به المهاجم.",
+                "استخدم صيغة بيانات فقط مثل JSON أو محمّلاً آمناً مثل yaml.safe_load."),
+    "CWE-327": ("Broken or Weak Cryptography", "A02",
+                "A weak or broken algorithm (MD5, SHA-1, DES, RC4, ECB mode) is used.",
+                "Use SHA-256 or better for hashing, AES-GCM for encryption, and bcrypt/argon2 for passwords.",
+                "يُستخدم خوارزمية تشفير ضعيفة أو مكسورة (MD5, SHA-1, DES, RC4, نمط ECB).",
+                "استخدم SHA-256 أو أقوى للتجزئة، و AES-GCM للتشفير، و bcrypt أو argon2 لكلمات المرور."),
+    "CWE-338": ("Weak Random Number Generator", "A02",
+                "A non-cryptographic random generator is used for a security value (token, password, key).",
+                "Use a cryptographically secure generator (secrets, crypto.randomBytes, SecureRandom).",
+                "يُستخدم مولّد أرقام عشوائية غير تشفيري لقيمة أمنية (رمز، كلمة مرور، مفتاح).",
+                "استخدم مولّداً آمناً تشفيرياً مثل secrets أو crypto.randomBytes أو SecureRandom."),
+    "CWE-295": ("Improper Certificate Validation", "A07",
+                "TLS certificate verification is disabled, which allows man-in-the-middle attacks.",
+                "Keep certificate verification enabled; add your internal CA to the trust store instead.",
+                "تم تعطيل التحقق من شهادة TLS، مما يسمح بهجمات الرجل في المنتصف.",
+                "أبقِ التحقق من الشهادات مفعّلاً، وأضف شهادة جهتك الداخلية إلى مخزن الثقة بدلاً من تعطيله."),
+    "CWE-347": ("Improper Verification of Cryptographic Signature", "A02",
+                "A token signature is not verified (or the 'none' algorithm is accepted), so tokens can be forged.",
+                "Always verify signatures and pin the expected algorithm.",
+                "لا يتم التحقق من توقيع الرمز (أو تُقبل خوارزمية none)، فيمكن تزوير الرموز.",
+                "تحقق دائماً من التوقيع وحدد الخوارزمية المتوقعة بشكل صريح."),
+    "CWE-798": ("Hard-coded Credentials", "A07",
+                "A password, key or token is stored in the source code, where anyone with access to the code can read it.",
+                "Move secrets to environment variables or a secrets manager, and rotate the exposed secret.",
+                "كلمة مرور أو مفتاح أو رمز مخزّن داخل الكود المصدري، ويستطيع أي شخص يصل إلى الكود قراءته.",
+                "انقل الأسرار إلى متغيرات البيئة أو مدير أسرار، وغيّر السر المكشوف فوراً."),
+    "CWE-120": ("Buffer Overflow", "MEM",
+                "An unbounded copy can write past the end of a buffer and corrupt memory.",
+                "Use bounded functions (snprintf, strncpy with explicit termination, fgets) and check lengths.",
+                "نسخ غير محدود الطول قد يكتب خارج حدود المخزن المؤقت ويفسد الذاكرة.",
+                "استخدم الدوال محدودة الطول مثل snprintf و fgets وتحقق من الأطوال."),
+    "CWE-242": ("Use of Inherently Dangerous Function", "MEM",
+                "gets() cannot limit how much it reads and always allows a buffer overflow.",
+                "Replace gets() with fgets().",
+                "الدالة gets() لا تستطيع تحديد حجم القراءة وتسمح دائماً بتجاوز المخزن المؤقت.",
+                "استبدل gets() بالدالة fgets()."),
+    "CWE-134": ("Uncontrolled Format String", "MEM",
+                "A non-constant string is used as a printf format, so '%' sequences from input can read or write memory.",
+                "Always pass a constant format string: printf(\"%s\", value).",
+                "تُستخدم سلسلة غير ثابتة كصيغة printf، فيمكن لرموز '%' القادمة من المدخلات قراءة أو كتابة الذاكرة.",
+                "مرّر دائماً صيغة ثابتة مثل printf(\"%s\", value)."),
+    "CWE-377": ("Insecure Temporary File", "A01",
+                "The temporary file name is predictable, which allows race-condition attacks.",
+                "Use mkstemp / tempfile.NamedTemporaryFile, which create the file atomically.",
+                "اسم الملف المؤقت قابل للتوقع، مما يسمح بهجمات حالة السباق.",
+                "استخدم mkstemp أو tempfile.NamedTemporaryFile التي تنشئ الملف بشكل آمن."),
+    "CWE-611": ("XML External Entity (XXE)", "A05",
+                "The XML parser may resolve external entities, which can leak local files.",
+                "Disable DTDs and external entities in the parser configuration.",
+                "محلل XML قد يعالج الكيانات الخارجية، مما قد يسرّب ملفات محلية.",
+                "عطّل DTD والكيانات الخارجية في إعدادات المحلل."),
+    "CWE-489": ("Active Debug Code", "A05",
+                "Debug mode is enabled; in production it exposes internals and may allow code execution.",
+                "Disable debug mode in production and read the setting from the environment.",
+                "وضع التصحيح مفعّل، وفي بيئة الإنتاج يكشف تفاصيل داخلية وقد يسمح بتنفيذ كود.",
+                "عطّل وضع التصحيح في بيئة الإنتاج واقرأ الإعداد من متغيرات البيئة."),
+    "CWE-942": ("Permissive CORS Policy", "A05",
+                "Any website is allowed to read responses from this application.",
+                "Restrict Access-Control-Allow-Origin to the origins that need it.",
+                "يُسمح لأي موقع بقراءة ردود هذا التطبيق.",
+                "حدد Access-Control-Allow-Origin بالنطاقات التي تحتاجه فقط."),
+    "CWE-1004": ("Cookie Without HttpOnly", "A05",
+                 "The cookie can be read by JavaScript, so an XSS bug can steal the session.",
+                 "Set httpOnly (and secure) on session cookies.",
+                 "يمكن لـ JavaScript قراءة ملف تعريف الارتباط، فتستطيع ثغرة XSS سرقة الجلسة.",
+                 "فعّل httpOnly و secure على ملفات تعريف ارتباط الجلسة."),
+    "CWE-605": ("Service Bound to All Interfaces", "A05",
+                "The service listens on 0.0.0.0 and is reachable from every network the machine is on.",
+                "Bind to 127.0.0.1 during development, or place the service behind a firewall/reverse proxy.",
+                "الخدمة تستمع على 0.0.0.0 ويمكن الوصول إليها من كل شبكة متصل بها الجهاز.",
+                "اربط الخدمة بـ 127.0.0.1 أثناء التطوير أو ضعها خلف جدار ناري."),
+    "CWE-732": ("Incorrect Permission Assignment", "A01",
+                "The file is made writable by every user on the system.",
+                "Grant the minimum permissions needed (for example 0o600 or 0o640).",
+                "الملف يصبح قابلاً للكتابة من قبل كل مستخدمي النظام.",
+                "امنح أقل صلاحيات مطلوبة (مثل 0o600 أو 0o640)."),
+    "CWE-209": ("Information Exposure Through Error Messages", "A04",
+                "Detailed errors are shown to users and reveal internal information.",
+                "Log errors on the server and show users a generic message.",
+                "تُعرض أخطاء تفصيلية للمستخدمين وتكشف معلومات داخلية.",
+                "سجّل الأخطاء على الخادم واعرض للمستخدم رسالة عامة."),
+    "CWE-434": ("Unrestricted File Upload", "A04",
+                "Uploaded files are stored without checking type or name, which may allow uploading executable code.",
+                "Validate extension and content type, generate the stored file name, and store outside the web root.",
+                "تُحفظ الملفات المرفوعة دون التحقق من النوع أو الاسم، مما قد يسمح برفع كود قابل للتنفيذ.",
+                "تحقق من الامتداد ونوع المحتوى، وولّد اسم الملف المخزّن، واحفظه خارج مجلد الويب."),
+    "CWE-621": ("Variable Extraction Error", "A04",
+                "extract() on request data lets an attacker overwrite any local variable.",
+                "Read the specific request fields you need instead of calling extract().",
+                "استخدام extract() على بيانات الطلب يسمح للمهاجم بالكتابة فوق أي متغير محلي.",
+                "اقرأ الحقول المحددة التي تحتاجها بدلاً من استدعاء extract()."),
+}
+
+_EQUIVALENT = {  # CWEs that describe the same weakness for merging purposes
+    "CWE-94": "CWE-95", "CWE-96": "CWE-95",
+    "CWE-328": "CWE-327", "CWE-326": "CWE-327", "CWE-916": "CWE-327",
+    "CWE-330": "CWE-338",
+    "CWE-259": "CWE-798", "CWE-321": "CWE-798", "CWE-312": "CWE-798", "CWE-540": "CWE-798",
+    "CWE-77": "CWE-78", "CWE-88": "CWE-78",
+    "CWE-80": "CWE-79",
+    "CWE-119": "CWE-120", "CWE-121": "CWE-120", "CWE-676": "CWE-120", "CWE-787": "CWE-120",
+    "CWE-23": "CWE-22", "CWE-73": "CWE-22",
+    "CWE-564": "CWE-89",
+    "CWE-1333": "CWE-1333",
+}
+
+
+def canonical(cwe: str) -> str:
+    """Normalize 'cwe-089: xyz' -> 'CWE-89' and fold equivalent ids together."""
+    if not cwe:
+        return ""
+    text = str(cwe).upper().strip()
+    digits = ""
+    idx = text.find("CWE-")
+    rest = text[idx + 4:] if idx >= 0 else text
+    for ch in rest:
+        if ch.isdigit():
+            digits += ch
+        elif digits:
+            break
+    if not digits:
+        return ""
+    value = "CWE-%d" % int(digits)
+    return _EQUIVALENT.get(value, value)
+
+
+def info(cwe: str, lang: str = "en") -> Dict[str, str]:
+    key = canonical(cwe)
+    if key in _KB:
+        name, owasp, d_en, f_en, d_ar, f_ar = _KB[key]
+        return {
+            "cwe": key, "name": name, "owasp": OWASP_2021[owasp],
+            "description": d_ar if lang == "ar" else d_en,
+            "fix": f_ar if lang == "ar" else f_en,
+            "url": "https://cwe.mitre.org/data/definitions/%s.html" % key.split("-")[1],
+        }
+    url = "https://cwe.mitre.org/data/definitions/%s.html" % key.split("-")[1] if key else ""
+    return {"cwe": key, "name": key or "Security issue", "owasp": OWASP_2021["OTHER"],
+            "description": "", "fix": "", "url": url}
+
+
+def owasp_for(cwe: str) -> str:
+    return info(cwe)["owasp"]

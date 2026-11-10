@@ -1,0 +1,66 @@
+# Rules for C and C++.
+
+- id: C-BOF-001
+  title: gets() can never be used safely
+  languages: [c]
+  cwe: CWE-242
+  severity: critical
+  confidence: 0.95
+  pattern: '(^|[^\w.>])gets\s*\('
+
+- id: C-BOF-002
+  title: Unbounded string copy (strcpy / strcat)
+  languages: [c]
+  cwe: CWE-120
+  severity: high
+  confidence: 0.6
+  pattern: '(^|[^\w.>])(strcpy|strcat|wcscpy|wcscat|stpcpy)\s*\('
+  exclude: '(strcpy|strcat)\s*\(\s*\w+\s*,\s*"[^"]*"\s*\)'
+
+- id: C-BOF-003
+  title: Unbounded formatted write (sprintf)
+  languages: [c]
+  cwe: CWE-120
+  severity: high
+  confidence: 0.6
+  pattern: '(^|[^\w.>])(sprintf|vsprintf)\s*\('
+
+- id: C-BOF-004
+  title: scanf family with an unbounded %s
+  languages: [c]
+  cwe: CWE-120
+  severity: high
+  confidence: 0.8
+  pattern: '(^|[^\w.>])(scanf|sscanf|fscanf)\s*\([^;]*%s'
+
+- id: C-FMT-001
+  title: Non-constant format string
+  languages: [c]
+  cwe: CWE-134
+  severity: high
+  confidence: 0.75
+  pattern: '(^|[^\w.>])(printf|vprintf)\s*\(\s*[A-Za-z_]\w*(\[[^\]]*\])?\s*\)|(^|[^\w.>])(fprintf|syslog|dprintf)\s*\(\s*\w+\s*,\s*[A-Za-z_]\w*(\[[^\]]*\])?\s*\)|(^|[^\w.>])snprintf\s*\(\s*\w+\s*,\s*[^,]+,\s*[A-Za-z_]\w*\s*\)'
+
+- id: C-CMDI-001
+  title: system()/popen() called with a non-constant command
+  languages: [c]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.7
+  pattern: '(^|[^\w.>])(system|popen)\s*\(\s*[A-Za-z_]\w*\s*[,)]'
+
+- id: C-RANDOM-001
+  title: rand() is not suitable for security values
+  languages: [c]
+  cwe: CWE-338
+  severity: low
+  confidence: 0.45
+  pattern: '(^|[^\w.>])rand\s*\(\s*\)'
+
+- id: C-TMP-001
+  title: Predictable temporary file name
+  languages: [c]
+  cwe: CWE-377
+  severity: medium
+  confidence: 0.8
+  pattern: '(^|[^\w.>])(tmpnam|tempnam|mktemp)\s*\('

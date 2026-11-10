@@ -1,0 +1,157 @@
+# Rules for PHP.
+
+- id: PHP-SQLI-001
+  title: Request data used directly in an SQL call
+  languages: [php]
+  cwe: CWE-89
+  severity: critical
+  confidence: 0.85
+  pattern: '(mysqli_query|mysql_query|pg_query|sqlite_query|->query|->exec|->multi_query)\s*\([^;]*\$_(GET|POST|REQUEST|COOKIE)'
+
+- id: PHP-SQLI-002
+  title: SQL string built with a PHP variable
+  languages: [php]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.7
+  pattern: '"\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^"]*(\$\w|\{\$)|"\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^"]*"\s*\.\s*\$|''\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^'']*''\s*\.\s*\$'
+  exclude: '\$_(GET|POST|REQUEST|COOKIE).*(mysqli_query|->query)|(mysqli_query|mysql_query|pg_query|->query|->exec)\s*\([^;]*\$_(GET|POST|REQUEST|COOKIE)|intval\(|\(int\)'
+  ignore_case: true
+
+- id: PHP-CMDI-001
+  title: Shell command built with a variable
+  languages: [php]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.75
+  pattern: '(^|[^\w>$])(system|exec|shell_exec|passthru|popen|proc_open)\s*\([^;]*\$\w'
+  exclude: 'escapeshellarg\(|escapeshellcmd\('
+
+- id: PHP-CMDI-002
+  title: Backtick shell execution with a variable
+  languages: [php]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.6
+  pattern: '=\s*`[^`]*\$\w[^`]*`'
+
+- id: PHP-EVAL-001
+  title: eval()/assert() on dynamic data
+  languages: [php]
+  cwe: CWE-95
+  severity: critical
+  confidence: 0.8
+  pattern: '(^|[^\w>$])(eval|assert|create_function)\s*\([^;]*\$\w'
+
+- id: PHP-XSS-001
+  title: Request data echoed without encoding
+  languages: [php]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.8
+  pattern: '(\b(echo|print)\b|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)'
+  exclude: 'htmlspecialchars\(|htmlentities\(|intval\(|strip_tags\(|urlencode\(|json_encode\('
+
+- id: PHP-LFI-001
+  title: File inclusion controlled by the request
+  languages: [php]
+  cwe: CWE-98
+  severity: critical
+  confidence: 0.85
+  pattern: '\b(include|require)(_once)?\b[^;]*\$_(GET|POST|REQUEST|COOKIE)'
+
+- id: PHP-LFI-002
+  title: File inclusion using a variable path
+  languages: [php]
+  cwe: CWE-98
+  severity: medium
+  confidence: 0.45
+  pattern: '^\s*(include|require)(_once)?\s*\(?\s*\$\w+\s*\)?\s*;'
+
+- id: PHP-PATH-001
+  title: File read/write path taken from the request
+  languages: [php]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.75
+  pattern: '\b(file_get_contents|fopen|readfile|file|unlink|file_put_contents)\s*\([^;]*\$_(GET|POST|REQUEST|COOKIE)'
+  exclude: 'basename\('
+
+- id: PHP-DESER-001
+  title: unserialize() on dynamic data
+  languages: [php]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.7
+  pattern: '\bunserialize\s*\([^;]*\$\w'
+
+- id: PHP-CRYPTO-001
+  title: MD5/SHA-1 used for a password
+  languages: [php]
+  cwe: CWE-327
+  severity: high
+  confidence: 0.8
+  pattern: '\b(md5|sha1)\s*\([^)]*(pass|pwd)'
+  ignore_case: true
+
+- id: PHP-CRYPTO-002
+  title: Weak hash function (MD5 / SHA-1)
+  languages: [php]
+  cwe: CWE-327
+  severity: low
+  confidence: 0.4
+  pattern: '\b(md5|sha1)\s*\('
+  exclude: '(pass|pwd)'
+  ignore_case: true
+
+- id: PHP-RANDOM-001
+  title: Predictable random value used for a security token
+  languages: [php]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.7
+  pattern: '\$\w*(token|secret|password|session|otp|nonce|salt|csrf)\w*\s*=[^;]*\b(rand|mt_rand|uniqid|lcg_value)\s*\('
+  ignore_case: true
+
+- id: PHP-REDIRECT-001
+  title: Redirect target taken from the request
+  languages: [php]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.8
+  pattern: 'header\s*\(\s*["'']Location:[^;]*\$_(GET|POST|REQUEST)'
+  ignore_case: true
+
+- id: PHP-EXTRACT-001
+  title: extract() called on request data
+  languages: [php]
+  cwe: CWE-621
+  severity: high
+  confidence: 0.85
+  pattern: '\bextract\s*\(\s*\$_(GET|POST|REQUEST|COOKIE)'
+
+- id: PHP-UPLOAD-001
+  title: Uploaded file stored using the client-supplied name
+  languages: [php]
+  cwe: CWE-434
+  severity: high
+  confidence: 0.6
+  pattern: 'move_uploaded_file\s*\([^;]*\$_FILES\[[^\]]+\]\[\s*["'']name["'']\s*\]'
+
+- id: PHP-ERRORS-001
+  title: Detailed errors displayed to users
+  languages: [php]
+  cwe: CWE-209
+  severity: low
+  confidence: 0.7
+  pattern: 'ini_set\s*\(\s*["'']display_errors["'']\s*,\s*["'']?(1|on|true)'
+  ignore_case: true
+
+- id: PHP-TLS-001
+  title: TLS certificate verification disabled in cURL
+  languages: [php]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.85
+  pattern: 'CURLOPT_SSL_VERIFY(PEER|HOST)\s*,\s*(false|0)\b'
+  ignore_case: true

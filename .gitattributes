@@ -1,0 +1,4 @@
+* text=auto
+# stored with Windows line endings so that the ZIP download runs as-is
+*.bat -text
+*.sh text eol=lf

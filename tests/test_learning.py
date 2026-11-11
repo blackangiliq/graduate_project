@@ -69,6 +69,9 @@ class FakeOpenAI(JsonHandler):
 
     def authorized(self):
         if self.headers.get("Authorization") != "Bearer sk-test":
+            if self.command == "POST":
+                self.body()     # read the request first, as a real server does; answering
+                #                 early makes Windows abort the connection (WinError 10053)
             self.reply(401, {"error": {"message": "Incorrect API key provided"}})
             return False
         return True

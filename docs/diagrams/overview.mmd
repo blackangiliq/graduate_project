@@ -1,0 +1,79 @@
+%%{init: {"flowchart": {"wrappingWidth": 420}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% The whole project on one page, in six layers.
+%% Render:  mmdc -i docs/diagrams/overview.mmd -o docs/images/overview.png -w 1400 -s 2 -b white
+flowchart TD
+    subgraph L1["1. Interface  ·  how you use the platform"]
+        direction LR
+        A1 ~~~ A2 ~~~ A3 ~~~ A4
+        A1["<b>Dashboard</b><br/>Streamlit · app.py<br/>English and Arabic"]
+        A2["<b>Command line</b><br/>python -m sca"]
+        A3["<b>One-click launchers</b><br/>run.bat · run.sh"]
+        A4["<b>Project folder</b><br/>22 programming languages"]
+    end
+
+    subgraph L2["2. Static analysis  ·  the code is read, never executed"]
+        direction LR
+        B1 ~~~ B2 ~~~ B3 ~~~ B4 ~~~ B5
+        B1["<b>Secrets</b><br/>key formats + entropy<br/>built in + imported from Gitleaks"]
+        B2["<b>Pattern rules</b><br/>built in · imported from DevSkim<br/>learned · your own"]
+        B3["<b>Python engine</b><br/>AST taint analysis<br/>follows input across functions"]
+        B4["<b>External scanners</b><br/>Bandit · Opengrep<br/>Gitleaks · optional"]
+        B5["<b>Taint-lite</b><br/>input tracing for<br/>9 other languages"]
+    end
+
+    subgraph L3["3. Fusion and AI"]
+        direction LR
+        C1 ~~~ C2 ~~~ C3 ~~~ C4 ~~~ C5
+        C1["<b>Merge</b><br/>Noisy-OR confidence<br/>CWE + OWASP Top 10"]
+        C2["<b>ML classifier</b><br/>TF-IDF +<br/>logistic regression"]
+        C3["<b>AI review</b><br/>verify · explain · fix"]
+        C4["<b>Deep scan</b><br/>whole files, with a<br/>second confirming pass"]
+        C5["<b>Provider</b><br/>API: OpenAI · Gemini · Claude<br/>or Ollama on this computer"]
+    end
+
+    subgraph L4["4. Decision  ·  keeping false alarms down"]
+        direction LR
+        D1 ~~~ D2 ~~~ D3 ~~~ D4
+        D1["<b>Confirmed or probable</b><br/>confirmed needs<br/>independent evidence"]
+        D2["<b>Strict mode</b><br/>confirmed findings only"]
+        D3["<b>Risk 0-10</b><br/>for each finding"]
+        D4["<b>Score 0-100</b><br/>grade A-F for the project"]
+    end
+
+    subgraph L5["5. Outputs"]
+        direction LR
+        E1 ~~~ E2 ~~~ E3 ~~~ E4 ~~~ E5
+        E1["<b>Findings</b><br/>filters and<br/>review buttons"]
+        E2["<b>HTML report</b><br/>one self-contained file"]
+        E3["<b>PDF report</b><br/>fpdf2"]
+        E4["<b>JSON and SARIF</b><br/>GitHub · VS Code"]
+        E5["<b>History</b><br/>SQLite<br/>score over time"]
+    end
+
+    subgraph L6["6. Learning and rule control  ·  the AI proposes, the tool validates, you approve"]
+        direction LR
+        F1 ~~~ F2 ~~~ F3 ~~~ F4 ~~~ F5
+        F1["<b>Your reviews</b><br/>real / false positive"]
+        F2["<b>Propose</b><br/>the model writes<br/>a rule as JSON"]
+        F3["<b>Nine checks</b><br/>validate + sandbox<br/>isolated process"]
+        F4["<b>Your approval</b><br/>Learning tab"]
+        F5["<b>Rule set</b><br/>Rules tab: edit, switch off,<br/>write, import, export"]
+    end
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+    L6 --> NEXT(["<b>The next scan is smarter</b><br/>new rules · adjusted confidence<br/>retrained classifier"])
+
+    classDef stage fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef out fill:#faeeda,stroke:#854f0b,color:#412402
+    class A1,A2,A3,A4,B1,B2,B3,B4,B5,C1,D1,D2,D3,D4 stage
+    class C2,C3,C4,C5 ai
+    class F1,F2,F3,F4,F5,NEXT learn
+    class E1,E2,E3,E4,E5 out
+    style L1 fill:#fbfaf7,stroke:#c9c7bd
+    style L2 fill:#fbfaf7,stroke:#c9c7bd
+    style L3 fill:#f7f6fe,stroke:#afa9ec
+    style L4 fill:#fbfaf7,stroke:#c9c7bd
+    style L5 fill:#fffdf5,stroke:#c9a55a
+    style L6 fill:#f2fbf7,stroke:#5dcaa5

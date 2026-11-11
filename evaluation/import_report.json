@@ -1,0 +1,5267 @@
+{
+ "date": "2026-11-11",
+ "max_noise_per_10k": 0.5,
+ "rules": [
+  {
+   "source": "DevSkim",
+   "id": "DS600100",
+   "name": "Possible incorrect datetime format",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Correctness.DateTime.Format)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112838",
+   "name": ".NET - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112838",
+   "noise": {
+    "lines": 139835,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112837",
+   "name": ".NET - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112837",
+   "noise": {
+    "lines": 211266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112851",
+   "name": "COBOL - Hard-coded SSL/TLS Protocol",
+   "status": "skipped",
+   "reason": "language not scanned by this tool (cobol)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112839",
+   "name": ".NET - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112839",
+   "noise": {
+    "lines": 211266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440001",
+   "name": "Generic: Hard-coded SSL/TLS Protocol",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440011",
+   "name": "OpenSSL: Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440011",
+   "noise": {
+    "lines": 2244916,
+    "product_hits": 11,
+    "test_hits": 0,
+    "per_10k": 0.049,
+    "examples": [
+     "redis_redis/deps/hiredis/ssl.c:275  SSL_CTX_set_min_proto_version(ctx->ssl_ctx, TLS1_2_VERSION);",
+     "redis_redis/deps/hiredis/ssl.c:277  SSL_CTX_set_options(ctx->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);",
+     "redis_redis/src/cli_common.c:142  SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440012",
+   "name": "BoringSSL: Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440012",
+   "noise": {
+    "lines": 2244916,
+    "product_hits": 9,
+    "test_hits": 0,
+    "per_10k": 0.04,
+    "examples": [
+     "redis_redis/deps/hiredis/ssl.c:275  SSL_CTX_set_min_proto_version(ctx->ssl_ctx, TLS1_2_VERSION);",
+     "redis_redis/src/cli_common.c:170  #ifdef TLS1_3_VERSION",
+     "redis_redis/src/redis-benchmark.c:1556  #ifdef TLS1_3_VERSION"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440013",
+   "name": "GnuTLS: Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440013",
+   "noise": {
+    "lines": 2244916,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440014",
+   "name": "LibreSSL: Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440014",
+   "noise": {
+    "lines": 2244916,
+    "product_hits": 9,
+    "test_hits": 0,
+    "per_10k": 0.04,
+    "examples": [
+     "redis_redis/deps/hiredis/ssl.c:275  SSL_CTX_set_min_proto_version(ctx->ssl_ctx, TLS1_2_VERSION);",
+     "redis_redis/src/cli_common.c:170  #ifdef TLS1_3_VERSION",
+     "redis_redis/src/redis-benchmark.c:1556  #ifdef TLS1_3_VERSION"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440015",
+   "name": "mbedTLS: Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440015",
+   "noise": {
+    "lines": 2244916,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440016",
+   "name": "Generic: Hard-coded SSL/TLS Protocol",
+   "status": "skipped",
+   "reason": "does not compile in Python: look-behind requires fixed-width pattern"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440100",
+   "name": "Generic: Hard-coded Elliptic Curve",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440100",
+   "noise": {
+    "lines": 2244916,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112852",
+   "name": "Go - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112852",
+   "noise": {
+    "lines": 31177,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112853",
+   "name": "Java - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112853",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112854",
+   "name": "OkHttp - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112854",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112844",
+   "name": "Node - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112844",
+   "noise": {
+    "lines": 253511,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440080",
+   "name": "MacOS - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440080",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440072",
+   "name": "Python - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440072",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 1,
+    "test_hits": 3,
+    "per_10k": 0.022,
+    "examples": [
+     "django_django/django/core/mail/backends/smtp.py:108  ssl_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440073",
+   "name": "Rust - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440073",
+   "noise": {
+    "lines": 40016,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112835",
+   "name": ".NET - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112835",
+   "noise": {
+    "lines": 211266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112836",
+   "name": ".NET - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS112836",
+   "noise": {
+    "lines": 211266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440075",
+   "name": "Win32 - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440075",
+   "noise": {
+    "lines": 482109,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440074",
+   "name": "Win32 - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440074",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440076",
+   "name": "Win32 - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440076",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440077",
+   "name": "Win32 - Hard-coded SSL/TLS Protocol",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS440077",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 4,
+    "test_hits": 0,
+    "per_10k": 0.125,
+    "examples": [
+     "redis_redis/deps/hiredis/ssl.c:265  ssl_method = SSLv23_client_method();",
+     "redis_redis/deps/hiredis/ssl.c:275  SSL_CTX_set_min_proto_version(ctx->ssl_ctx, TLS1_2_VERSION);",
+     "redis_redis/src/cli_common.c:137  ssl_ctx = SSL_CTX_new(SSLv23_client_method());"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS154189",
+   "name": "Banned C function detected",
+   "status": "skipped",
+   "reason": "matches the known-safe sample: Connection conn = DriverManager.getConnection(System.getenv(\"DB_URL\"), \"shop\", S"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS185832",
+   "name": "Banned C function detected (strcpy)",
+   "status": "skipped",
+   "reason": "matches the known-safe sample: strcpy(dst, \"fixed\"); /* [C12] */"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS111237",
+   "name": "Banned C function detected (strncpy)",
+   "status": "skipped",
+   "reason": "matches the known-safe sample: strncpy(dst, \"fixed\", size - 1);"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS141863",
+   "name": "Banned C function detected (strcat)",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS141863",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 6,
+    "test_hits": 0,
+    "per_10k": 0.188,
+    "examples": [
+     "redis_redis/deps/lua/src/lobject.c:196  strcat(out, \"...\");",
+     "redis_redis/deps/lua/src/lobject.c:198  strcat(out, source);",
+     "redis_redis/deps/lua/src/lobject.c:207  strcat(out, \"...\");"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS108330",
+   "name": "Banned C function detected (strncat)",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS108330",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 1,
+    "test_hits": 0,
+    "per_10k": 0.031,
+    "examples": [
+     "redis_redis/deps/lua/src/lobject.c:206  strncat(out, source, len);"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS181021",
+   "name": "Banned C function detected (gets)",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS181021",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS154190",
+   "name": "Banned pointer validation function detected (IsBad*Ptr)",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS154190",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS154191",
+   "name": "Banned unbounded memory copy detected (CopyMemory)",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS154191",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS154192",
+   "name": "Banned unbounded string length function detected",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS154192",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 479,
+    "test_hits": 75,
+    "per_10k": 15.029,
+    "examples": [
+     "google_leveldb/benchmarks/db_bench.cc:1078  FLAGS_benchmarks = argv[i] + strlen(\"--benchmarks=\");",
+     "google_leveldb/benchmarks/db_bench_sqlite3.cc:556  bytes_ += value_size + strlen(key);",
+     "google_leveldb/benchmarks/db_bench_sqlite3.cc:681  FLAGS_benchmarks = argv[i] + strlen(\"--benchmarks=\");"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS154193",
+   "name": "Objective-C method swizzling detected",
+   "status": "skipped",
+   "reason": "language not scanned by this tool (objective-c)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425000",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425000",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 1,
+    "test_hits": 0,
+    "per_10k": 0.022,
+    "examples": [
+     "django_django/django/core/cache/backends/filebased.py:152  exp = pickle.load(f)"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425010",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425010",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 3,
+    "test_hits": 11,
+    "per_10k": 0.197,
+    "examples": [
+     "apache_commons-lang/src/main/java/org/apache/commons/lang3/SerializationUtils.java:135  return (T) in.readObject();",
+     "apache_commons-lang/src/main/java/org/apache/commons/lang3/SerializationUtils.java:203  final T obj = (T) in.readObject();",
+     "apache_commons-lang/src/main/java/org/apache/commons/lang3/event/EventListenerSupport.java:323  final L[] srcListeners = (L[]) objectInputStream.readObject();"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425020",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425020",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 59,
+    "test_hits": 94,
+    "per_10k": 1.603,
+    "examples": [
+     "laravel_framework/src/Illuminate/Auth/Recaller.php:21  $this->recaller = @unserialize($recaller, ['allowed_classes' => false]) ?: $recaller;",
+     "laravel_framework/src/Illuminate/Bus/ChainedBatch.php:122  $next = unserialize(array_shift($this->chained));",
+     "laravel_framework/src/Illuminate/Bus/DatabaseBatchRepository.php:348  protected function unserialize($serialized)"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425030",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425030",
+   "noise": {
+    "lines": 35265,
+    "product_hits": 14,
+    "test_hits": 11,
+    "per_10k": 3.97,
+    "examples": [
+     "jekyll_jekyll/features/step_definitions.rb:162  SafeYAML.load_file(source_dir.join(\"_config.yml\"))",
+     "jekyll_jekyll/features/step_definitions.rb:166  config[key] = SafeYAML.load(value)",
+     "jekyll_jekyll/lib/jekyll/cache.rb:167  value = Marshal.load(cached_file)"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425040",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425040",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 136,
+    "test_hits": 0,
+    "per_10k": 8.324,
+    "examples": [
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json/JsonSerializer.cs:187  if (value < TypeNameHandling.None || value > TypeNameHandling.Auto)",
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs:147  bool includeTypeDetails = ShouldWriteType(TypeNameHandling.Objects, contract, member, containerContract, containerProper",
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs:627  if (ShouldWriteType(TypeNameHandling.Objects, contract, member, collectionContract, containerProperty))"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425050",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425050",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425060",
+   "name": "Do not deserialize untrusted data.",
+   "status": "skipped",
+   "reason": "does not compile in Python: unknown extension ?<n at position 107"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425070",
+   "name": "Do not deserialize untrusted data.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS425070",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 5,
+    "test_hits": 0,
+    "per_10k": 0.306,
+    "examples": [
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json.Tests/ExceptionTests.cs:116  var binaryFormatter = new BinaryFormatter();",
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json.Tests/Benchmarks/DeserializeComparisonBenchmarks.cs:76  public TestClass BinaryFormatter()",
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json.Tests/Benchmarks/DeserializeComparisonBenchmarks.cs:83  BinaryFormatter formatter = new BinaryFormatter();"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425080",
+   "name": "Do not deserialize untrusted data.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS425080",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 5,
+    "test_hits": 0,
+    "per_10k": 0.306,
+    "examples": [
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json.Tests/Benchmarks/DeserializeComparisonBenchmarks.cs:88  public TestClass JavaScriptSerializer()",
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json.Tests/Benchmarks/DeserializeComparisonBenchmarks.cs:95  JavaScriptSerializer ser = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };",
+     "JamesNK_Newtonsoft.Json/Src/Newtonsoft.Json.Tests/Benchmarks/SerializeComparisonBenchmarks.cs:115  public string JavaScriptSerializer()"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS425090",
+   "name": "Do not deserialize untrusted data.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS425090",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS179924",
+   "name": "Do not copy a FILE object (CERT FIO38-C)",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (CERT.FIO38-C)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS181731",
+   "name": "Don't pass user input to this function",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS181731",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS161085",
+   "name": "Problematic C function detected (malloc)",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS161085",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 41,
+    "test_hits": 103,
+    "per_10k": 1.286,
+    "examples": [
+     "google_leveldb/db/c.cc:163  reinterpret_cast<char*>(std::malloc(sizeof(char) * str.size()));",
+     "google_leveldb/db/c.cc:553  char* buffer = static_cast<char*>(std::malloc(result.size() + 1));",
+     "google_leveldb/util/cache.cc:275  reinterpret_cast<LRUHandle*>(malloc(sizeof(LRUHandle) - 1 + key.size()));"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS121708",
+   "name": "Problematic C function detected (memcpy)",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS121708",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 590,
+    "test_hits": 42,
+    "per_10k": 18.511,
+    "examples": [
+     "google_leveldb/db/c.cc:164  std::memcpy(result, str.data(), sizeof(char) * str.size());",
+     "google_leveldb/db/c.cc:554  std::memcpy(buffer, result.data(), result.size());",
+     "google_leveldb/db/dbformat.cc:129  std::memcpy(dst, user_key.data(), usize);"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS140021",
+   "name": "Problematic C function detected (strlen)",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS140021",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 423,
+    "test_hits": 75,
+    "per_10k": 13.272,
+    "examples": [
+     "google_leveldb/benchmarks/db_bench.cc:1078  FLAGS_benchmarks = argv[i] + strlen(\"--benchmarks=\");",
+     "google_leveldb/benchmarks/db_bench_sqlite3.cc:556  bytes_ += value_size + strlen(key);",
+     "google_leveldb/benchmarks/db_bench_sqlite3.cc:681  FLAGS_benchmarks = argv[i] + strlen(\"--benchmarks=\");"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS224000",
+   "name": "Dangerous T-SQL Command",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS224000",
+   "noise": {
+    "lines": 75,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS137038",
+   "name": "Notice: Outbound HTTP Connection",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (ThreatModel.Integration.HTTP)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS137138",
+   "name": "Insecure URL",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200000",
+   "name": "Kubernetes container runs privileged",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200001",
+   "name": "Kubernetes container allows privilege escalation",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200002",
+   "name": "Kubernetes pod shares a host namespace",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200003",
+   "name": "Kubernetes container root filesystem is writable",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200004",
+   "name": "Kubernetes container may run as root",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200005",
+   "name": "Kubernetes container image is unpinned",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200006",
+   "name": "Kubernetes container adds a dangerous capability",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS200007",
+   "name": "Kubernetes pod mounts a host path",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS165746",
+   "name": "Do not execute user-provided JavaScript",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS165746",
+   "noise": {
+    "lines": 26755,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS113286",
+   "name": "Do not include user-input directly in format strings",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (ControlFlow.Injection.FormatString)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS113853",
+   "name": "Do not set a custom execution policy.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS113853",
+   "noise": {
+    "lines": 47883,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS104456",
+   "name": "Use of restricted functions.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS104456",
+   "noise": {
+    "lines": 47883,
+    "product_hits": 564,
+    "test_hits": 0,
+    "per_10k": 117.787,
+    "examples": [
+     "pester_Pester/build.ps1:352  & $powershell -c \"'Load: ' + (Measure-Command { Import-Module '$PSScriptRoot/bin/Pester.psd1' -ErrorAction Stop}).TotalM",
+     "pester_Pester/test.ps1:79  $breakpoints = & $Enter_CoverageAnalysis -CodeCoverage \"$PSScriptRoot/bin/Pester*\" -UseBreakpoints $false",
+     "pester_Pester/test.ps1:82  $breakpoints = & $Enter_CoverageAnalysis -CodeCoverage \"$PSScriptRoot/src/*\" -UseBreakpoints $false"
+    ]
+   },
+   "reason": "Noisy on real code: 564 matches in 47883 lines of well-known open-source projects (117.79 per 10,000 lines)."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS181865",
+   "name": "Disabled certificate validation",
+   "status": "skipped",
+   "reason": "language not scanned by this tool (objective-c)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS176603",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS176603",
+   "noise": {
+    "lines": 35265,
+    "product_hits": 1,
+    "test_hits": 0,
+    "per_10k": 0.284,
+    "examples": [
+     "sinatra_sinatra/sinatra-contrib/lib/sinatra/runner.rb:159  http.verify_mode  = OpenSSL::SSL::VERIFY_NONE"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS130822",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS130822",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS159369",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS159369",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS101940",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS101940",
+   "noise": {
+    "lines": 139835,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS125134",
+   "name": "Disabled certificate validation",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS125134",
+   "noise": {
+    "lines": 253511,
+    "product_hits": 2,
+    "test_hits": 43,
+    "per_10k": 0.079,
+    "examples": [
+     "nestjs_nest/packages/common/interfaces/external/https-options.interface.ts:85  rejectUnauthorized?: boolean;",
+     "nestjs_nest/packages/microservices/external/mqtt-options.interface.ts:154  rejectUnauthorized?: boolean;"
+    ]
+   },
+   "reason": "Checked by hand on real code: it also matches type declarations of the option, not only the place where validation is switched off."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS152094",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS152094",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS126185",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS126185",
+   "noise": {
+    "lines": 47883,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS126186",
+   "name": "Disabled certificate validation",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS126187",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS126187",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS126188",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS126188",
+   "noise": {
+    "lines": 84776,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS175862",
+   "name": "Do not use the mcrypt module, use OpenSSL instead.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS175862",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS109501",
+   "name": "Do not use the 3DES symmetric block cipher.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS109501",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS106863",
+   "name": "Do not use the DES symmetric block cipher.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS106863",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS106864",
+   "name": "Do not use the DES symmetric block cipher.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS106864",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS106865",
+   "name": "Do not use the DES symmetric block cipher.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS106865",
+   "noise": {
+    "lines": 253511,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS106866",
+   "name": "Do not use the DES symmetric block cipher.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS106866",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS156431",
+   "name": "Do not use the RC2 symmetric block cipher.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS156431",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS114352",
+   "name": "Encryption marked optional",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS114352",
+   "noise": {
+    "lines": 1692216,
+    "product_hits": 0,
+    "test_hits": 4,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS101155",
+   "name": "Disabled certificate validation",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS101155",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS101159",
+   "name": "Initializing Security Context",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Cryptography.SecurityContext.Initialization)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440000",
+   "name": "Generic: Do not hardcode SSL/TLS versions within an application.",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440010",
+   "name": "OpenSSL: Do not hardcode SSL/TLS versions within an application.",
+   "status": "skipped",
+   "reason": "does not compile in Python: Possible nested set at position 527"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440017",
+   "name": "OpenSSL: Do not hardcode SSL/TLS versions within an application.",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440020",
+   "name": ".NET - Do not hardcode SSL/TLS versions within an application.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS440020",
+   "noise": {
+    "lines": 211266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440030",
+   "name": ".RUST - Failure to specify a minimum version of TLS defaults to allowing TLS 1.0.",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440070",
+   "name": "Python- Do not hardcode TLS protocol versions.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS440070",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS440071",
+   "name": "Win32- Do not hardcode TLS protocol versions.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS440071",
+   "noise": {
+    "lines": 482109,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS126858",
+   "name": "Weak/Broken Hash Algorithm",
+   "status": "skipped",
+   "reason": "matches the known-safe sample: Several lines are written to LOOK suspicious (the words eval, password, token, m"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS197800",
+   "name": "Weak/Broken Hash Algorithm",
+   "status": "skipped",
+   "reason": "language not scanned by this tool (objective-c)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS128420",
+   "name": "Weak/Broken Hash Algorithm",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS128420",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS108647",
+   "name": "Do not use broken/weak cryptographic hash algorithms",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS108647",
+   "noise": {
+    "lines": 35265,
+    "product_hits": 11,
+    "test_hits": 0,
+    "per_10k": 3.119,
+    "examples": [
+     "redis_redis/utils/redis-sha1.rb:25  sha1 = Digest::SHA1.hexdigest(sha1+k)",
+     "redis_redis/utils/redis-sha1.rb:26  sha1 = Digest::SHA1.hexdigest(sha1+r.get(k))",
+     "redis_redis/utils/redis-sha1.rb:30  sha1 = Digest::SHA1.hexdigest(sha1+k)"
+    ]
+   },
+   "reason": "Noisy on real code: 11 matches in 35265 lines of well-known open-source projects (3.12 per 10,000 lines)."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS196098",
+   "name": "Do not use broken/weak cryptographic hash algorithms",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS196098",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS168931",
+   "name": "Do not use broken/weak cryptographic hash algorithms",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS168931",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS197836",
+   "name": "Do not take the hash of low-entropy content.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS197836",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 2,
+    "test_hits": 0,
+    "per_10k": 0.008,
+    "examples": [
+     "pallets_flask/src/flask/sessions.py:277  \"\"\"Don't access ``hashlib.sha1`` until runtime. FIPS builds may not include",
+     "laravel_framework/src/Illuminate/Foundation/Http/MaintenanceModeBypassCookie.php:22  'mac' => hash_hmac('sha256', $expiresAt->getTimestamp(), $key),"
+    ]
+   },
+   "reason": "Checked by hand on real code: its matches were ordinary HMAC calls and comments, not hashes of low-entropy data."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS188250",
+   "name": "Missing initialization vector",
+   "status": "skipped",
+   "reason": "misses its own must-match example: $ciphertext = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key,\n $plaintext, MCRYPT_MODE"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS128921",
+   "name": "Hardcoded initialization vector size",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS128921",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS144436",
+   "name": "Do not use outdated SSL/TLS protocols",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS144436",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS127101",
+   "name": "Hardcoding TLS protocol version",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS127101",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS169125",
+   "name": "Do not use outdated SSL/TLS protocols",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS169125",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 1,
+    "test_hits": 0,
+    "per_10k": 0.004,
+    "examples": [
+     "redis_redis/src/tls.c:98  \"Use a combination of 'TLSv1', 'TLSv1.1', 'TLSv1.2' and 'TLSv1.3'.\");"
+    ]
+   },
+   "reason": "Checked by hand on real code: its only match was a help text that lists protocol names."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS169126",
+   "name": "An Outdated or Banned SSL/TLS Protocol is Used",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS169126",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 12,
+    "test_hits": 0,
+    "per_10k": 0.05,
+    "examples": [
+     "redis_redis/deps/hiredis/ssl.c:265  ssl_method = SSLv23_client_method();",
+     "redis_redis/deps/hiredis/ssl.c:277  SSL_CTX_set_options(ctx->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);",
+     "redis_redis/src/cli_common.c:137  ssl_ctx = SSL_CTX_new(SSLv23_client_method());"
+    ]
+   },
+   "reason": "Checked by hand on real code: it also matches the options that DISABLE old protocols (SSL_OP_NO_SSLv3)."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS169127",
+   "name": "An Outdated or Banned SSL/TLS Protocol is Used",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS169127",
+   "noise": {
+    "lines": 318726,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS169128",
+   "name": "An Outdated or Banned SSL/TLS Protocol is Used",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS169128",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS148264",
+   "name": "Do not use weak/non-cryptographic random number generators",
+   "status": "skipped",
+   "reason": "matches the known-safe sample: return rand() % 6 + 1;"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS148264",
+   "name": "Do not use weak/non-cryptographic random number generators",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS148264",
+   "noise": {
+    "lines": 40016,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS148264",
+   "name": "Do not use weak/non-cryptographic random number generators",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS148264-2",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS149435",
+   "name": "Do not seed randomness based on system time or a static value.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS149435",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 11,
+    "test_hits": 2,
+    "per_10k": 0.046,
+    "examples": [
+     "redis_redis/modules/vector-sets/w2v.c:113  srand(time(NULL));",
+     "redis_redis/src/dict.c:2261  srand(12345);",
+     "redis_redis/src/ebuckets.c:2227  srand(0);"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS109733",
+   "name": "Source implementation of a weak/broken cryptography hash function",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS109733",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 2,
+    "test_hits": 0,
+    "per_10k": 0.008,
+    "examples": [
+     "redis_redis/src/sha1.c:122  context->state[2] = 0x98BADCFE;",
+     "redis_redis/src/sha1.c:124  context->state[4] = 0xC3D2E1F0;"
+    ]
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS187371",
+   "name": "A weak cipher mode of operation was used",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS187371",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 19,
+    "test_hits": 1,
+    "per_10k": 0.08,
+    "examples": [
+     "redis_redis/deps/croaring/src/isadetection.c:159  1 << 5;  ///< @private Bit 5 of EBX for EAX=0x7",
+     "redis_redis/deps/croaring/src/isadetection.c:161  1 << 3;  ///< @private bit 3 of EBX for EAX=0x7",
+     "redis_redis/deps/croaring/src/isadetection.c:163  1 << 8;  ///< @private bit 8 of EBX for EAX=0x7"
+    ]
+   },
+   "reason": "Checked by hand on real code: its short cipher-mode names (EAX, CTS, ...) also match unrelated identifiers such as CPU register names."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS182720",
+   "name": "A weak cipher mode of operation was used",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS182720",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS180000",
+   "name": "Android debug is enabled.",
+   "status": "skipped",
+   "reason": "applies only to files selected by name"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS180001",
+   "name": "Android debug is enabled.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS180001",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS180002",
+   "name": "Android StrictMode is enabled.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS180002",
+   "noise": {
+    "lines": 152266,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS184626",
+   "name": "All Controllers Should Derive From Controller.",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS450000",
+   "name": "Do not target .NET Framework versions less than 4.7.2.",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Framework.NET.Outdated)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS450001",
+   "name": "Cookie Secure flag is disabled (.NET)",
+   "status": "skipped",
+   "reason": "applies only to files selected by name"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS450002",
+   "name": "Trace is enabled in system.web",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS450003",
+   "name": "Web.config debug is enabled",
+   "status": "skipped",
+   "reason": "applies only to files selected by name"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS144886",
+   "name": "$_REQUEST should be avoided",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Implementation.PHP)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS163877",
+   "name": "XSS: Do not echo unencoded GET/POST/COOKIE values",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS162092",
+   "name": "Do not leave debug code in production",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Hygiene.Network.AccessingLocalhost)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS176209",
+   "name": "Suspicious comment",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Hygiene.Comment.Suspicious)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS189424",
+   "name": "Review eval for untrusted data",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS189424",
+   "noise": {
+    "lines": 1085514,
+    "product_hits": 19,
+    "test_hits": 19,
+    "per_10k": 0.175,
+    "examples": [
+     "laravel_framework/src/Illuminate/Cache/RedisLock.php:65  return (bool) $this->redis->eval(LuaScripts::releaseLock(), 1, $this->name, $this->owner);",
+     "laravel_framework/src/Illuminate/Redis/Limiters/ConcurrencyLimiter.php:156  $this->redis->eval($this->releaseScript(), 1, $key, $id);",
+     "laravel_framework/src/Illuminate/Support/Onceable.php:82  if (str_contains($trace[0]['file'] ?? '', 'eval()\\'d code')) {"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS172411",
+   "name": "Review setTimeout for untrusted data",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS172411",
+   "noise": {
+    "lines": 253511,
+    "product_hits": 21,
+    "test_hits": 76,
+    "per_10k": 0.828,
+    "examples": [
+     "Alamofire_Alamofire/docs/docsets/Alamofire.docset/Contents/Resources/Documents/js/typeahead.jquery.js:372  setTimeout(function() {",
+     "Alamofire_Alamofire/docs/js/typeahead.jquery.js:372  setTimeout(function() {",
+     "axios_axios/examples/abort-controller/server.js:12  setTimeout(() => {"
+    ]
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS172412",
+   "name": "Review unsafe code",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS172412",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 1,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS113854",
+   "name": "Do not extract untrusted zip archives",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS165348",
+   "name": "Do not attempt to access device UDID",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Implementation.Mobile.iOS.DataProtection.Privacy.UDID)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS173237",
+   "name": "Do not store tokens or keys in source code.",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS117838",
+   "name": "Do not store tokens or keys in source code.",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Implementation.Privacy.Token)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS173238",
+   "name": "Private key material committed to source",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Cryptography.KeyManagement)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS173239",
+   "name": "Provider access token committed to source",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Authentication.Token)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS173240",
+   "name": "Azure storage account key committed to source",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Authentication.Token)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS112266",
+   "name": "ProtectedData used without additional entropy",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Storage.Windows.DPAPI)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS191340",
+   "name": "Do not store sensitive data in NSUserDefaults.",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Storage.Apple.iOS.UserDefaults.SensitiveData)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS205000",
+   "name": "Package source is not restricted to an approved feed",
+   "status": "skipped",
+   "reason": "matches its own must-not-match example: <?xml version=\"1.0\" encoding=\"utf-8\"?>\n<configuration>\n  <packageSources>\n    <c"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS205001",
+   "name": "Additional package index configured",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS205001",
+   "noise": {
+    "lines": 688558,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS300001",
+   "name": "Vulnerable NuGet Library",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Vulerable-Dependency.Library.NuGet)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS300005",
+   "name": "Vulnerable NuGet Library",
+   "status": "skipped",
+   "reason": "outside the scope of this tool (Vulerable-Dependency.Library.NuGet)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS610000",
+   "name": "HTML link missing noopener or noreferrer",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS610001",
+   "name": "Cookie missing security attributes",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS610002",
+   "name": "HSTS missing required directives",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132779",
+   "name": "Do not enable external entity resolution.",
+   "status": "skipped",
+   "reason": "language not scanned by this tool (objective-c)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132780",
+   "name": "Do not enable external entity resolution.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS132780",
+   "noise": {
+    "lines": 26755,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132790",
+   "name": "Do not enable external entity resolution.",
+   "status": "skipped",
+   "reason": "language not scanned by this tool (objective-c)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132782",
+   "name": "Do not enable external entity resolution.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS132782",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132783",
+   "name": "Do not enable external entity resolution.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS132783",
+   "noise": {
+    "lines": 163383,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132784",
+   "name": "Do not enable external entity resolution.",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132785",
+   "name": "Do not enable external entity resolution.",
+   "status": "enabled",
+   "rule": "DEVSKIM-DS132785",
+   "noise": {
+    "lines": 368056,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132786",
+   "name": "Do not enable external entity resolution.",
+   "status": "disabled",
+   "rule": "DEVSKIM-DS132786",
+   "noise": {
+    "lines": 463947,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": "Review rule: DevSkim marks this pattern for manual review, not as a confirmed weakness."
+  },
+  {
+   "source": "DevSkim",
+   "id": "DS132781",
+   "name": "XSLT Scripting Enabled",
+   "status": "skipped",
+   "reason": "uses conditions on neighbouring lines (this engine works line by line)"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "1password-secret-key",
+   "name": "Uncovered a possible 1Password secret key, potentially compromising access to secrets in vaults.",
+   "status": "enabled",
+   "rule": "GITLEAKS-1password-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "1password-service-account-token",
+   "name": "Uncovered a possible 1Password service account token, potentially compromising access to secrets in vaults.",
+   "status": "enabled",
+   "rule": "GITLEAKS-1password-service-account-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "adafruit-api-key",
+   "name": "Identified a potential Adafruit API Key, which could lead to unauthorized access to Adafruit services and sensitive data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-adafruit-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "adobe-client-id",
+   "name": "Detected a pattern that resembles an Adobe OAuth Web Client ID, posing a risk of compromised Adobe integrations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-adobe-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "adobe-client-secret",
+   "name": "Discovered a potential Adobe Client Secret, which, if exposed, could allow unauthorized Adobe service access and data manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-adobe-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "age-secret-key",
+   "name": "Discovered a potential Age encryption tool secret key, risking data decryption and unauthorized access to sensitive information.",
+   "status": "enabled",
+   "rule": "GITLEAKS-age-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "airtable-api-key",
+   "name": "Uncovered a possible Airtable API Key, potentially compromising database access and leading to data leakage or alteration.",
+   "status": "enabled",
+   "rule": "GITLEAKS-airtable-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "airtable-personnal-access-token",
+   "name": "Uncovered a possible Airtable Personal AccessToken, potentially compromising database access and leading to data leakage or alteration.",
+   "status": "skipped",
+   "reason": "does not compile in Python: Possible nested set at position 7"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "algolia-api-key",
+   "name": "Identified an Algolia API Key, which could result in unauthorized search operations and data exposure on Algolia-managed platforms.",
+   "status": "enabled",
+   "rule": "GITLEAKS-algolia-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "alibaba-access-key-id",
+   "name": "Detected an Alibaba Cloud AccessKey ID, posing a risk of unauthorized cloud resource access and potential data compromise.",
+   "status": "enabled",
+   "rule": "GITLEAKS-alibaba-access-key-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "alibaba-secret-key",
+   "name": "Discovered a potential Alibaba Cloud Secret Key, potentially allowing unauthorized operations and data access within Alibaba Cloud.",
+   "status": "enabled",
+   "rule": "GITLEAKS-alibaba-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "anthropic-admin-api-key",
+   "name": "Detected an Anthropic Admin API Key, risking unauthorized access to administrative functions and sensitive AI model configurations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-anthropic-admin-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "anthropic-api-key",
+   "name": "Identified an Anthropic API Key, which may compromise AI assistant integrations and expose sensitive data to unauthorized access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-anthropic-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "artifactory-api-key",
+   "name": "Detected an Artifactory api key, posing a risk unauthorized access to the central repository.",
+   "status": "enabled",
+   "rule": "GITLEAKS-artifactory-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "artifactory-reference-token",
+   "name": "Detected an Artifactory reference token, posing a risk of impersonation and unauthorized access to the central repository.",
+   "status": "enabled",
+   "rule": "GITLEAKS-artifactory-reference-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "asana-client-id",
+   "name": "Discovered a potential Asana Client ID, risking unauthorized access to Asana projects and sensitive task information.",
+   "status": "enabled",
+   "rule": "GITLEAKS-asana-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "asana-client-secret",
+   "name": "Identified an Asana Client Secret, which could lead to compromised project management integrity and unauthorized access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-asana-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "atlassian-api-token",
+   "name": "Detected an Atlassian API token, posing a threat to project management and collaboration tool security and data confidentiality.",
+   "status": "enabled",
+   "rule": "GITLEAKS-atlassian-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "authress-service-client-access-key",
+   "name": "Uncovered a possible Authress Service Client Access Key, which may compromise access control services and sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-authress-service-client-access-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "aws-access-token",
+   "name": "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms.",
+   "status": "enabled",
+   "rule": "GITLEAKS-aws-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "aws-amazon-bedrock-api-key-long-lived",
+   "name": "Identified a pattern that may indicate long-lived Amazon Bedrock API keys, risking unauthorized Amazon Bedrock usage",
+   "status": "enabled",
+   "rule": "GITLEAKS-aws-amazon-bedrock-api-key-long-lived",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "aws-amazon-bedrock-api-key-short-lived",
+   "name": "Identified a pattern that may indicate short-lived Amazon Bedrock API keys, risking unauthorized Amazon Bedrock usage",
+   "status": "enabled",
+   "rule": "GITLEAKS-aws-amazon-bedrock-api-key-short-lived",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "azure-ad-client-secret",
+   "name": "Azure AD Client Secret",
+   "status": "enabled",
+   "rule": "GITLEAKS-azure-ad-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "beamer-api-token",
+   "name": "Detected a Beamer API token, potentially compromising content management and exposing sensitive notifications and updates.",
+   "status": "enabled",
+   "rule": "GITLEAKS-beamer-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "bitbucket-client-id",
+   "name": "Discovered a potential Bitbucket Client ID, risking unauthorized repository access and potential codebase exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-bitbucket-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "bitbucket-client-secret",
+   "name": "Discovered a potential Bitbucket Client Secret, posing a risk of compromised code repositories and unauthorized access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-bitbucket-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "bittrex-access-key",
+   "name": "Identified a Bittrex Access Key, which could lead to unauthorized access to cryptocurrency trading accounts and financial loss.",
+   "status": "enabled",
+   "rule": "GITLEAKS-bittrex-access-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "bittrex-secret-key",
+   "name": "Detected a Bittrex Secret Key, potentially compromising cryptocurrency transactions and financial security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-bittrex-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "cisco-meraki-api-key",
+   "name": "Cisco Meraki is a cloud-managed IT solution that provides networking, security, and device management through an easy-to-use interface.",
+   "status": "enabled",
+   "rule": "GITLEAKS-cisco-meraki-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "clickhouse-cloud-api-secret-key",
+   "name": "Identified a pattern that may indicate clickhouse cloud API secret key, risking unauthorized clickhouse cloud api access and data breaches on ClickHouse Cloud platforms.",
+   "status": "enabled",
+   "rule": "GITLEAKS-clickhouse-cloud-api-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "clojars-api-token",
+   "name": "Uncovered a possible Clojars API token, risking unauthorized access to Clojure libraries and potential code manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-clojars-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "cloudflare-api-key",
+   "name": "Detected a Cloudflare API Key, potentially compromising cloud application deployments and operational security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-cloudflare-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "cloudflare-global-api-key",
+   "name": "Detected a Cloudflare Global API Key, potentially compromising cloud application deployments and operational security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-cloudflare-global-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "cloudflare-origin-ca-key",
+   "name": "Detected a Cloudflare Origin CA Key, potentially compromising cloud application deployments and operational security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-cloudflare-origin-ca-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "codecov-access-token",
+   "name": "Found a pattern resembling a Codecov Access Token, posing a risk of unauthorized access to code coverage reports and sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-codecov-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "cohere-api-token",
+   "name": "Identified a Cohere Token, posing a risk of unauthorized access to AI services and data manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-cohere-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "coinbase-access-token",
+   "name": "Detected a Coinbase Access Token, posing a risk of unauthorized access to cryptocurrency accounts and financial transactions.",
+   "status": "enabled",
+   "rule": "GITLEAKS-coinbase-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "confluent-access-token",
+   "name": "Identified a Confluent Access Token, which could compromise access to streaming data platforms and sensitive data flow.",
+   "status": "enabled",
+   "rule": "GITLEAKS-confluent-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "confluent-secret-key",
+   "name": "Found a Confluent Secret Key, potentially risking unauthorized operations and data access within Confluent services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-confluent-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "contentful-delivery-api-token",
+   "name": "Discovered a Contentful delivery API token, posing a risk to content management systems and data integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-contentful-delivery-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "curl-auth-header",
+   "name": "Discovered a potential authorization token provided in a curl command header, which could compromise the curl accessed resource.",
+   "status": "enabled",
+   "rule": "GITLEAKS-curl-auth-header",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "curl-auth-user",
+   "name": "Discovered a potential basic authorization token provided in a curl command, which could compromise the curl accessed resource.",
+   "status": "enabled",
+   "rule": "GITLEAKS-curl-auth-user",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "databricks-api-token",
+   "name": "Uncovered a Databricks API token, which may compromise big data analytics platforms and sensitive data processing.",
+   "status": "enabled",
+   "rule": "GITLEAKS-databricks-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "datadog-access-token",
+   "name": "Detected a Datadog Access Token, potentially risking monitoring and analytics data exposure and manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-datadog-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "defined-networking-api-token",
+   "name": "Identified a Defined Networking API token, which could lead to unauthorized network operations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-defined-networking-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "digitalocean-access-token",
+   "name": "Found a DigitalOcean OAuth Access Token, risking unauthorized cloud resource access and data compromise.",
+   "status": "enabled",
+   "rule": "GITLEAKS-digitalocean-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "digitalocean-pat",
+   "name": "Discovered a DigitalOcean Personal Access Token, posing a threat to cloud infrastructure security and data privacy.",
+   "status": "enabled",
+   "rule": "GITLEAKS-digitalocean-pat",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "digitalocean-refresh-token",
+   "name": "Uncovered a DigitalOcean OAuth Refresh Token, which could allow prolonged unauthorized access and resource manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-digitalocean-refresh-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "discord-api-token",
+   "name": "Detected a Discord API key, potentially compromising communication channels and user data privacy on Discord.",
+   "status": "enabled",
+   "rule": "GITLEAKS-discord-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "discord-client-id",
+   "name": "Identified a Discord client ID, which may lead to unauthorized integrations and data exposure in Discord applications.",
+   "status": "enabled",
+   "rule": "GITLEAKS-discord-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "discord-client-secret",
+   "name": "Discovered a potential Discord client secret, risking compromised Discord bot integrations and data leaks.",
+   "status": "enabled",
+   "rule": "GITLEAKS-discord-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "doppler-api-token",
+   "name": "Discovered a Doppler API token, posing a risk to environment and secrets management security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-doppler-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "droneci-access-token",
+   "name": "Detected a Droneci Access Token, potentially compromising continuous integration and deployment workflows.",
+   "status": "enabled",
+   "rule": "GITLEAKS-droneci-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "dropbox-api-token",
+   "name": "Identified a Dropbox API secret, which could lead to unauthorized file access and data breaches in Dropbox storage.",
+   "status": "enabled",
+   "rule": "GITLEAKS-dropbox-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "dropbox-long-lived-api-token",
+   "name": "Found a Dropbox long-lived API token, risking prolonged unauthorized access to cloud storage and sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-dropbox-long-lived-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "dropbox-short-lived-api-token",
+   "name": "Discovered a Dropbox short-lived API token, posing a risk of temporary but potentially harmful data access and manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-dropbox-short-lived-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "duffel-api-token",
+   "name": "Uncovered a Duffel API token, which may compromise travel platform integrations and sensitive customer data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-duffel-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "dynatrace-api-token",
+   "name": "Detected a Dynatrace API token, potentially risking application performance monitoring and data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-dynatrace-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "easypost-api-token",
+   "name": "Identified an EasyPost API token, which could lead to unauthorized postal and shipment service access and data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-easypost-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "easypost-test-api-token",
+   "name": "Detected an EasyPost test API token, risking exposure of test environments and potentially sensitive shipment data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-easypost-test-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "etsy-access-token",
+   "name": "Found an Etsy Access Token, potentially compromising Etsy shop management and customer data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-etsy-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "facebook-access-token",
+   "name": "Discovered a Facebook Access Token, posing a risk of unauthorized access to Facebook accounts and personal data exposure.",
+   "status": "skipped",
+   "reason": "could not be shown to match a string built from its own expression"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "facebook-page-access-token",
+   "name": "Discovered a Facebook Page Access Token, posing a risk of unauthorized access to Facebook accounts and personal data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-facebook-page-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "facebook-secret",
+   "name": "Discovered a Facebook Application secret, posing a risk of unauthorized access to Facebook accounts and personal data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-facebook-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "fastly-api-token",
+   "name": "Uncovered a Fastly API key, which may compromise CDN and edge cloud services, leading to content delivery and security issues.",
+   "status": "enabled",
+   "rule": "GITLEAKS-fastly-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "finicity-api-token",
+   "name": "Detected a Finicity API token, potentially risking financial data access and unauthorized financial operations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-finicity-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "finicity-client-secret",
+   "name": "Identified a Finicity Client Secret, which could lead to compromised financial service integrations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-finicity-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "finnhub-access-token",
+   "name": "Found a Finnhub Access Token, risking unauthorized access to financial market data and analytics.",
+   "status": "enabled",
+   "rule": "GITLEAKS-finnhub-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "flickr-access-token",
+   "name": "Discovered a Flickr Access Token, posing a risk of unauthorized photo management and potential data leakage.",
+   "status": "enabled",
+   "rule": "GITLEAKS-flickr-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "flutterwave-encryption-key",
+   "name": "Uncovered a Flutterwave Encryption Key, which may compromise payment processing and sensitive financial information.",
+   "status": "enabled",
+   "rule": "GITLEAKS-flutterwave-encryption-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "flutterwave-public-key",
+   "name": "Detected a Finicity Public Key, potentially exposing public cryptographic operations and integrations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-flutterwave-public-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "flutterwave-secret-key",
+   "name": "Identified a Flutterwave Secret Key, risking unauthorized financial transactions and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-flutterwave-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "flyio-access-token",
+   "name": "Uncovered a Fly.io API key",
+   "status": "enabled",
+   "rule": "GITLEAKS-flyio-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "frameio-api-token",
+   "name": "Found a Frame.io API token, potentially compromising video collaboration and project management.",
+   "status": "enabled",
+   "rule": "GITLEAKS-frameio-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "freemius-secret-key",
+   "name": "Detected a Freemius secret key, potentially exposing sensitive information.",
+   "status": "skipped",
+   "reason": "could not be shown to match a string built from its own expression"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "freshbooks-access-token",
+   "name": "Discovered a Freshbooks Access Token, posing a risk to accounting software access and sensitive financial data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-freshbooks-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gcp-api-key",
+   "name": "Uncovered a GCP API key, which could lead to unauthorized access to Google Cloud services and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gcp-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "generic-api-key",
+   "name": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+   "status": "skipped",
+   "reason": "the tool has its own generic secret detector"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "github-app-token",
+   "name": "Identified a GitHub App Token, which may compromise GitHub application integrations and source code security.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "github-fine-grained-pat",
+   "name": "Found a GitHub Fine-Grained Personal Access Token, risking unauthorized repository access and code manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-github-fine-grained-pat",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "github-oauth",
+   "name": "Discovered a GitHub OAuth Access Token, posing a risk of compromised GitHub account integrations and data leaks.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "github-pat",
+   "name": "Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "github-refresh-token",
+   "name": "Detected a GitHub Refresh Token, which could allow prolonged unauthorized access to GitHub services.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-cicd-job-token",
+   "name": "Identified a GitLab CI/CD Job Token, potential access to projects and some APIs on behalf of a user while the CI job is running.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-cicd-job-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-deploy-token",
+   "name": "Identified a GitLab Deploy Token, risking access to repositories, packages and containers with write access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-deploy-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-feature-flag-client-token",
+   "name": "Identified a GitLab feature flag client token, risks exposing user lists and features flags used by an application.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-feature-flag-client-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-feed-token",
+   "name": "Identified a GitLab feed token, risking exposure of user data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-feed-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-incoming-mail-token",
+   "name": "Identified a GitLab incoming mail token, risking manipulation of data sent by mail.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-incoming-mail-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-kubernetes-agent-token",
+   "name": "Identified a GitLab Kubernetes Agent token, risking access to repos and registry of projects connected via agent.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-kubernetes-agent-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-oauth-app-secret",
+   "name": "Identified a GitLab OIDC Application Secret, risking access to apps using GitLab as authentication provider.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-oauth-app-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-pat",
+   "name": "Identified a GitLab Personal Access Token, risking unauthorized access to GitLab repositories and codebase exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-pat",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-pat-routable",
+   "name": "Identified a GitLab Personal Access Token (routable), risking unauthorized access to GitLab repositories and codebase exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-pat-routable",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-ptt",
+   "name": "Found a GitLab Pipeline Trigger Token, potentially compromising continuous integration workflows and project security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-ptt",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-rrt",
+   "name": "Discovered a GitLab Runner Registration Token, posing a risk to CI/CD pipeline integrity and unauthorized access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-rrt",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-runner-authentication-token",
+   "name": "Discovered a GitLab Runner Authentication Token, posing a risk to CI/CD pipeline integrity and unauthorized access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-runner-authentication-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-runner-authentication-token-routable",
+   "name": "Discovered a GitLab Runner Authentication Token (Routable), posing a risk to CI/CD pipeline integrity and unauthorized access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-runner-authentication-token-routable",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-scim-token",
+   "name": "Discovered a GitLab SCIM Token, posing a risk to unauthorized access for a organization or instance.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-scim-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitlab-session-cookie",
+   "name": "Discovered a GitLab Session Cookie, posing a risk to unauthorized access to a user account.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitlab-session-cookie",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gitter-access-token",
+   "name": "Uncovered a Gitter Access Token, which may lead to unauthorized access to chat and communication services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gitter-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "gocardless-api-token",
+   "name": "Detected a GoCardless API token, potentially risking unauthorized direct debit payment operations and financial data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-gocardless-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "grafana-api-key",
+   "name": "Identified a Grafana API key, which could compromise monitoring dashboards and sensitive data analytics.",
+   "status": "enabled",
+   "rule": "GITLEAKS-grafana-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "grafana-cloud-api-token",
+   "name": "Found a Grafana cloud API token, risking unauthorized access to cloud-based monitoring services and data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-grafana-cloud-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "grafana-service-account-token",
+   "name": "Discovered a Grafana service account token, posing a risk of compromised monitoring services and data integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-grafana-service-account-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "harness-api-key",
+   "name": "Identified a Harness Access Token (PAT or SAT), risking unauthorized access to a Harness account.",
+   "status": "enabled",
+   "rule": "GITLEAKS-harness-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "hashicorp-tf-api-token",
+   "name": "Uncovered a HashiCorp Terraform user/org API token, which may lead to unauthorized infrastructure management and security breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-hashicorp-tf-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "hashicorp-tf-password",
+   "name": "Identified a HashiCorp Terraform password field, risking unauthorized infrastructure configuration and security breaches.",
+   "status": "disabled",
+   "rule": "GITLEAKS-hashicorp-tf-password",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 1,
+    "test_hits": 8,
+    "per_10k": 0.004,
+    "examples": [
+     "django_django/django/contrib/auth/management/commands/createsuperuser.py:23  PASSWORD_FIELD = \"password\""
+    ]
+   },
+   "reason": "Matched 1 line(s) of product code in well-known open-source projects, none of them a real credential."
+  },
+  {
+   "source": "Gitleaks",
+   "id": "heroku-api-key",
+   "name": "Detected a Heroku API Key, potentially compromising cloud application deployments and operational security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-heroku-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "heroku-api-key-v2",
+   "name": "Detected a Heroku API Key, potentially compromising cloud application deployments and operational security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-heroku-api-key-v2",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "hubspot-api-key",
+   "name": "Found a HubSpot API Token, posing a risk to CRM data integrity and unauthorized marketing operations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-hubspot-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "huggingface-access-token",
+   "name": "Discovered a Hugging Face Access token, which could lead to unauthorized access to AI models and sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-huggingface-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "huggingface-organization-api-token",
+   "name": "Uncovered a Hugging Face Organization API token, potentially compromising AI organization accounts and associated data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-huggingface-organization-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "infracost-api-token",
+   "name": "Detected an Infracost API Token, risking unauthorized access to cloud cost estimation tools and financial data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-infracost-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "intercom-api-key",
+   "name": "Identified an Intercom API Token, which could compromise customer communication channels and data privacy.",
+   "status": "enabled",
+   "rule": "GITLEAKS-intercom-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "intra42-client-secret",
+   "name": "Found a Intra42 client secret, which could lead to unauthorized access to the 42School API and sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-intra42-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "jfrog-api-key",
+   "name": "Found a JFrog API Key, posing a risk of unauthorized access to software artifact repositories and build pipelines.",
+   "status": "enabled",
+   "rule": "GITLEAKS-jfrog-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "jfrog-identity-token",
+   "name": "Discovered a JFrog Identity Token, potentially compromising access to JFrog services and sensitive software artifacts.",
+   "status": "enabled",
+   "rule": "GITLEAKS-jfrog-identity-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "jwt",
+   "name": "Uncovered a JSON Web Token, which may lead to unauthorized access to web applications and sensitive user data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-jwt",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "jwt-base64",
+   "name": "Detected a Base64-encoded JSON Web Token, posing a risk of exposing encoded authentication and data exchange information.",
+   "status": "enabled",
+   "rule": "GITLEAKS-jwt-base64",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "kraken-access-token",
+   "name": "Identified a Kraken Access Token, potentially compromising cryptocurrency trading accounts and financial security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-kraken-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "kubernetes-secret-yaml",
+   "name": "Possible Kubernetes Secret detected, posing a risk of leaking credentials/tokens from your deployments",
+   "status": "enabled",
+   "rule": "GITLEAKS-kubernetes-secret-yaml",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "kucoin-access-token",
+   "name": "Found a Kucoin Access Token, risking unauthorized access to cryptocurrency exchange services and transactions.",
+   "status": "enabled",
+   "rule": "GITLEAKS-kucoin-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "kucoin-secret-key",
+   "name": "Discovered a Kucoin Secret Key, which could lead to compromised cryptocurrency operations and financial data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-kucoin-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "launchdarkly-access-token",
+   "name": "Uncovered a Launchdarkly Access Token, potentially compromising feature flag management and application functionality.",
+   "status": "enabled",
+   "rule": "GITLEAKS-launchdarkly-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "linear-api-key",
+   "name": "Detected a Linear API Token, posing a risk to project management tools and sensitive task data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-linear-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "linear-client-secret",
+   "name": "Identified a Linear Client Secret, which may compromise secure integrations and sensitive project management data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-linear-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "linkedin-client-id",
+   "name": "Found a LinkedIn Client ID, risking unauthorized access to LinkedIn integrations and professional data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-linkedin-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "linkedin-client-secret",
+   "name": "Discovered a LinkedIn Client secret, potentially compromising LinkedIn application integrations and user data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-linkedin-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "lob-api-key",
+   "name": "Uncovered a Lob API Key, which could lead to unauthorized access to mailing and address verification services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-lob-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "lob-pub-api-key",
+   "name": "Detected a Lob Publishable API Key, posing a risk of exposing mail and print service integrations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-lob-pub-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "looker-client-id",
+   "name": "Found a Looker Client ID, risking unauthorized access to a Looker account and exposing sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-looker-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "looker-client-secret",
+   "name": "Found a Looker Client Secret, risking unauthorized access to a Looker account and exposing sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-looker-client-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "mailchimp-api-key",
+   "name": "Identified a Mailchimp API key, potentially compromising email marketing campaigns and subscriber data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-mailchimp-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "mailgun-private-api-token",
+   "name": "Found a Mailgun private API token, risking unauthorized email service operations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-mailgun-private-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "mailgun-pub-key",
+   "name": "Discovered a Mailgun public validation key, which could expose email verification processes and associated data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-mailgun-pub-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "mailgun-signing-key",
+   "name": "Uncovered a Mailgun webhook signing key, potentially compromising email automation and data integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-mailgun-signing-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "mapbox-api-token",
+   "name": "Detected a MapBox API token, posing a risk to geospatial services and sensitive location data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-mapbox-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "mattermost-access-token",
+   "name": "Identified a Mattermost Access Token, which may compromise team communication channels and data privacy.",
+   "status": "enabled",
+   "rule": "GITLEAKS-mattermost-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "maxmind-license-key",
+   "name": "Discovered a potential MaxMind license key.",
+   "status": "enabled",
+   "rule": "GITLEAKS-maxmind-license-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "messagebird-api-token",
+   "name": "Found a MessageBird API token, risking unauthorized access to communication platforms and message data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-messagebird-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "messagebird-client-id",
+   "name": "Discovered a MessageBird client ID, potentially compromising API integrations and sensitive communication data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-messagebird-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "microsoft-teams-webhook",
+   "name": "Uncovered a Microsoft Teams Webhook, which could lead to unauthorized access to team collaboration tools and data leaks.",
+   "status": "enabled",
+   "rule": "GITLEAKS-microsoft-teams-webhook",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "netlify-access-token",
+   "name": "Detected a Netlify Access Token, potentially compromising web hosting services and site management.",
+   "status": "enabled",
+   "rule": "GITLEAKS-netlify-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "new-relic-browser-api-token",
+   "name": "Identified a New Relic ingest browser API token, risking unauthorized access to application performance data and analytics.",
+   "status": "enabled",
+   "rule": "GITLEAKS-new-relic-browser-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "new-relic-insert-key",
+   "name": "Discovered a New Relic insight insert key, compromising data injection into the platform.",
+   "status": "enabled",
+   "rule": "GITLEAKS-new-relic-insert-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "new-relic-user-api-id",
+   "name": "Found a New Relic user API ID, posing a risk to application monitoring services and data integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-new-relic-user-api-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "new-relic-user-api-key",
+   "name": "Discovered a New Relic user API Key, which could lead to compromised application insights and performance monitoring.",
+   "status": "enabled",
+   "rule": "GITLEAKS-new-relic-user-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "notion-api-token",
+   "name": "Notion API token",
+   "status": "enabled",
+   "rule": "GITLEAKS-notion-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "npm-access-token",
+   "name": "Uncovered an npm access token, potentially compromising package management and code repository access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-npm-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "nuget-config-password",
+   "name": "Identified a password within a Nuget config file, potentially compromising package management access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-nuget-config-password",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "nytimes-access-token",
+   "name": "Detected a Nytimes Access Token, risking unauthorized access to New York Times APIs and content services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-nytimes-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "octopus-deploy-api-key",
+   "name": "Discovered a potential Octopus Deploy API key, risking application deployments and operational security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-octopus-deploy-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "okta-access-token",
+   "name": "Identified an Okta Access Token, which may compromise identity management services and user authentication data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-okta-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "openai-api-key",
+   "name": "Found an OpenAI API Key, posing a risk of unauthorized access to AI services and data manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-openai-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "openshift-user-token",
+   "name": "Found an OpenShift user token, potentially compromising an OpenShift/Kubernetes cluster.",
+   "status": "enabled",
+   "rule": "GITLEAKS-openshift-user-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "perplexity-api-key",
+   "name": "Detected a Perplexity API key, which could lead to unauthorized access to Perplexity AI services and data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-perplexity-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "pkcs12-file",
+   "name": "Found a PKCS #12 file, which commonly contain bundled private keys.",
+   "status": "skipped",
+   "reason": "matches file names, not file content"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "plaid-api-token",
+   "name": "Discovered a Plaid API Token, potentially compromising financial data aggregation and banking services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-plaid-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "plaid-client-id",
+   "name": "Uncovered a Plaid Client ID, which could lead to unauthorized financial service integrations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-plaid-client-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "plaid-secret-key",
+   "name": "Detected a Plaid Secret key, risking unauthorized access to financial accounts and sensitive transaction data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-plaid-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "planetscale-api-token",
+   "name": "Identified a PlanetScale API token, potentially compromising database management and operations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-planetscale-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "planetscale-oauth-token",
+   "name": "Found a PlanetScale OAuth token, posing a risk to database access control and sensitive data integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-planetscale-oauth-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "planetscale-password",
+   "name": "Discovered a PlanetScale password, which could lead to unauthorized database operations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-planetscale-password",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "postman-api-token",
+   "name": "Uncovered a Postman API token, potentially compromising API testing and development workflows.",
+   "status": "enabled",
+   "rule": "GITLEAKS-postman-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "prefect-api-token",
+   "name": "Detected a Prefect API token, risking unauthorized access to workflow management and automation services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-prefect-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "private-key",
+   "name": "Identified a Private Key, which may compromise cryptographic security and sensitive data encryption.",
+   "status": "skipped",
+   "reason": "could not be shown to match a string built from its own expression"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "privateai-api-token",
+   "name": "Identified a PrivateAI Token, posing a risk of unauthorized access to AI services and data manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-privateai-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "pulumi-api-token",
+   "name": "Found a Pulumi API token, posing a risk to infrastructure as code services and cloud resource management.",
+   "status": "enabled",
+   "rule": "GITLEAKS-pulumi-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "pypi-upload-token",
+   "name": "Discovered a PyPI upload token, potentially compromising Python package distribution and repository integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-pypi-upload-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "rapidapi-access-token",
+   "name": "Uncovered a RapidAPI Access Token, which could lead to unauthorized access to various APIs and data services.",
+   "status": "enabled",
+   "rule": "GITLEAKS-rapidapi-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "readme-api-token",
+   "name": "Detected a Readme API token, risking unauthorized documentation management and content exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-readme-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "rubygems-api-token",
+   "name": "Identified a Rubygem API token, potentially compromising Ruby library distribution and package management.",
+   "status": "enabled",
+   "rule": "GITLEAKS-rubygems-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "scalingo-api-token",
+   "name": "Found a Scalingo API token, posing a risk to cloud platform services and application deployment security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-scalingo-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sendbird-access-id",
+   "name": "Discovered a Sendbird Access ID, which could compromise chat and messaging platform integrations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sendbird-access-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sendbird-access-token",
+   "name": "Uncovered a Sendbird Access Token, potentially risking unauthorized access to communication services and user data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sendbird-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sendgrid-api-token",
+   "name": "Detected a SendGrid API token, posing a risk of unauthorized email service operations and data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sendgrid-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sendinblue-api-token",
+   "name": "Identified a Sendinblue API token, which may compromise email marketing services and subscriber data privacy.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sendinblue-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sentry-access-token",
+   "name": "Found a Sentry.io Access Token (old format), risking unauthorized access to error tracking services and sensitive application data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sentry-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sentry-org-token",
+   "name": "Found a Sentry.io Organization Token, risking unauthorized access to error tracking services and sensitive application data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sentry-org-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sentry-user-token",
+   "name": "Found a Sentry.io User Token, risking unauthorized access to error tracking services and sensitive application data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sentry-user-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "settlemint-application-access-token",
+   "name": "Found a Settlemint Application Access Token.",
+   "status": "enabled",
+   "rule": "GITLEAKS-settlemint-application-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "settlemint-personal-access-token",
+   "name": "Found a Settlemint Personal Access Token.",
+   "status": "enabled",
+   "rule": "GITLEAKS-settlemint-personal-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "settlemint-service-access-token",
+   "name": "Found a Settlemint Service Access Token.",
+   "status": "enabled",
+   "rule": "GITLEAKS-settlemint-service-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "shippo-api-token",
+   "name": "Discovered a Shippo API token, potentially compromising shipping services and customer order data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-shippo-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "shopify-access-token",
+   "name": "Uncovered a Shopify access token, which could lead to unauthorized e-commerce platform access and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-shopify-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "shopify-custom-access-token",
+   "name": "Detected a Shopify custom access token, potentially compromising custom app integrations and e-commerce data security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-shopify-custom-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "shopify-private-app-access-token",
+   "name": "Identified a Shopify private app access token, risking unauthorized access to private app data and store operations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-shopify-private-app-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "shopify-shared-secret",
+   "name": "Found a Shopify shared secret, posing a risk to application authentication and e-commerce platform security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-shopify-shared-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sidekiq-secret",
+   "name": "Discovered a Sidekiq Secret, which could lead to compromised background job processing and application data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sidekiq-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sidekiq-sensitive-url",
+   "name": "Uncovered a Sidekiq Sensitive URL, potentially exposing internal job queues and sensitive operation details.",
+   "status": "skipped",
+   "reason": "could not be shown to match a string built from its own expression"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-app-token",
+   "name": "Detected a Slack App-level token, risking unauthorized access to Slack applications and workspace data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-slack-app-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-bot-token",
+   "name": "Identified a Slack Bot token, which may compromise bot integrations and communication channel security.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-config-access-token",
+   "name": "Found a Slack Configuration access token, posing a risk to workspace configuration and sensitive data access.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-config-refresh-token",
+   "name": "Discovered a Slack Configuration refresh token, potentially allowing prolonged unauthorized access to configuration settings.",
+   "status": "enabled",
+   "rule": "GITLEAKS-slack-config-refresh-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-legacy-bot-token",
+   "name": "Uncovered a Slack Legacy bot token, which could lead to compromised legacy bot operations and data exposure.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-legacy-token",
+   "name": "Detected a Slack Legacy token, risking unauthorized access to older Slack integrations and user data.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-legacy-workspace-token",
+   "name": "Identified a Slack Legacy Workspace token, potentially compromising access to workspace data and legacy features.",
+   "status": "skipped",
+   "reason": "the same key format is already built in"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-user-token",
+   "name": "Found a Slack User token, posing a risk of unauthorized user impersonation and data access within Slack workspaces.",
+   "status": "enabled",
+   "rule": "GITLEAKS-slack-user-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "slack-webhook-url",
+   "name": "Discovered a Slack Webhook, which could lead to unauthorized message posting and data leakage in Slack channels.",
+   "status": "skipped",
+   "reason": "could not be shown to match a string built from its own expression"
+  },
+  {
+   "source": "Gitleaks",
+   "id": "snyk-api-token",
+   "name": "Uncovered a Snyk API token, potentially compromising software vulnerability scanning and code security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-snyk-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sonar-api-token",
+   "name": "Uncovered a Sonar API token, potentially compromising software vulnerability scanning and code security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sonar-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sourcegraph-access-token",
+   "name": "Sourcegraph is a code search and navigation engine.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sourcegraph-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "square-access-token",
+   "name": "Detected a Square Access Token, risking unauthorized payment processing and financial transaction exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-square-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "squarespace-access-token",
+   "name": "Identified a Squarespace Access Token, which may compromise website management and content control on Squarespace.",
+   "status": "enabled",
+   "rule": "GITLEAKS-squarespace-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "stripe-access-token",
+   "name": "Found a Stripe Access Token, posing a risk to payment processing services and sensitive financial data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-stripe-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sumologic-access-id",
+   "name": "Discovered a SumoLogic Access ID, potentially compromising log management services and data analytics integrity.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sumologic-access-id",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "sumologic-access-token",
+   "name": "Uncovered a SumoLogic Access Token, which could lead to unauthorized access to log data and analytics insights.",
+   "status": "enabled",
+   "rule": "GITLEAKS-sumologic-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "telegram-bot-api-token",
+   "name": "Detected a Telegram Bot API Token, risking unauthorized bot operations and message interception on Telegram.",
+   "status": "enabled",
+   "rule": "GITLEAKS-telegram-bot-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "travisci-access-token",
+   "name": "Identified a Travis CI Access Token, potentially compromising continuous integration services and codebase security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-travisci-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twilio-api-key",
+   "name": "Found a Twilio API Key, posing a risk to communication services and sensitive customer interaction data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twilio-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twitch-api-token",
+   "name": "Discovered a Twitch API token, which could compromise streaming services and account integrations.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twitch-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twitter-access-secret",
+   "name": "Uncovered a Twitter Access Secret, potentially risking unauthorized Twitter integrations and data breaches.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twitter-access-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twitter-access-token",
+   "name": "Detected a Twitter Access Token, posing a risk of unauthorized account operations and social media data exposure.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twitter-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twitter-api-key",
+   "name": "Identified a Twitter API Key, which may compromise Twitter application integrations and user data security.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twitter-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twitter-api-secret",
+   "name": "Found a Twitter API Secret, risking the security of Twitter app integrations and sensitive data access.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twitter-api-secret",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "twitter-bearer-token",
+   "name": "Discovered a Twitter Bearer Token, potentially compromising API access and data retrieval from Twitter.",
+   "status": "enabled",
+   "rule": "GITLEAKS-twitter-bearer-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "typeform-api-token",
+   "name": "Uncovered a Typeform API token, which could lead to unauthorized survey management and data collection.",
+   "status": "enabled",
+   "rule": "GITLEAKS-typeform-api-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "vault-batch-token",
+   "name": "Detected a Vault Batch Token, risking unauthorized access to secret management services and sensitive data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-vault-batch-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "vault-service-token",
+   "name": "Identified a Vault Service Token, potentially compromising infrastructure security and access to sensitive credentials.",
+   "status": "enabled",
+   "rule": "GITLEAKS-vault-service-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "yandex-access-token",
+   "name": "Found a Yandex Access Token, posing a risk to Yandex service integrations and user data privacy.",
+   "status": "enabled",
+   "rule": "GITLEAKS-yandex-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "yandex-api-key",
+   "name": "Discovered a Yandex API Key, which could lead to unauthorized access to Yandex services and data manipulation.",
+   "status": "enabled",
+   "rule": "GITLEAKS-yandex-api-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "yandex-aws-access-token",
+   "name": "Uncovered a Yandex AWS Access Token, potentially compromising cloud resource access and data security on Yandex Cloud.",
+   "status": "enabled",
+   "rule": "GITLEAKS-yandex-aws-access-token",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  },
+  {
+   "source": "Gitleaks",
+   "id": "zendesk-secret-key",
+   "name": "Detected a Zendesk Secret Key, risking unauthorized access to customer support services and sensitive ticketing data.",
+   "status": "enabled",
+   "rule": "GITLEAKS-zendesk-secret-key",
+   "noise": {
+    "lines": 2384751,
+    "product_hits": 0,
+    "test_hits": 0,
+    "per_10k": 0.0,
+    "examples": []
+   },
+   "reason": ""
+  }
+ ],
+ "corpus": {
+  "projects": [
+   [
+    "Alamofire_Alamofire",
+    323461
+   ],
+   [
+    "BurntSushi_ripgrep",
+    41589
+   ],
+   [
+    "DapperLib_Dapper",
+    20668
+   ],
+   [
+    "JamesNK_Newtonsoft.Json",
+    171606
+   ],
+   [
+    "apache_commons-lang",
+    123915
+   ],
+   [
+    "axios_axios",
+    47726
+   ],
+   [
+    "django_django",
+    449759
+   ],
+   [
+    "expressjs_express",
+    16728
+   ],
+   [
+    "gin-gonic_gin",
+    18961
+   ],
+   [
+    "google_gson",
+    41313
+   ],
+   [
+    "google_leveldb",
+    21560
+   ],
+   [
+    "jekyll_jekyll",
+    21757
+   ],
+   [
+    "laravel_framework",
+    373034
+   ],
+   [
+    "nestjs_nest",
+    200119
+   ],
+   [
+    "ohmyzsh_ohmyzsh",
+    57481
+   ],
+   [
+    "pallets_flask",
+    14286
+   ],
+   [
+    "pester_Pester",
+    53942
+   ],
+   [
+    "psf_requests",
+    9566
+   ],
+   [
+    "redis_redis",
+    346353
+   ],
+   [
+    "sinatra_sinatra",
+    18121
+   ],
+   [
+    "spf13_cobra",
+    12806
+   ]
+  ],
+  "lines_by_language": {
+   "config": 139835,
+   "swift": 26755,
+   "html": 306566,
+   "javascript": 253511,
+   "lua": 397,
+   "rust": 40016,
+   "shell": 36893,
+   "ruby": 35265,
+   "powershell": 47883,
+   "csharp": 163383,
+   "java": 152266,
+   "python": 463947,
+   "go": 31177,
+   "c": 318726,
+   "php": 368056,
+   "sql": 75
+  }
+ }
+}

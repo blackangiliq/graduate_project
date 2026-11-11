@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from ..models import Finding
 from ..walker import SourceFile, mask_secret
+from . import rules_engine
 
 KNOWN_FORMATS = [
     ("SECRET-AWS-001", "AWS access key ID", r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b", "high", 0.9),
@@ -81,8 +82,35 @@ def _natural_language(value: str) -> bool:
     return len(words) >= 2 and all(w.strip(".,:!?").isalpha() for w in words)
 
 
-def scan_file(sf: SourceFile) -> List[Finding]:
+def match_secret_rule(rule: "rules_engine.Rule", line: str):
+    """Yield (span, secret) for each credential a rule of kind "secret" finds in a line.
+    The secret is the rule's capture group when it has one, otherwise the whole match."""
+    if rule.keywords:
+        lowered = line.lower()
+        if not any(keyword in lowered for keyword in rule.keywords):
+            return
+    for m in rule.pattern.finditer(line):
+        if rule.exclude and rule.exclude.search(line):
+            return
+        if any(extra.search(line) for extra in rule.extra_excludes):
+            return
+        group = rule.secret_group or (1 if m.re.groups else 0)
+        secret = m.group(group) if group <= m.re.groups and m.group(group) else m.group(0)
+        if PLACEHOLDER.match(secret) or LOOKS_LIKE_CODE.search(secret):
+            continue
+        if rule.entropy and shannon_entropy(secret) < rule.entropy:
+            continue
+        span = m.span(group) if group <= m.re.groups and m.group(group) else m.span()
+        yield span, secret
+
+
+def scan_file(sf: SourceFile, rules: Optional[List["rules_engine.Rule"]] = None) -> List[Finding]:
     hits = []  # (line number, secret, rule id, title, severity, confidence)
+    rules = rules_engine.secret_rules() if rules is None else rules
+    if rules:   # keep only the rules whose keyword occurs somewhere in this file
+        lowered_file = sf.text.lower()
+        rules = [r for r in rules
+                 if not r.keywords or any(k in lowered_file for k in r.keywords)]
     for number, line in enumerate(sf.lines, start=1):
         if len(line) > 1000:
             continue
@@ -96,6 +124,13 @@ def scan_file(sf: SourceFile) -> List[Finding]:
                         continue
                 hit_spans.append(m.span())
                 hits.append((number, secret, rule_id, title, severity, confidence))
+        for rule in rules:
+            for span, secret in match_secret_rule(rule, line):
+                if any(s[0] < span[1] and span[0] < s[1] for s in hit_spans):
+                    continue  # the same credential was already reported
+                hit_spans.append(span)
+                hits.append((number, secret, rule.id, rule.title, rule.severity,
+                             rule.confidence))
         for m in ASSIGNMENT.finditer(line):
             name, value = m.group("name"), m.group("value").strip()
             if any(s[0] <= m.start("value") < s[1] for s in hit_spans):
@@ -127,7 +162,8 @@ def scan_file(sf: SourceFile) -> List[Finding]:
 
 
 def scan(files: Iterable[SourceFile]) -> List[Finding]:
+    rules = rules_engine.secret_rules()
     out: List[Finding] = []
     for sf in files:
-        out.extend(scan_file(sf))
+        out.extend(scan_file(sf, rules))
     return out

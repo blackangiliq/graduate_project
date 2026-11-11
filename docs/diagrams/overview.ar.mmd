@@ -5,7 +5,7 @@ flowchart TD
     subgraph L1["1. الواجهة — Interface  ·  كيف تستخدم المنصة"]
         direction RL
         A1 ~~~ A2 ~~~ A3 ~~~ A4
-        A1["<b>لوحة التحكم</b><br/>Dashboard<br/>Streamlit · app.py"]
+        A1["<b>لوحة التحكم</b><br/>Dashboard · Streamlit<br/>بالعربية والإنجليزية"]
         A2["<b>سطر الأوامر</b><br/>Command line<br/>python -m sca"]
         A3["<b>التشغيل بنقرة</b><br/>Launchers<br/>run.bat · run.sh"]
         A4["<b>مجلد المشروع</b><br/>Project folder<br/>22 لغة برمجة"]
@@ -14,8 +14,8 @@ flowchart TD
     subgraph L2["2. التحليل الستاتيكي — Static analysis  ·  الكود يُقرأ ولا يُنفَّذ"]
         direction RL
         B1 ~~~ B2 ~~~ B3 ~~~ B4 ~~~ B5
-        B1["<b>كشف الأسرار</b><br/>Secrets<br/>regex + entropy"]
-        B2["<b>القواعد</b><br/>Pattern rules<br/>98 مدمجة + المتعلَّمة"]
+        B1["<b>كشف الأسرار</b><br/>Secrets · regex + entropy<br/>مدمجة + مستوردة من Gitleaks"]
+        B2["<b>القواعد</b><br/>Pattern rules · مدمجة<br/>مستوردة من DevSkim · متعلَّمة · قواعدك"]
         B3["<b>محرك بايثون</b><br/>AST taint analysis<br/>تتبّع بين الدوال"]
         B4["<b>ماسحات خارجية</b><br/>Bandit · Opengrep<br/>Gitleaks · اختياري"]
         B5["<b>التتبّع المبسّط</b><br/>Taint-lite<br/>9 لغات أخرى"]
@@ -50,14 +50,14 @@ flowchart TD
         E5["<b>التاريخ</b><br/>History · SQLite<br/>تغيّر الدرجة"]
     end
 
-    subgraph L6["6. التعلّم — Learning  ·  الذكاء الاصطناعي يقترح، الأداة تتحقق، أنت تصادق"]
+    subgraph L6["6. التعلّم والتحكم بالقواعد — Learning and rule control  ·  الذكاء الاصطناعي يقترح، الأداة تتحقق، أنت تصادق"]
         direction RL
         F1 ~~~ F2 ~~~ F3 ~~~ F4 ~~~ F5
         F1["<b>مراجعاتك</b><br/>Your reviews<br/>حقيقية / كاذبة"]
         F2["<b>اقتراح قاعدة</b><br/>Propose<br/>النموذج يكتب JSON"]
         F3["<b>تسعة فحوص</b><br/>Validate + sandbox<br/>عملية معزولة"]
         F4["<b>مصادقتك</b><br/>Human approval<br/>تبويب Learning"]
-        F5["<b>قواعد متعلَّمة</b><br/>learned/rules.yaml<br/>تُستخدم في الفحص التالي"]
+        F5["<b>مجموعة القواعد</b><br/>تبويب Rules: تعديل وتعطيل<br/>وكتابة واستيراد وتصدير"]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5 --> L6

@@ -1,0 +1,41 @@
+%%{init: {"flowchart": {"wrappingWidth": 420}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% Taint analysis: source, propagation, sanitizer, sink.
+%% Render:  mmdc -i docs/diagrams/taint.mmd -o docs/images/taint.png -w 1400 -s 2 -b white
+flowchart TD
+    subgraph IDEA["The idea: does user data reach a dangerous operation?"]
+        SRC["<b>1. Source</b><br/>user_id = request.args.get(#quot;id#quot;)<br/>user_id holds user data: it is marked tainted"]
+        PROP["<b>2. Propagation</b><br/>query = #quot;SELECT * FROM users WHERE id = #quot; + user_id<br/>the mark moves to query, because it was built from a tainted variable"]
+        SAN{"<b>3. Did the value pass a sanitizer?</b><br/>such as int(), shlex.quote() or secure_filename()"}
+        SINK["<b>4. Sink</b><br/>cursor.execute(query)<br/>a dangerous operation received a tainted value"]
+        FIND["<b>Finding</b><br/>SQL Injection · CWE-89 · tainted = True<br/>confidence 0.85, classified as confirmed"]
+        SAFE["<b>Nothing is reported</b><br/>the value became safe"]
+        SRC --> PROP --> SAN
+        SAN -- no --> SINK --> FIND
+        SAN -- yes --> SAFE
+    end
+
+    subgraph PASSES["Python AST engine: three passes  ·  sca/engines/python_ast.py"]
+        P1["<b>Pass 1: inside each function (intra-procedural)</b><br/>analyses each function alone: its sources, how taint spreads, its sinks<br/>finds the example above, because source and sink are in the same function"]
+        P2["<b>Pass 2: function summary</b><br/>for each parameter it asks: if this were tainted, would it reach a sink?<br/>example: in read_template(name) the parameter name reaches open()"]
+        P3["<b>Pass 3: call sites</b><br/>the call read_template(request.args.get(#quot;tpl#quot;)) passes a tainted value to name<br/>so a Path Traversal is reported at open() inside the called function<br/>limits: one call deep, inside the same file"]
+        P1 --> P2 --> P3
+    end
+
+    subgraph LITE["Other languages: taint-lite  ·  sca/engines/taint_lite.py"]
+        L1["<b>The same question, in a simpler way</b><br/>for each injection finding of the rule engine it looks 60 lines back<br/>and follows simple assignments from sources such as $_POST, req.query and getParameter()"]
+        L2["<b>PHP example</b><br/>$name = $_POST['name'];<br/>$sql = #quot;SELECT * FROM users WHERE name = '$name'#quot;;<br/>the second line uses the tainted $name: the finding is marked tainted and gains 0.15 confidence"]
+        L3["<b>An approximation, not a full analysis</b><br/>inside one file, with a fixed list of sources and sanitizers<br/>if no path is proven the finding stays as it is and nothing is deleted"]
+        L1 --> L2 --> L3
+    end
+
+    IDEA --> PASSES --> LITE
+
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef good fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    class SRC,PROP,P1,P2,P3,L1,L2,L3 plain
+    class SAFE good
+    class SINK,FIND stop
+    style IDEA fill:#fbfaf7,stroke:#c9c7bd
+    style PASSES fill:#fbfaf7,stroke:#c9c7bd
+    style LITE fill:#fbfaf7,stroke:#c9c7bd

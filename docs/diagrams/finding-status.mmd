@@ -1,0 +1,38 @@
+%%{init: {"flowchart": {"wrappingWidth": 420}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% What happens to one finding: confirmed, probable, needs review or dismissed.
+%% Render:  mmdc -i docs/diagrams/finding-status.mmd -o docs/images/finding-status.png -w 1400 -s 2 -b white
+flowchart TD
+    RAW["<b>Raw finding</b><br/>a rule or an engine matched a line of code"] --> Q0{"Is the rule quarantined?"}
+    Q0 -- yes --> DROP["<b>Dropped</b><br/>and mentioned in the scan notes"]
+    Q0 -- no --> ADJ["<b>Confidence adjusted by the rule's record</b><br/>confidence = (tp + 4c) / (tp + fp + 4)"]
+    ADJ --> TL["<b>Taint</b><br/>does user input reach the line?<br/>AST engine for Python, taint-lite for other languages"]
+    TL --> MG["<b>Merge</b><br/>one finding per problem, confidence by Noisy-OR"]
+    MG --> QU{"Did you review this finding before?<br/>matched by fingerprint"}
+    QU -- "yes: false positive" --> DISM["<b>dismissed</b> by you<br/>not counted, still visible in the report"]
+    QU -- "yes: real" --> CONF
+    QU -- no --> QA{"Did the AI review it?"}
+    QA -- "verdict: false, confidence 0.6 or more" --> LFP["<b>likely_false_positive</b><br/>not counted, kept for a human to check"]
+    QA -- "verdict: real, confidence 0.7 or more" --> CONF
+    QA -- "no review, or not sure" --> QT{"Is the file test code?<br/>tests/ · test_*.py · *.spec.js"}
+    QT -- yes --> PROB
+    QT -- no --> QTA{"Was user input traced<br/>to the line? tainted"}
+    QTA -- yes --> CONF
+    QTA -- no --> QF{"Is it an injection weakness,<br/>which needs a data flow?<br/>SQL · command · XSS · path · eval · deserialization"}
+    QF -- yes --> PROB
+    QF -- "no: a property of the line itself<br/>weak algorithm, TLS switched off, hard-coded secret" --> QE{"Did two independent engines report it,<br/>or one engine with confidence 0.85 or more?"}
+    QE -- yes --> CONF
+    QE -- no --> PROB
+
+    CONF["<b>confirmed</b><br/>shown with the reason (evidence)"] --> OPEN["<b>open</b><br/>counted in the project score"]
+    PROB["<b>probable</b><br/>a rule matched, no independent evidence yet"] --> QS{"Is strict mode on?"}
+    QS -- no --> OPEN
+    QS -- yes --> NR["<b>needs_review</b><br/>not counted; waits for your review<br/>or for the AI review"]
+
+    classDef good fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef warn fill:#faeeda,stroke:#854f0b,color:#412402
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    class CONF,OPEN good
+    class PROB,NR warn
+    class DROP,DISM,LFP stop
+    class RAW,ADJ,TL,MG plain

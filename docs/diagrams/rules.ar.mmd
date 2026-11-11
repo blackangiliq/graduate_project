@@ -1,0 +1,67 @@
+%%{init: {"flowchart": {"wrappingWidth": 440}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% مصادر القواعد، وكيف تُفحص القاعدة المستوردة، وكيف يتحكم المستخدم بالقواعد.
+%% Render:  mmdc -i docs/diagrams/rules.ar.mmd -o docs/images/rules.ar.png -w 1400 -s 2 -b white
+flowchart TD
+    subgraph SRC["أربعة مصادر للقواعد — Four origins"]
+        direction RL
+        O1 ~~~ O2 ~~~ O3 ~~~ O4
+        O1["<b>مدمجة — Built in</b><br/>عدد 98 قاعدة · sca/rules/*.yaml<br/>كُتبت واختُبرت مع الأداة"]
+        O2["<b>مستوردة — Imported</b><br/>عدد 300 قاعدة · sca/rules/imported<br/>DevSkim 95 · Gitleaks 205 · رخصة MIT"]
+        O3["<b>متعلَّمة — Learned</b><br/>learned/rules.yaml<br/>اقترحها الذكاء الاصطناعي وصادقتَ عليها"]
+        O4["<b>قواعدك — Your own</b><br/>learned/custom.yaml<br/>من تبويب Rules أو ملف YAML"]
+    end
+
+    subgraph IMP["كيف تُستورد قاعدة مفتوحة المصدر  ·  tools/import_rules.py"]
+        direction TB
+        I1["<b>1. التحويل — Convert</b><br/>تعابير ‎.NET و Go إلى صيغة re في بايثون<br/>أسماء اللغات، الخطورة، ورقم CWE من وسوم القاعدة"]
+        I2["<b>2. الفحوص الآلية — Automatic checks</b><br/>يُترجَم التعبير · ينتهي على أسطر الإجهاد داخل sandbox<br/>ينجح في أمثلته: must-match و must-not-match<br/>صامت على الكود المعروف أنه آمن"]
+        I3["<b>3. القياس على كود حقيقي</b><br/>2.4 مليون سطر من 21 مشروعاً مفتوح المصدر معروفاً<br/>كم سطراً تعلّمه القاعدة؟"]
+        I4{"قاعدة مراجعة، أو مزعجة،<br/>أو حُكم عليها يدوياً بأنها غير مفيدة؟"}
+        I5["<b>تأتي مفعّلة</b><br/>DevSkim 49 · Gitleaks 204"]
+        I6["<b>تأتي معطّلة مع ذكر السبب</b><br/>DevSkim 46 · Gitleaks 1<br/>تستطيع تفعيلها"]
+        I7["<b>تُستبعد مع ذكر السبب</b><br/>عدد 78 قاعدة: شروط متعددة الأسطر،<br/>لغة غير مدعومة، أو فشل في فحص"]
+        I1 --> I2
+        I2 -- نجحت --> I3 --> I4
+        I2 -- فشلت --> I7
+        I4 -- لا --> I5
+        I4 -- نعم --> I6
+    end
+
+    subgraph CTL["ما تستطيع فعله بأي قاعدة  ·  تبويب Rules  ·  python -m sca rules"]
+        direction RL
+        C1 ~~~ C2 ~~~ C3 ~~~ C4
+        C1["<b>العرض — See</b><br/>تصفّح وفلترة وبحث<br/>قراءة كل حقل ومصدر القاعدة"]
+        C2["<b>التغيير — Change</b><br/>تعديل أي حقل<br/>تفعيل أو تعطيل<br/>استرجاع الأصل"]
+        C3["<b>الإنشاء — Create</b><br/>كتابة قاعدة جديدة<br/>تجربة تعبير على كود<br/>تُفحص قبل الحفظ"]
+        C4["<b>النقل — Move</b><br/>تصدير إلى YAML<br/>استيراد على حاسوب آخر"]
+    end
+
+    subgraph SAVE["أين يُحفظ التغيير؟"]
+        direction RL
+        S1 ~~~ S2 ~~~ S3
+        S1["<b>قاعدة مرفقة مع الأداة</b><br/>ملفها لا يُعاد كتابته<br/>التغيير يذهب إلى learned/edits.yaml<br/>يبقى بعد التحديث ويمكن التراجع عنه"]
+        S2["<b>قاعدة متعلَّمة أو من قواعدك</b><br/>تُعدَّل في مكانها داخل<br/>learned/rules.yaml أو learned/custom.yaml"]
+        S3["<b>استثناء مصادَق عليه</b><br/>learned/overrides.yaml<br/>السطر المطابق له تتجاوزه القاعدة"]
+    end
+
+    IMP --> SRC
+    SRC --> SET(["<b>مجموعة قواعد واحدة — One rule set</b><br/>كل قاعدة مفعّلة تعمل على كل سطر كود<br/>وصيغ المفاتيح تعمل داخل محرك الأسرار"])
+    CTL --> SAVE --> SET
+    SET --> SCAN["<b>الفحص — Scan</b><br/>كل نتيجة تحمل اسم القاعدة التي أنتجتها"]
+    SCAN --> FB["<b>مراجعاتك — Your reviews</b><br/>ترفع ثقة القاعدة أو تخفضها<br/>ثلاثة إنذارات كاذبة مع ثقة منخفضة: تُحجر القاعدة"]
+    FB -.-> SET
+
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef good fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef warn fill:#faeeda,stroke:#854f0b,color:#412402
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    class O1,O2,O4,I1,I2,I3,C1,C2,C3,C4,S1,S2,S3,SCAN plain
+    class O3 ai
+    class I5,SET,FB good
+    class I6 warn
+    class I7 stop
+    style SRC fill:#fbfaf7,stroke:#c9c7bd
+    style IMP fill:#fffdf5,stroke:#c9a55a
+    style CTL fill:#f2fbf7,stroke:#5dcaa5
+    style SAVE fill:#fbfaf7,stroke:#c9c7bd

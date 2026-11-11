@@ -12,7 +12,8 @@ flowchart TD
     U4["<b>4. اختيار المشروع — Choose the folder</b><br/>اكتب المسار أو اضغط Browse<br/>أو Use sample للتجربة"] --> U5["<b>5. الفحص — Run scan</b><br/>ستاتيكي فقط، أو مع AI review<br/>ومع Deep scan لاكتشاف ما لا تجده القواعد<br/>ومع Strict mode لعرض المؤكَّد فقط"]
     U5 --> U6["<b>6. قراءة النتائج — Findings</b><br/>لكل نتيجة: الكود، سبب التأكيد، الشرح، الإصلاح<br/>راجعها: Real vulnerability أو False positive"]
     U6 --> U7["<b>7. التعلّم — Learning</b><br/>اضغط Learn from this scan<br/>افتح كل قاعدة مقترحة واقرأ فحوصها<br/>ثم Approve أو Reject"]
-    U7 --> U8["<b>8. التقرير — Reports</b><br/>نزّل HTML أو PDF أو JSON أو SARIF<br/>وتابع تغيّر الدرجة في History"]
+    U7 --> U7B["<b>8. القواعد — Rules</b><br/>تصفّح كل القواعد وعدّلها أو عطّلها<br/>واكتب قاعدتك وجرّبها على كود"]
+    U7B --> U8["<b>9. التقرير — Reports</b><br/>نزّل HTML أو PDF أو JSON أو SARIF<br/>وتابع تغيّر الدرجة في History"]
     U8 -. "أعد الفحص: القواعد الجديدة فعّالة ومراجعاتك محفوظة" .-> U5
 
     classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
@@ -20,4 +21,4 @@ flowchart TD
     classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
     class U1,U2,U4,U5,U6,U8 plain
     class U3A,U3B ai
-    class U7 learn
+    class U7,U7B learn

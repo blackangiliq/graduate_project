@@ -42,10 +42,28 @@ values it finds are masked in every snippet, report and LLM prompt.
 
 ### 4.1 Pattern rules (`sca/engines/rules_engine.py`)
 
-Sources of rules: `sca/rules/*.yaml` (built-in), `learned/rules.yaml` (approved learned
-rules), `learned/overrides.yaml` (approved extra exclusions per rule). A broken learned
-entry is skipped so that a bad learned rule can never stop a scan. The loaded set is cached
-and reloaded when any rule file changes.
+Rules have four origins: `sca/rules/*.yaml` (built in), `sca/rules/imported/*.yaml`
+(converted from DevSkim and Gitleaks by `tools/import_rules.py`; each file names its source,
+commit and licence), `learned/rules.yaml` (approved learned rules) and `learned/custom.yaml`
+(written by the user). Two more files hold the user's changes: `learned/edits.yaml`
+(`{rule id: {field: value}}` for shipped rules, including `enabled`) and
+`learned/overrides.yaml` (approved extra exclusions). `all_rules()` returns every rule with
+edits applied; `load_rules()` returns the enabled pattern rules; `secret_rules()` the enabled
+rules of `kind: secret`, which the secrets engine runs. A broken user entry or edit is
+skipped, so it can never stop a scan. The set is cached and reloaded when a rule file changes.
+
+`sca/rulebook.py` is the management layer used by the Rules tab and by `python -m sca
+rules`: list, check, create, update, enable/disable, reset, delete, export and import. A
+shipped rule file is never rewritten. `check()` separates errors (invalid field, expression
+that does not compile or is too slow in the sandbox, a failed own example) from warnings
+(matches everyday or known-safe code, duplicate expression).
+
+The import (`tools/import_rules.py`) converts .NET and Go expressions to Python `re`,
+maps languages, severities and CWE ids, and keeps a rule only if it compiles, finishes on
+stress lines, passes its own examples and is silent on the known-safe samples. Kept rules
+are measured on a corpus of real projects; review-only or noisy rules ship with
+`enabled: false` and a `note`. The result of every rule is in
+`evaluation/import_report.json`.
 
 A rule is a regular expression for a vulnerable line plus an optional `exclude`. Comment
 lines, block comments and lines over 600 characters are skipped. `RULE_LANGUAGE` maps
@@ -258,7 +276,11 @@ The constants are design choices; a sensitivity analysis is a reasonable thesis 
 
 ## 11. Extending
 
-- **New rule**: an entry in `sca/rules/` plus test lines in `tests/test_engines.py`.
+- **New rule**: for a user, the Rules tab or `python -m sca rules new FILE` (stored in
+  `learned/custom.yaml`); for the project, an entry in `sca/rules/` plus test lines in
+  `tests/test_engines.py`.
+- **New imported rule set**: a converter in `tools/import_rules.py` that writes
+  `sca/rules/imported/<name>.yaml` with a `source:` block.
 - **New language**: extension in `LANG_BY_EXT`, name in `CODE_LANGUAGES`, comment prefix in
   `COMMENT_PREFIXES` (`sca/walker.py`); sources in `taint_lite.SOURCES` if wanted.
 - **New engine**: `scan(files) -> List[Finding]` and one `run_engine(...)` line.

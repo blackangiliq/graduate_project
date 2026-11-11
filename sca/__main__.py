@@ -6,6 +6,8 @@
     python -m sca learn <folder> --rounds 5 --auto-approve    # keep learning until stable
     python -m sca learn --bootstrap all                       # fill gaps of every language
     python -m sca rules list          # review, approve or reject proposed rules
+    python -m sca rules catalog       # every rule: built in, imported, learned, your own
+    python -m sca rules new|edit|enable|disable|reset|delete|test|export|import ...
     python -m sca feedback fp <id>    # mark a finding as a false positive (or tp = real)
     python -m sca coverage            # rules per language and weakness
     python -m sca doctor              # show which engines and AI components are available
@@ -224,8 +226,14 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print("Secure Code Analyzer %s on Python %s" % (__version__, sys.version.split()[0]))
     print()
     print("Static engines")
-    print("  [ok] rules      %d rules loaded (%d built in, %d learned)"
-          % (len(rules), len(rules) - learned, learned))
+    from . import rulebook
+    counts = rulebook.summary()
+    origins = counts["by_origin"]
+    print("  [ok] rules      %d of %d rules active (%d built in, %d imported, %d learned, "
+          "%d your own; %d are credential formats)"
+          % (counts["enabled"], counts["total"], origins["builtin"]["enabled"],
+             origins["imported"]["enabled"], origins["learned"]["enabled"],
+             origins["custom"]["enabled"], counts["secret"]))
     print("  [ok] ast        Python taint analysis, inter-procedural within a file (built in)")
     print("  [ok] taint-lite input tracing for JS, PHP, Java, Go, C#, Ruby, C (built in)")
     print("  [ok] secrets    key formats + entropy (built in)")
@@ -372,10 +380,14 @@ def cmd_rules(args: argparse.Namespace) -> int:
                 feedback.adjusted_confidence(base, s["tp"], s["fp"]),
                 "QUARANTINED" if feedback.is_quarantined(base, s["tp"], s["fp"]) else "active"))
         return 0
+    if action in RULEBOOK_ACTIONS:
+        return _rulebook_action(args, storage)
     if not args.ids:
         print("Give a candidate id.", file=sys.stderr)
         return 2
     ids = args.ids
+    if action == "show" and storage.get_candidate(ids[0]) is None:
+        return _rulebook_action(args, storage)       # not a candidate: show the rule itself
     if action == "approve" and ids == ["all"]:
         ids = [c["id"] for c in storage.list_candidates("pending")]
     code = 0
@@ -400,6 +412,125 @@ def cmd_rules(args: argparse.Namespace) -> int:
             print("Error: %s" % str(exc).strip("'\""), file=sys.stderr)
             code = 1
     return code
+
+
+RULEBOOK_ACTIONS = ("catalog", "enable", "disable", "reset", "delete", "edit", "new",
+                    "template", "test", "export", "import")
+
+
+def _print_rule(rule) -> None:
+    import yaml
+    data = rule.as_dict()
+    state = "enabled" if rule.enabled else "DISABLED"
+    print("%s  [%s, %s%s]" % (rule.id, rule.origin, state, ", edited by you" if rule.edited else ""))
+    if rule.source:
+        print("source: %s%s" % (rule.source, " (%s licence, %s)" % (rule.license, rule.url)
+                                if rule.license else ""))
+    if rule.note:
+        print("note: %s" % rule.note)
+    keep = ("title", "kind", "languages", "cwe", "severity", "confidence", "pattern", "exclude",
+            "ignore_case", "message", "fix", "keywords", "entropy", "extra_excludes",
+            "examples_vulnerable", "examples_safe", "file")
+    print(yaml.safe_dump({k: data[k] for k in keep if data.get(k) not in ("", [], 0.0, False)},
+                         sort_keys=False, allow_unicode=True, width=1000).rstrip())
+
+
+def _rulebook_action(args: argparse.Namespace, storage) -> int:
+    """Everything that manages the rule set itself (see sca/rulebook.py)."""
+    import yaml
+    from . import rulebook
+    from .walker import walk_project
+
+    action, ids = args.action, args.ids
+    try:
+        if action == "catalog":
+            rules = rulebook.list_rules(
+                origin=args.origin, language=args.lang, cwe=args.cwe, text=args.search or "",
+                enabled=False if args.disabled else None)
+            print("%-34s %-9s %-8s %-9s %-8s %s" % ("Rule", "Origin", "State", "Weakness",
+                                                    "Severity", "Title"))
+            for rule in rules:
+                print("%-34s %-9s %-8s %-9s %-8s %s" % (
+                    rule.id[:34], rule.origin, ("on" if rule.enabled else "off")
+                    + ("*" if rule.edited else ""), rule.cwe, rule.severity, rule.title[:60]))
+            counts = rulebook.summary()
+            print("\n%d shown. In total %d rules, %d active (* = edited by you)."
+                  % (len(rules), counts["total"], counts["enabled"]))
+            return 0
+        if action == "template":
+            print(rulebook.TEMPLATE, end="")
+            return 0
+        if action == "export":
+            text = rulebook.export_yaml(ids or None, args.origin)
+            if args.output:
+                Path(args.output).write_text(text, encoding="utf-8")
+                print("Wrote %s" % args.output)
+            else:
+                print(text, end="")
+            return 0
+        if not ids:
+            print("Give a rule id (or a file for new / import).", file=sys.stderr)
+            return 2
+        if action in ("new", "import"):
+            added, problems = rulebook.import_yaml(Path(ids[0]).read_text(encoding="utf-8"),
+                                                   storage)
+            for rule_id in added:
+                print("Added %s. It is active from the next scan." % rule_id)
+                for warning in rulebook.check(rulebook.get(rule_id).as_dict(), storage,
+                                              rule_id)["warnings"]:
+                    print("  warning: %s" % warning)
+            for problem in problems:
+                print("Error: %s" % problem, file=sys.stderr)
+            return 1 if problems else 0
+        if action == "show":
+            for rule_id in ids:
+                _print_rule(rulebook.get(rule_id))
+            return 0
+        if action == "edit":
+            changes: Dict[str, Any] = {}
+            for item in args.set or []:
+                key, _, value = item.partition("=")
+                changes[key.strip()] = yaml.safe_load(value) if key.strip() in (
+                    "languages", "confidence", "ignore_case", "enabled") else value
+            if not changes:
+                print("Nothing to change. Use --set field=value, for example "
+                      "--set severity=low --set confidence=0.4", file=sys.stderr)
+                return 2
+            result = rulebook.update(ids[0], changes, storage)
+            print("Updated %s." % ids[0])
+            for warning in result["warnings"]:
+                print("  warning: %s" % warning)
+            return 0
+        if action == "test":
+            rule = rulebook.get(ids[0])
+            if len(ids) < 2:
+                print("Give a file or folder to test the rule on.", file=sys.stderr)
+                return 2
+            hits = 0
+            for sf in walk_project(ids[1]):
+                for number, line in enumerate(sf.lines, start=1):
+                    if rule.matches(line):
+                        hits += 1
+                        print("%s:%d  %s" % (sf.rel, number, line.strip()[:140]))
+            print("%d line(s) matched by %s." % (hits, rule.id))
+            return 0
+        for rule_id in ids:
+            if action == "enable":
+                rulebook.set_enabled(rule_id, True)
+                print("Enabled %s." % rule_id)
+            elif action == "disable":
+                rulebook.set_enabled(rule_id, False)
+                print("Disabled %s. It no longer takes part in scans." % rule_id)
+            elif action == "reset":
+                print("Restored %s to its original definition." % rule_id
+                      if rulebook.reset(rule_id) else "%s was not changed." % rule_id)
+            elif action == "delete":
+                rulebook.delete(rule_id)
+                print("Deleted %s." % rule_id)
+    except (rulebook.RuleError, OSError) as exc:
+        print("Error: %s" % exc, file=sys.stderr)
+        return 1
+    return 0
 
 
 def cmd_feedback(args: argparse.Namespace) -> int:
@@ -443,13 +574,13 @@ def cmd_coverage(args: argparse.Namespace) -> int:
 
     matrix = coverage_matrix()
     cwes = sorted({c for row in matrix.values() for c in row}, key=lambda c: int(c.split("-")[1]))
-    print("Active pattern rules per language and weakness "
-          "(Python is also covered by the AST engine):\n")
+    print("Active pattern rules per language and weakness (rules for \"any\" language and "
+          "credential formats are not counted):\n")
     print("%-12s %5s  %s" % ("Language", "Rules", "Weaknesses covered"))
     for language, row in matrix.items():
         covered = ", ".join("%s(%d)" % (c.replace("CWE-", ""), row[c]) for c in cwes if row.get(c))
-        if language == "python" and not covered:
-            covered = "AST taint engine (no pattern rules needed)"
+        if language == "python":
+            covered = "AST taint engine" + (" + " + covered if covered else "")
         print("%-12s %5d  %s" % (language, sum(row.values()), covered or "- none yet -"))
     print("\nNumbers are CWE ids:")
     for c in cwes:
@@ -598,11 +729,40 @@ def build_parser() -> argparse.ArgumentParser:
     _add_llm_arguments(learn)
     learn.set_defaults(func=cmd_learn)
 
-    rules = sub.add_parser("rules", help="review proposed rules")
-    rules.add_argument("action", choices=["list", "show", "approve", "reject", "remove", "stats"])
-    rules.add_argument("ids", nargs="*", help="candidate id(s); 'approve all' is allowed")
+    rules = sub.add_parser(
+        "rules", help="review proposed rules and manage the whole rule set",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""Proposed rules (candidates from the AI):
+  list                    candidates waiting for approval (--status all for every one)
+  show ID                 a candidate, or any rule of the rule set
+  approve ID... | all     make a validated candidate active
+  reject ID...            discard a candidate
+  stats                   how each rule did in your reviews
+
+The rule set:
+  catalog                 every rule (--origin, --lang, --cwe, --search, --disabled)
+  enable ID... / disable ID...
+  edit ID --set field=value [--set ...]    fields: title, languages, cwe, severity,
+                          confidence, pattern, exclude, ignore_case, message, fix
+  reset ID...             undo your changes to a rule that ships with the tool
+  template                print an empty rule to fill in
+  new FILE.yaml           add your own rule(s) from a file (same as import)
+  test ID PATH            show the lines of a file or folder that a rule marks
+  delete ID...            remove one of your own or learned rules (remove = same)
+  export [ID...]          print rules as YAML (--origin custom, -o FILE)
+  import FILE.yaml        add rules exported from another computer""")
+    rules.add_argument("action", choices=["list", "show", "approve", "reject", "remove", "stats"]
+                       + list(RULEBOOK_ACTIONS), metavar="action")
+    rules.add_argument("ids", nargs="*", help="rule or candidate id(s), or a file")
     rules.add_argument("--status", default="pending",
                        choices=["pending", "approved", "rejected", "rejected_auto", "all"])
+    rules.add_argument("--origin", choices=["builtin", "imported", "learned", "custom"])
+    rules.add_argument("--lang", help="catalog: only rules for this language")
+    rules.add_argument("--cwe", help="catalog: only rules for this weakness, e.g. CWE-89")
+    rules.add_argument("--search", help="catalog: text in the id, title or expression")
+    rules.add_argument("--disabled", action="store_true", help="catalog: only disabled rules")
+    rules.add_argument("--set", action="append", metavar="FIELD=VALUE", help="edit: a change")
+    rules.add_argument("-o", "--output", help="export: write to this file")
     rules.set_defaults(func=cmd_rules)
 
     feedback = sub.add_parser("feedback", help="tell the tool whether a finding is real")

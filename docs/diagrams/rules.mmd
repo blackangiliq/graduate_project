@@ -1,0 +1,67 @@
+%%{init: {"flowchart": {"wrappingWidth": 440}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% Where rules come from, how an imported rule is vetted, and how the user controls rules.
+%% Render:  mmdc -i docs/diagrams/rules.mmd -o docs/images/rules.png -w 1400 -s 2 -b white
+flowchart TD
+    subgraph SRC["Four origins of rules"]
+        direction LR
+        O1 ~~~ O2 ~~~ O3 ~~~ O4
+        O1["<b>Built in</b>  98 rules<br/>sca/rules/*.yaml<br/>written and tested with the tool"]
+        O2["<b>Imported</b>  300 rules<br/>sca/rules/imported/*.yaml<br/>DevSkim 95 · Gitleaks 205 (MIT)"]
+        O3["<b>Learned</b><br/>learned/rules.yaml<br/>proposed by the AI, approved by you"]
+        O4["<b>Your own</b><br/>learned/custom.yaml<br/>Rules tab or a YAML file"]
+    end
+
+    subgraph IMP["How an open-source rule is imported  ·  tools/import_rules.py"]
+        direction TB
+        I1["<b>1. Convert</b><br/>.NET and Go expressions to Python re<br/>language names, severity, CWE from the rule's tags"]
+        I2["<b>2. Automatic checks</b><br/>compiles · finishes on stress lines (sandbox)<br/>passes its own must-match and must-not-match examples<br/>silent on the known-safe sample code"]
+        I3["<b>3. Measure on real code</b><br/>2.4 million lines of 21 well-known open-source projects<br/>how many lines does the rule mark?"]
+        I4{"Review rule, noisy,<br/>or judged harmless by hand?"}
+        I5["<b>Ships enabled</b><br/>DevSkim 49 · Gitleaks 204"]
+        I6["<b>Ships disabled</b>, with the reason<br/>DevSkim 46 · Gitleaks 1<br/>you can switch it on"]
+        I7["<b>Left out</b>, with the reason<br/>78 rules: multi-line conditions,<br/>unsupported language, failed a check"]
+        I1 --> I2
+        I2 -- passed --> I3 --> I4
+        I2 -- failed --> I7
+        I4 -- no --> I5
+        I4 -- yes --> I6
+    end
+
+    subgraph CTL["What you can do with any rule  ·  Rules tab  ·  python -m sca rules"]
+        direction LR
+        C1 ~~~ C2 ~~~ C3 ~~~ C4
+        C1["<b>See</b><br/>browse, filter, search<br/>read every field and its source"]
+        C2["<b>Change</b><br/>edit any field<br/>enable or disable<br/>restore the original"]
+        C3["<b>Create</b><br/>write a new rule<br/>try an expression on code<br/>checked before saving"]
+        C4["<b>Move</b><br/>export to YAML<br/>import on another computer"]
+    end
+
+    subgraph SAVE["Where a change is stored"]
+        direction LR
+        S1 ~~~ S2 ~~~ S3
+        S1["<b>Rule that ships with the tool</b><br/>its file is never rewritten<br/>the change goes to learned/edits.yaml<br/>survives an update, can be undone"]
+        S2["<b>Learned or own rule</b><br/>changed in place in<br/>learned/rules.yaml or learned/custom.yaml"]
+        S3["<b>Approved exclusion</b><br/>learned/overrides.yaml<br/>a line matching it is skipped by the rule"]
+    end
+
+    IMP --> SRC
+    SRC --> SET(["<b>One rule set</b><br/>every enabled rule runs on every code line<br/>credential formats run in the secrets engine"])
+    CTL --> SAVE --> SET
+    SET --> SCAN["<b>Scan</b><br/>findings carry the id of the rule that produced them"]
+    SCAN --> FB["<b>Your reviews</b><br/>raise or lower the rule's confidence<br/>3 false positives and a low score: the rule is quarantined"]
+    FB -.-> SET
+
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef good fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    classDef warn fill:#faeeda,stroke:#854f0b,color:#412402
+    classDef stop fill:#fcebeb,stroke:#a32d2d,color:#501313
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    class O1,O2,O4,I1,I2,I3,C1,C2,C3,C4,S1,S2,S3,SCAN plain
+    class O3 ai
+    class I5,SET,FB good
+    class I6 warn
+    class I7 stop
+    style SRC fill:#fbfaf7,stroke:#c9c7bd
+    style IMP fill:#fffdf5,stroke:#c9a55a
+    style CTL fill:#f2fbf7,stroke:#5dcaa5
+    style SAVE fill:#fbfaf7,stroke:#c9c7bd

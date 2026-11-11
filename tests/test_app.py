@@ -59,8 +59,10 @@ def test_dashboard_scan_flow():
     # switch explanations to Arabic and rerun: must not raise
     app.radio[0].set_value("العربية").run()
     assert not app.exception
+    assert "درجة الأمان (التقدير F)" in [m.label for m in app.metric]   # the whole UI switches
+    assert any(b.label == "ابدأ الفحص" for b in app.button)
 
-    button(app, "Load this scan").click().run()
+    button(app, "حمّل هذا الفحص").click().run()                          # "Load this scan"
     assert not app.exception
 
 
@@ -99,7 +101,7 @@ def test_dashboard_api_provider_settings():
 def test_dashboard_rejects_missing_folder():
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
     app.run()
-    app.text_input[0].set_value(str(ROOT / "no-such-folder")).run()
+    app.sidebar.text_input[0].set_value(str(ROOT / "no-such-folder")).run()
     button(app, "Run scan").click().run()
     assert any("does not exist" in e.value for e in app.error)
 
@@ -150,3 +152,79 @@ def test_dashboard_learning_flow():
         assert result.ai["llm"] == "disabled"
     finally:
         server.shutdown()
+
+
+def test_rules_tab_controls_the_rule_set(tmp_path, monkeypatch):
+    from sca import rulebook
+    from sca.engines import rules_engine
+    monkeypatch.setenv("SCA_LEARNED_DIR", str(tmp_path / "learned"))
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
+    app.run()
+    assert not app.exception
+    labels = [m.label for m in app.metric]
+    assert "All rules" in labels and "Imported" in labels and "Your own" in labels
+
+    first = rules_engine.all_rules()[0]                     # the rule shown in the details
+    next(b for b in app.button if b.key == "rule_off_" + first.id).click().run()
+    assert not app.exception and not rulebook.get(first.id).enabled
+    assert any("Disabled %s." % first.id in s.value for s in app.success)
+    next(b for b in app.button if b.key == "rule_on_" + first.id).click().run()
+    assert rulebook.get(first.id).enabled
+
+    # edit it through the form, then restore the original
+    app.selectbox(key="rule_severity_" + first.id).set_value("low")
+    button(app, "Save changes").click().run()
+    assert not app.exception
+    assert rulebook.get(first.id).severity == "low" and rulebook.get(first.id).edited
+    next(b for b in app.button if b.key == "rule_reset_" + first.id).click().run()
+    assert rulebook.get(first.id).severity == first.severity
+
+    # write a new rule: first an invalid one, then a valid one
+    app.text_input(key="new_id").set_value("UI-RULE-001")
+    app.text_input(key="new_title").set_value("eval of request data")
+    app.multiselect(key="new_languages").set_value(["javascript"])
+    app.text_input(key="new_cwe").set_value("CWE-95")
+    app.text_area(key="new_pattern").set_value("eval((")
+    button(app, "Save the rule").click().run()
+    assert any("Not saved" in e.value for e in app.error)
+    assert rules_engine.get_rule("UI-RULE-001") is None
+    app.text_area(key="new_pattern").set_value(r"\beval\(\s*req\.")
+    app.text_area(key="new_vulnerable").set_value("eval(req.body.code)")
+    button(app, "Check the rule").click().run()
+    assert any("passed every check" in s.value for s in app.success)
+    button(app, "Save the rule").click().run()
+    assert not app.exception
+    assert rulebook.get("UI-RULE-001").origin == "custom"
+
+    # try an expression
+    app.text_area(key="try_pattern_").set_value(r"\beval\(")
+    app.text_area(key="try_code_").set_value("x = 1\neval(data)\n")
+    button(app, "Run the expression").click().run()
+    assert any(">>   2  eval(data)" in c.value for c in app.code)
+
+
+def test_guide_tab_shows_every_setting_diagram_and_reference_in_both_languages():
+    from sca.ui import texts
+    from sca.ui.i18n import AR
+    images = ROOT / "docs" / "images"
+    for item in texts.DIAGRAMS:                             # each diagram exists twice
+        assert (images / ("%s.png" % item["name"])).is_file(), item["name"]
+        assert (images / ("%s.ar.png" % item["name"])).is_file(), item["name"]
+        assert item["text_en"] and item["text_ar"]
+    for key, item in texts.SETTINGS.items():                # each setting is explained twice
+        assert all(item["label"]) and all(item["help"]), key
+    for english, arabic in AR.items():                      # placeholders survive translation
+        assert english.count("%") == arabic.count("%"), english
+
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
+    app.run()
+    assert not app.exception
+    shown = " ".join(m.value for m in app.markdown)
+    assert "Choose the project." in shown and "What a rule is" in shown
+    assert "owasp.org/Top10" in shown and "python -m sca rules catalog" in " ".join(
+        c.value for c in app.code)
+    app.radio[0].set_value("العربية").run()
+    assert not app.exception
+    shown = " ".join(m.value for m in app.markdown)
+    assert "اختر المشروع." in shown and "ما هي القاعدة؟" in shown and "حلقة التعلّم" in " ".join(
+        h.value for h in app.subheader)

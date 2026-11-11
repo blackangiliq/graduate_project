@@ -1,0 +1,24 @@
+%%{init: {"flowchart": {"wrappingWidth": 420}, "themeVariables": {"fontFamily": "Liberation Sans", "fontSize": "15px"}, "themeCSS": "foreignObject div, foreignObject p, foreignObject span, .nodeLabel, .edgeLabel, .cluster-label { unicode-bidi: plaintext; }"}}%%
+%% The practical steps from installation to learning.
+%% Render:  mmdc -i docs/diagrams/usage.mmd -o docs/images/usage.png -w 1400 -s 2 -b white
+flowchart TD
+    U1["<b>1. Install</b><br/>Install Python 3.10 or newer<br/>and download the repository from GitHub"] --> U2["<b>2. Run</b><br/>Windows: double-click run.bat<br/>Linux and macOS: ./run.sh<br/>The browser opens on localhost:8501"]
+    U2 --> U3{"<b>3. Do you want the AI?</b><br/>optional"}
+    U3 -- "yes, through an API" --> U3A["Choose the provider, paste the key, choose the model<br/>then Save AI settings<br/>or: python -m sca config --provider openai --model ..."]
+    U3 -- "yes, locally" --> U3B["Install Ollama and pull a model<br/>ollama pull qwen2.5-coder:7b"]
+    U3 -- no --> U4
+    U3A --> U4
+    U3B --> U4
+    U4["<b>4. Choose the folder</b><br/>Type the path or press Browse<br/>or Use sample to try the demo"] --> U5["<b>5. Run scan</b><br/>static only, or with AI review<br/>with Deep scan to find what rules miss<br/>with Strict mode to see confirmed findings only"]
+    U5 --> U6["<b>6. Read the findings</b><br/>each one: code, why it is confirmed, explanation, fix<br/>review it: Real vulnerability or False positive"]
+    U6 --> U7["<b>7. Learning</b><br/>press Learn from this scan<br/>open each proposed rule and read its checks<br/>then Approve or Reject"]
+    U7 --> U7B["<b>8. Rules</b><br/>browse every rule, edit it or switch it off<br/>write your own and try it on code"]
+    U7B --> U8["<b>9. Reports</b><br/>download HTML, PDF, JSON or SARIF<br/>follow the score in History"]
+    U8 -. "scan again: the new rules are active and your reviews are remembered" .-> U5
+
+    classDef plain fill:#f6f5f1,stroke:#8a8880,color:#1c1b19
+    classDef ai fill:#eeedfe,stroke:#534ab7,color:#26215c
+    classDef learn fill:#e1f5ee,stroke:#0f6e56,color:#04342c
+    class U1,U2,U4,U5,U6,U8 plain
+    class U3A,U3B ai
+    class U7,U7B learn

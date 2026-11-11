@@ -24,6 +24,7 @@ from sca.cwe import info as cwe_info
 from sca.engines import external
 from sca.engines.rules_engine import load_rules
 from sca.learn import feedback as feedback_module
+from sca import rulebook
 from sca.learn import loop, store
 from sca.models import SEVERITIES, ScanResult
 from sca.pipeline import ScanOptions, run_scan
@@ -31,6 +32,8 @@ from sca.report.html_report import render_html
 from sca.report.pdf_report import render_pdf
 from sca.report.sarif import to_sarif
 from sca.storage import Storage
+from sca.ui import guide_tab, rules_tab, texts
+from sca.ui.i18n import AR
 from sca.walker import CODE_LANGUAGES
 
 ROOT = Path(__file__).resolve().parent
@@ -53,6 +56,31 @@ WIDE = ({"width": "stretch"} if "width" in inspect.signature(st.button).paramete
 
 
 # ------------------------------------------------------------------ helpers
+def ui_lang() -> str:
+    return "ar" if st.session_state.get("ui_lang") == "العربية" else "en"
+
+
+def t(text: str) -> str:
+    """The text in the language of the dashboard (English is the source language)."""
+    return AR.get(text, text) if ui_lang() == "ar" else text
+
+
+def opt(key: str) -> dict:
+    """label= and help= of a sidebar control, from the shared settings table."""
+    label, help_text = texts.setting(key, ui_lang())
+    return {"label": label, "help": help_text}
+
+
+RTL_CSS = """<style>
+[data-testid="stMarkdownContainer"], [data-testid="stCaptionContainer"],
+[data-testid="stWidgetLabel"], [data-testid="stMetric"], [data-testid="stAlert"],
+[data-testid="stTable"] td, [data-testid="stTable"] th, h1, h2, h3, h4 {
+    direction: rtl; text-align: right; }
+[data-testid="stMarkdownContainer"] pre, [data-testid="stMarkdownContainer"] code,
+[data-testid="stCode"] { direction: ltr; text-align: left; unicode-bidi: plaintext; }
+</style>"""
+
+
 def pick_folder() -> str:
     """Open the operating system's folder dialog (in a separate process so that it cannot
     interfere with the web server) and return the chosen path."""
@@ -150,173 +178,195 @@ st.session_state.setdefault("target", "")
 saved = load_config()
 with st.sidebar:
     st.title("Secure Code Analyzer")
-    st.caption("Static + AI vulnerability detection that learns - v%s" % __version__)
+    st.radio("Language / اللغة", ["English", "العربية"], horizontal=True, key="ui_lang",
+             help=texts.setting("ui_lang", "en")[1] + "\n\n" + texts.setting("ui_lang", "ar")[1])
+    lang = ui_lang()
+    if lang == "ar":
+        st.markdown(RTL_CSS, unsafe_allow_html=True)
+    st.caption(t("Static + AI vulnerability detection that learns - v%s") % __version__)
 
-    st.subheader("1. Project folder")
-    st.text_input("Folder path", key="target", placeholder=r"C:\projects\my-app")
+    st.subheader(t("1. Project folder"))
+    st.text_input(key="target", placeholder=r"C:\projects\my-app", **opt("target"))
     col_a, col_b = st.columns(2)
-    col_a.button("Browse...", on_click=browse_clicked, **WIDE)
-    col_b.button("Use sample", on_click=use_sample, **WIDE,
-                 help="Scan the deliberately vulnerable demo app that ships with the tool")
+    col_a.button(on_click=browse_clicked, **opt("browse"), **WIDE)
+    col_b.button(on_click=use_sample, **opt("sample"), **WIDE)
     if st.session_state.get("browse_note"):
         st.caption(st.session_state.pop("browse_note"))
 
-    st.subheader("2. Static engines")
+    st.subheader(t("2. Static engines"))
     tools = external.availability()
-    use_rules = st.checkbox("Pattern rules (built-in + learned)", value=True)
-    use_ast = st.checkbox("Python AST taint analysis", value=True)
-    use_secrets = st.checkbox("Secrets detection", value=True)
-    use_bandit = st.checkbox("Bandit" + ("" if tools["bandit"] else " (not installed)"),
-                             value=tools["bandit"], disabled=not tools["bandit"])
-    use_semgrep = st.checkbox("Opengrep / Semgrep" + ("" if tools["semgrep"] else
-                                                      " (not installed)"),
-                              value=tools["semgrep"], disabled=not tools["semgrep"])
-    use_gitleaks = st.checkbox("Gitleaks" + ("" if tools["gitleaks"] else " (not installed)"),
-                               value=tools["gitleaks"], disabled=not tools["gitleaks"])
+    missing = t(" (not installed)")
+    counts = rulebook.summary()
+    use_rules = st.checkbox(value=True, **opt("use_rules"))
+    st.caption(t("%d active rules of %d - manage them in the Rules tab")
+               % (counts["enabled"], counts["total"]))
+    use_ast = st.checkbox(value=True, **opt("use_ast"))
+    use_secrets = st.checkbox(value=True, **opt("use_secrets"))
+    use_bandit = st.checkbox("Bandit" + ("" if tools["bandit"] else missing),
+                             value=tools["bandit"], disabled=not tools["bandit"],
+                             help=opt("use_bandit")["help"])
+    use_semgrep = st.checkbox("Opengrep / Semgrep" + ("" if tools["semgrep"] else missing),
+                              value=tools["semgrep"], disabled=not tools["semgrep"],
+                              help=opt("use_semgrep")["help"])
+    use_gitleaks = st.checkbox("Gitleaks" + ("" if tools["gitleaks"] else missing),
+                               value=tools["gitleaks"], disabled=not tools["gitleaks"],
+                               help=opt("use_gitleaks")["help"])
+    with st.expander(t("More engine options")):
+        use_taint_lite = st.checkbox(value=True, **opt("use_taint_lite"))
+        exclude_dirs = st.text_input(placeholder="docs, third_party", **opt("exclude_dirs"))
 
-    st.subheader("3. Artificial intelligence")
-    use_ml = st.checkbox("ML classifier (second opinion)", value=SKLEARN_AVAILABLE,
-                         disabled=not SKLEARN_AVAILABLE)
+    st.subheader(t("3. Artificial intelligence"))
+    use_ml = st.checkbox(value=SKLEARN_AVAILABLE, disabled=not SKLEARN_AVAILABLE,
+                         **opt("use_ml"))
     presets = list(PRESETS)
-    preset = st.selectbox("AI provider", presets, index=presets.index(saved.preset),
-                          format_func=lambda key: PRESETS[key]["label"])
+    preset = st.selectbox(options=presets, index=presets.index(saved.preset),
+                          format_func=lambda key: PRESETS[key]["label"], **opt("provider"))
     same = preset == saved.preset
     base_url = st.text_input(
-        "API address", key="base_url_%s" % preset,
-        value=saved.base_url if same and saved.base_url else PRESETS[preset]["base_url"])
+        key="base_url_%s" % preset,
+        value=saved.base_url if same and saved.base_url else PRESETS[preset]["base_url"],
+        **opt("base_url"))
     api_key = ""
     if PRESETS[preset]["kind"] != "ollama":
         api_key = st.text_input(
-            "API key", type="password", key="api_key_%s" % preset,
+            type="password", key="api_key_%s" % preset,
             value=saved.api_key if same else os.environ.get(PRESETS[preset]["key_env"] or "-", ""),
-            help="Kept in memory. Press 'Save AI settings' to store it in the .env file of "
-                 "this project (git-ignored). It is never written to reports or the database.")
+            **opt("api_key"))
     models, is_local = provider_models(preset, base_url, api_key)
     default_model = saved.model if same and saved.model else (
         DEFAULT_MODEL if preset == "ollama" else "")
     if models:
-        llm_model = st.selectbox("Model", models, index=models.index(default_model)
-                                 if default_model in models else 0)
+        llm_model = st.selectbox(options=models, index=models.index(default_model)
+                                 if default_model in models else 0, **opt("model"))
     else:
-        llm_model = st.text_input("Model", value=default_model, key="model_%s" % preset,
-                                  help="The model name exactly as the provider lists it.")
+        llm_model = st.text_input(value=default_model, key="model_%s" % preset, **opt("model"))
     llm_ready, llm_message = provider_ready(preset, base_url, api_key, llm_model)
     if llm_ready:
-        st.caption("AI provider ready: %s" % llm_model)
+        st.caption(t("AI provider ready: %s") % llm_model)
     else:
-        st.caption("AI provider not ready: %s. The static scan works without it." % llm_message)
+        st.caption(t("AI provider not ready: %s. The static scan works without it.")
+                   % llm_message)
     if not is_local:
-        st.warning("With this provider, the code under review is sent to %s. Secrets found by "
-                   "the tool are masked first. Choose Ollama to keep everything on this computer."
-                   % (urlparse(base_url).hostname or base_url))
-    use_llm = st.checkbox("AI review of findings", value=llm_ready, disabled=not llm_ready)
-    deep = st.checkbox("Deep scan (AI audits whole files)", value=False, disabled=not llm_ready,
-                       help="Slower and uses more requests. Finds issues the static engines "
-                            "miss, which the tool can then turn into new rules.")
-    llm_max = st.slider("Findings the AI reviews", 5, 200, 30, step=5, disabled=not llm_ready,
-                        help="The most severe findings go first.")
-    if st.button("Save AI settings", **WIDE):
+        st.warning(t("With this provider, the code under review is sent to %s. Secrets found "
+                     "by the tool are masked first. Choose Ollama to keep everything on this "
+                     "computer.") % (urlparse(base_url).hostname or base_url))
+    use_llm = st.checkbox(value=llm_ready, disabled=not llm_ready, **opt("use_llm"))
+    deep = st.checkbox(value=False, disabled=not llm_ready, **opt("deep"))
+    llm_max = st.slider(min_value=5, max_value=200, value=30, step=5, disabled=not llm_ready,
+                        **opt("llm_max"))
+    with st.expander(t("More AI options")):
+        deep_max_files = st.slider(min_value=1, max_value=50, value=10,
+                                   disabled=not llm_ready, **opt("deep_max_files"))
+        llm_timeout = st.slider(min_value=30, max_value=600, value=180, step=30,
+                                disabled=not llm_ready, **opt("llm_timeout"))
+    if st.button(**opt("save_ai"), **WIDE):
         path = save_config(LLMConfig(
             preset=preset, api_key=api_key, model=llm_model,
             base_url="" if base_url == PRESETS[preset]["base_url"] else base_url))
-        st.caption("Saved to %s" % path)
-    lang_label = st.radio("Explanation language", ["English", "العربية"], horizontal=True)
-    lang = "ar" if lang_label != "English" else "en"
+        st.caption(t("Saved to %s") % path)
 
-    st.subheader("4. Precision")
-    strict = st.checkbox("Strict mode (confirmed findings only)", value=False,
-                         help="Counts a finding only when independent evidence supports it: "
-                              "user input was traced to the line, the AI review confirmed "
-                              "it, you confirmed it, or (for weaknesses that need no data "
-                              "flow, such as a weak algorithm) two engines agree. Everything "
-                              "else is kept under 'Needs review'.")
+    st.subheader(t("4. Precision"))
+    strict = st.checkbox(value=False, **opt("strict"))
+    skip_tests = st.checkbox(value=False, **opt("skip_tests"))
+    use_feedback = st.checkbox(value=True, **opt("use_feedback"))
 
-    skip_tests = st.checkbox("Skip test code", value=False,
-                             help="Do not scan tests/, test_*.py, *.spec.js and similar. When "
-                                  "they are scanned, findings in test code get a lower "
-                                  "confidence and are never confirmed automatically.")
-
-    run = st.button("Run scan", type="primary", **WIDE)
+    st.subheader(t("5. Output"))
+    save_scan = st.checkbox(value=True, **opt("save_scan"))
+    run = st.button(type="primary", **opt("run"), **WIDE)
 
 llm_config = LLMConfig(preset=preset, base_url=base_url, api_key=api_key, model=llm_model)
 
 # ------------------------------------------------------------------ run a scan
+# Messages and the progress bar of a scan live in this container. It exists in every run,
+# so the tabs below keep their place on the page and the selected tab is not reset.
+status_area = st.container()
 if run:
-    target = st.session_state["target"].strip().strip('"')
-    if not target:
-        st.error("Choose a project folder first.")
-    elif not Path(target).expanduser().exists():
-        st.error("This path does not exist: %s" % target)
-    else:
-        options = ScanOptions(
-            use_rules=use_rules, use_ast=use_ast, use_secrets=use_secrets,
-            use_bandit=use_bandit, use_semgrep=use_semgrep, use_gitleaks=use_gitleaks,
-            use_ml=use_ml, use_llm=use_llm, llm_provider=preset, llm_base_url=base_url,
-            llm_api_key=api_key, llm_model=llm_model, llm_max_findings=llm_max,
-            llm_deep_scan=deep and use_llm, lang=lang, strict=strict,
-            include_tests=not skip_tests)
-        bar = st.progress(0.0, text="Starting")
+    with status_area:
+        target = st.session_state["target"].strip().strip('"')
+        if not target:
+            st.error(t("Choose a project folder first."))
+        elif not Path(target).expanduser().exists():
+            st.error(t("This path does not exist: %s") % target)
+        else:
+            options = ScanOptions(
+                use_rules=use_rules, use_ast=use_ast, use_secrets=use_secrets,
+                use_bandit=use_bandit, use_semgrep=use_semgrep, use_gitleaks=use_gitleaks,
+                use_ml=use_ml, use_llm=use_llm, llm_provider=preset, llm_base_url=base_url,
+                llm_api_key=api_key, llm_model=llm_model, llm_max_findings=llm_max,
+                llm_deep_scan=deep and use_llm, lang=lang, strict=strict,
+                include_tests=not skip_tests, use_taint_lite=use_taint_lite,
+                use_feedback=use_feedback, save=save_scan, llm_deep_max_files=deep_max_files,
+                llm_timeout=llm_timeout,
+                exclude_dirs=[d.strip() for d in exclude_dirs.split(",") if d.strip()])
+            bar = st.progress(0.0, text="Starting")
 
-        def on_progress(message: str, fraction: float) -> None:
-            bar.progress(min(1.0, max(0.0, fraction)), text=message)
+            def on_progress(message: str, fraction: float) -> None:
+                bar.progress(min(1.0, max(0.0, fraction)), text=message)
 
-        try:
-            st.session_state["result"] = run_scan(target, options, on_progress, get_storage())
-        except Exception as exc:  # show the problem instead of a stack trace
-            st.error("The scan failed: %s" % exc)
-        bar.empty()
+            try:
+                st.session_state["result"] = run_scan(target, options, on_progress, get_storage())
+            except Exception as exc:  # show the problem instead of a stack trace
+                st.error(t("The scan failed: %s") % exc)
+            bar.empty()
 
 result: ScanResult = st.session_state.get("result")
 
 # ------------------------------------------------------------------ main area
-tab_dash, tab_findings, tab_learn, tab_reports, tab_history, tab_about = st.tabs(
-    ["Dashboard", "Findings", "Learning", "Reports", "History", "About"])
+tab_dash, tab_findings, tab_rules, tab_learn, tab_reports, tab_history, tab_guide = st.tabs(
+    [t(name) for name in ("Dashboard", "Findings", "Rules", "Learning", "Reports", "History",
+                          "Guide")])
+
+with tab_rules:
+    rules_tab.render(get_storage(), t, WIDE)
+
+with tab_guide:
+    guide_tab.render(t, lang, WIDE)
 
 with tab_dash:
     if result is None:
-        st.header("Scan a project to begin")
-        st.write("Choose a folder in the sidebar and press **Run scan**. "
-                 "To see a full example, press **Use sample** first.")
-        st.info("Static engines always run on this computer. The optional AI review uses the "
-                "provider you choose: a local model (Ollama) or a cloud API.")
+        st.header(t("Scan a project to begin"))
+        st.write(t("Choose a folder in the sidebar and press **Run scan**. "
+                 "To see a full example, press **Use sample** first."))
+        st.info(t("Static engines always run on this computer. The optional AI review uses the "
+                "provider you choose: a local model (Ollama) or a cloud API."))
     else:
         counts = result.counts()
-        st.caption("%s - %s - %d files, %d lines, %.1f s" % (
+        st.caption(t("%s - %s - %d files, %d lines, %.1f s") % (
             result.target, result.started_at, result.files_scanned, result.lines_scanned,
             result.duration_seconds))
         cols = st.columns(6)
-        cols[0].metric("Security score (grade %s)" % result.grade, "%d / 100" % result.score)
+        cols[0].metric(t("Security score (grade %s)") % result.grade, "%d / 100" % result.score)
         for col, sev in zip(cols[1:], SEVERITIES[:4]):
             col.metric(sev.capitalize(), counts[sev])
         confirmed = sum(1 for f in result.open_findings if f.tier == "confirmed")
-        cols[5].metric("Confirmed / open", "%d / %d" % (confirmed, len(result.open_findings)))
-        others = ["%d %s" % (result.status_count(s), STATUS_LABEL[s].lower())
+        cols[5].metric(t("Confirmed / open"), "%d / %d" % (confirmed, len(result.open_findings)))
+        others = ["%d %s" % (result.status_count(s), t(STATUS_LABEL[s]).lower())
                   for s in ("needs_review", "likely_false_positive", "dismissed")
                   if result.status_count(s)]
         if others:
-            st.caption("Not counted in the score: " + ", ".join(others))
+            st.caption(t("Not counted in the score: ") + ", ".join(others))
 
         left, right = st.columns(2)
         with left:
-            st.subheader("By severity")
+            st.subheader(t("By severity"))
             # the number prefix keeps the bars in severity order (charts sort labels by name)
             st.bar_chart(pd.DataFrame({"findings": [counts[s] for s in SEVERITIES]},
                                       index=["%d. %s" % (i, s.capitalize())
                                              for i, s in enumerate(SEVERITIES, start=1)]),
                          horizontal=True, height=240)
         with right:
-            st.subheader("By OWASP Top 10 category")
+            st.subheader(t("By OWASP Top 10 category"))
             by_owasp = {}
             for f in result.open_findings:
                 by_owasp[f.owasp] = by_owasp.get(f.owasp, 0) + 1
             if by_owasp:
                 st.bar_chart(pd.DataFrame({"findings": by_owasp}), horizontal=True, height=240)
             else:
-                st.write("No open findings.")
+                st.write(t("No open findings."))
 
         left, right = st.columns(2)
         with left:
-            st.subheader("Most affected files")
+            st.subheader(t("Most affected files"))
             by_file = {}
             for f in result.open_findings:
                 by_file[f.file] = by_file.get(f.file, 0) + 1
@@ -324,26 +374,30 @@ with tab_dash:
             st.dataframe(pd.DataFrame(top, columns=["File", "Findings"]), hide_index=True,
                          **WIDE)
         with right:
-            st.subheader("Engines")
+            st.subheader(t("Engines"))
             rows = [{"Engine": k, "Status": v} for k, v in result.engine_notes.items()]
             rows += [{"Engine": "AI: " + k, "Status": str(v)} for k, v in result.ai.items()]
             st.dataframe(pd.DataFrame(rows), hide_index=True, **WIDE)
 
 with tab_findings:
     if result is None:
-        st.write("No scan yet.")
+        st.write(t("No scan yet."))
     elif not result.findings:
-        st.success("No findings. A clean scan is not a proof of security.")
+        st.success(t("No findings. A clean scan is not a proof of security."))
     else:
         f1, f2, f3, f4 = st.columns([2, 2, 2, 2])
         present = [s for s in STATUS_LABEL if result.status_count(s)] or ["open"]
-        status_filter = f1.selectbox("Show", present + ["all"],
-                                     format_func=lambda s: "All" if s == "all" else "%s (%d)" % (
-                                         STATUS_LABEL[s], result.status_count(s)))
-        sev_filter = f2.multiselect("Severity", SEVERITIES, default=SEVERITIES[:4])
+        # labels are computed now, so they do not depend on when Streamlit formats them
+        show_labels = {s: "%s (%d)" % (t(STATUS_LABEL[s]), result.status_count(s))
+                       for s in present}
+        show_labels["all"] = t("All")
+        status_filter = f1.selectbox(t("Show"), present + ["all"], format_func=show_labels.get)
+        if status_filter not in show_labels:
+            status_filter = present[0]
+        sev_filter = f2.multiselect(t("Severity"), SEVERITIES, default=SEVERITIES[:4])
         files = sorted({f.file for f in result.findings})
-        file_filter = f3.multiselect("File", files)
-        text_filter = f4.text_input("Search (title, CWE, code)")
+        file_filter = f3.multiselect(t("File"), files)
+        text_filter = f4.text_input(t("Search (title, CWE, code)"))
 
         shown = []
         for index, f in enumerate(result.findings):
@@ -356,9 +410,9 @@ with tab_findings:
                 continue
             shown.append((index, f))
 
-        st.caption("%d of %d findings. Your reviews are remembered: a finding you dismiss stays "
+        st.caption(t("%d of %d findings. Your reviews are remembered: a finding you dismiss stays "
                    "dismissed in later scans, and each review adjusts the confidence of the "
-                   "rule that produced it." % (len(shown), len(result.findings)))
+                   "rule that produced it.") % (len(shown), len(result.findings)))
         table = pd.DataFrame([{
             "Severity": f.severity, "Title": f.title, "File": f.file, "Line": f.line,
             "CWE": f.cwe, "Tier": f.tier, "Risk": f.risk_score,
@@ -368,7 +422,7 @@ with tab_findings:
         } for _, f in shown])
         st.dataframe(table, hide_index=True, height=280, **WIDE)
 
-        st.subheader("Details")
+        st.subheader(t("Details"))
         for position, (index, f) in enumerate(shown[:150]):
             label = "%s | %s | %s:%d" % (f.severity.upper(), f.title, f.file, f.line)
             with st.expander(label, expanded=(position == 0)):
@@ -377,47 +431,47 @@ with tab_findings:
                             % (f.cwe, kb["name"] if kb["name"] != f.cwe else "", f.owasp),
                             unsafe_allow_html=True)
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Risk", "%.1f / 10" % f.risk_score)
-                c2.metric("Confidence", "%d%%" % round(f.confidence * 100))
-                c3.metric("ML score", "-" if f.ml_score is None else
+                c1.metric(t("Risk"), "%.1f / 10" % f.risk_score)
+                c2.metric(t("Confidence"), "%d%%" % round(f.confidence * 100))
+                c3.metric(t("ML score"), "-" if f.ml_score is None else
                           "%d%%" % round(f.ml_score * 100))
-                c4.metric("AI verdict", f.ai_verdict.replace("_", " ") or "-")
+                c4.metric(t("AI verdict"), f.ai_verdict.replace("_", " ") or "-")
                 if f.tier == "confirmed":
-                    st.success("Confirmed: " + "; ".join(f.evidence))
+                    st.success(t("Confirmed: ") + "; ".join(f.evidence))
                 else:
-                    st.caption("Probable: a rule matched and no independent evidence confirms "
-                               "it yet%s." % (" (this file is test code)" if f.test_code else ""))
+                    st.caption(t("Probable: a rule matched and no independent evidence confirms "
+                               "it yet%s.") % (" (this file is test code)" if f.test_code else ""))
                 st.code(f.context or f.snippet, language=CODE_LANG.get(f.language, "text"))
-                st.caption("Flagged line: %d - found by: %s - rule: %s" % (
+                st.caption(t("Flagged line: %d - found by: %s - rule: %s") % (
                     f.line, ", ".join(f.engines), ", ".join(f.rule_ids)))
                 description = kb["description"] or f.description
                 fix = kb["fix"] or f.fix
                 if f.description and f.description != description and lang == "en":
                     st.write(f.description)
                 if description:
-                    st.markdown("**Why it matters**")
+                    st.markdown(t("**Why it matters**"))
                     st.write(description)
                 if fix:
-                    st.markdown("**How to fix**")
+                    st.markdown(t("**How to fix**"))
                     st.write(fix)
                 if f.ai_explanation or f.ai_fix:
-                    st.markdown("**AI review** (%s)" % (f.ai_model or "model"))
+                    st.markdown(t("**AI review** (%s)") % (f.ai_model or "model"))
                     if f.ai_explanation:
                         st.info(f.ai_explanation)
                     if f.ai_fix:
                         st.code(f.ai_fix, language=CODE_LANG.get(f.language, "text"))
                 if kb["url"]:
-                    st.caption("Reference: %s" % kb["url"])
+                    st.caption(t("Reference: %s") % kb["url"])
                 b1, b2, b3, _ = st.columns([1, 1, 1, 2])
-                b1.button("Real vulnerability", key="tp_%d" % index, on_click=review,
+                b1.button(t("Real vulnerability"), key="tp_%d" % index, on_click=review,
                           args=(index, "tp"), disabled=f.user_verdict == "true_positive", **WIDE)
-                b2.button("False positive", key="fp_%d" % index, on_click=review,
+                b2.button(t("False positive"), key="fp_%d" % index, on_click=review,
                           args=(index, "fp"), disabled=f.user_verdict == "false_positive", **WIDE)
                 if f.user_verdict:
-                    b3.button("Clear my review", key="clear_%d" % index, on_click=review,
+                    b3.button(t("Clear my review"), key="clear_%d" % index, on_click=review,
                               args=(index, "clear"), **WIDE)
         if len(shown) > 150:
-            st.caption("Showing the first 150. Use the filters, or download the full report.")
+            st.caption(t("Showing the first 150. Use the filters, or download the full report."))
 
 with tab_learn:
     storage = get_storage()
@@ -430,24 +484,24 @@ with tab_learn:
     pending = storage.list_candidates("pending")
     learned = store.read_learned()
     m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("Built-in rules", sum(1 for r in all_rules if r.origin == "builtin"))
-    m2.metric("Learned rules", len(learned))
-    m3.metric("Waiting for approval", len(pending))
-    m4.metric("Your reviews", len(storage.feedback_rows()))
-    m5.metric("Quarantined rules", len(quarantined))
-    st.caption("The AI proposes, the tool validates, you approve. A proposed rule becomes "
-               "active only after it passes every automatic check and you approve it.")
+    m1.metric(t("Active rules"), len(all_rules))
+    m2.metric(t("Learned rules"), len(learned))
+    m3.metric(t("Waiting for approval"), len(pending))
+    m4.metric(t("Your reviews"), len(storage.feedback_rows()))
+    m5.metric(t("Quarantined rules"), len(quarantined))
+    st.caption(t("The AI proposes, the tool validates, you approve. A proposed rule becomes "
+               "active only after it passes every automatic check and you approve it."))
 
-    st.subheader("Teach the tool")
+    st.subheader(t("Teach the tool"))
     if not llm_ready:
-        st.caption("Learning needs a working AI provider (section 3 of the sidebar).")
+        st.caption(t("Learning needs a working AI provider (section 3 of the sidebar)."))
     t1, t2, t3 = st.columns(3)
     with t1:
-        st.markdown("**From the current scan**")
-        st.caption("Uses what the AI found or rejected in the last scan. Run the scan with "
-                   "*AI review* and *Deep scan* switched on.")
-        if st.button("Learn from this scan", disabled=not llm_ready or result is None, **WIDE):
-            with st.spinner("Proposing and validating rules"):
+        st.markdown(t("**From the current scan**"))
+        st.caption(t("Uses what the AI found or rejected in the last scan. Run the scan with "
+                   "*AI review* and *Deep scan* switched on."))
+        if st.button(t("Learn from this scan"), disabled=not llm_ready or result is None, **WIDE):
+            with st.spinner(t("Proposing and validating rules")):
                 created = loop.learn_from_scan(result, loop.load_files(result.target),
                                                make_client(llm_config), storage)
             ok = sum(1 for c in created if c["status"] == "pending")
@@ -456,19 +510,19 @@ with tab_learn:
                 % (len(created), ok, len(created) - ok))
             st.rerun()
     with t2:
-        st.markdown("**Fill gaps for a language**")
+        st.markdown(t("**Fill gaps for a language**"))
         every = "all languages"
-        language = st.selectbox("Language", [every] + CODE_LANGUAGES)
+        language = st.selectbox(t("Language"), [every] + CODE_LANGUAGES)
         if language == every:
             gap_map = loop.all_gaps()
             gaps = [c for v in gap_map.values() for c in v]
-            st.caption("%d weaknesses without a rule in %d languages (up to %d AI requests)"
+            st.caption(t("%d weaknesses without a rule in %d languages (up to %d AI requests)")
                        % (len(gaps), len(gap_map), 2 * len(gaps)))
         else:
             gaps = loop.coverage_gaps(language)
-            st.caption("Weaknesses without a rule: %s" % (", ".join(gaps) or "none"))
-        if st.button("Write rules for the gaps", disabled=not llm_ready or not gaps, **WIDE):
-            with st.spinner("Asking the model for rules"):
+            st.caption(t("Weaknesses without a rule: %s") % (", ".join(gaps) or "none"))
+        if st.button(t("Write rules for the gaps"), disabled=not llm_ready or not gaps, **WIDE):
+            with st.spinner(t("Asking the model for rules")):
                 client = make_client(llm_config)
                 created = (loop.bootstrap_all(client, storage) if language == every
                            else loop.bootstrap(client, storage, language))
@@ -478,69 +532,69 @@ with tab_learn:
                 % (len(created), ok, len(created) - ok))
             st.rerun()
     with t3:
-        st.markdown("**From your false positives**")
-        st.caption("Proposes a narrow exclusion for each finding you dismissed, so the rule "
-                   "stops reporting that kind of safe code.")
-        if st.button("Learn exclusions", disabled=not llm_ready, **WIDE):
-            with st.spinner("Proposing and validating exclusions"):
+        st.markdown(t("**From your false positives**"))
+        st.caption(t("Proposes a narrow exclusion for each finding you dismissed, so the rule "
+                   "stops reporting that kind of safe code."))
+        if st.button(t("Learn exclusions"), disabled=not llm_ready, **WIDE):
+            with st.spinner(t("Proposing and validating exclusions")):
                 created = loop.learn_from_feedback(make_client(llm_config), storage)
             st.session_state["learn_note"] = "%d exclusion(s) proposed." % len(created)
             st.rerun()
 
-    st.subheader("Waiting for your approval (%d)" % len(pending))
+    st.subheader(t("Waiting for your approval (%d)") % len(pending))
     if not pending:
-        st.caption("Nothing is waiting.")
+        st.caption(t("Nothing is waiting."))
     for c in pending:
         kind = "Exclusion for %s" % c.get("target_rule") if c.get("kind") == "exclude" \
             else "New rule"
         with st.expander("%s | %s | %s | %s" % (kind, ", ".join(c.get("languages", [])),
                                                 c.get("cwe", ""), c.get("title", ""))):
-            st.caption("%s - proposed by %s - origin: %s" % (c["id"], c.get("source", ""),
+            st.caption(t("%s - proposed by %s - origin: %s") % (c["id"], c.get("source", ""),
                                                              c.get("origin", "")))
             if c.get("origin") == "bootstrap":
-                st.warning("Written from the model's own knowledge, without an example from a "
-                           "real project. Its only evidence is the examples below.")
+                st.warning(t("Written from the model's own knowledge, without an example from a "
+                           "real project. Its only evidence is the examples below."))
             if c.get("kind") == "exclude":
-                st.markdown("**Lines matching this are skipped by the rule**")
+                st.markdown(t("**Lines matching this are skipped by the rule**"))
                 st.code(c.get("exclude", ""), language="text")
             else:
-                st.markdown("**Pattern**")
+                st.markdown(t("**Pattern**"))
                 st.code(c.get("pattern", ""), language="text")
                 if c.get("exclude"):
-                    st.markdown("**Unless the line also matches**")
+                    st.markdown(t("**Unless the line also matches**"))
                     st.code(c["exclude"], language="text")
             if c.get("message"):
                 st.write(c["message"])
             evidence = (c.get("evidence") or {}).get("snippet")
             if evidence:
-                st.markdown("**Learned from** `%s`" % (c["evidence"].get("file") or "your review"))
+                st.markdown(t("**Learned from** `%s`") % (c["evidence"].get("file") or "your review"))
                 st.code(evidence, language="text")
             e1, e2 = st.columns(2)
             if c.get("examples_vulnerable"):
-                e1.markdown("**Must match**")
+                e1.markdown(t("**Must match**"))
                 e1.code("\n".join(c["examples_vulnerable"]), language="text")
             if c.get("examples_safe"):
-                e2.markdown("**Must not match**")
+                e2.markdown(t("**Must not match**"))
                 e2.code("\n".join(c["examples_safe"]), language="text")
             report = c.get("validation") or {}
-            st.markdown("**Automatic checks**")
+            st.markdown(t("**Automatic checks**"))
             st.dataframe(pd.DataFrame([{"Check": x["name"],
                                         "Result": "passed" if x["passed"] else "FAILED",
                                         "Detail": x["detail"]} for x in report.get("checks", [])]),
                          hide_index=True, **WIDE)
             if report.get("project_matches"):
-                st.markdown("**What it would flag in the scanned project (%d lines)**"
+                st.markdown(t("**What it would flag in the scanned project (%d lines)**")
                             % report.get("match_count", 0))
                 st.dataframe(pd.DataFrame(report["project_matches"]), hide_index=True, **WIDE)
             a1, a2, _ = st.columns([1, 1, 3])
-            a1.button("Approve", key="approve_%s" % c["id"], type="primary", on_click=decide,
+            a1.button(t("Approve"), key="approve_%s" % c["id"], type="primary", on_click=decide,
                       args=(c["id"], True), **WIDE)
-            a2.button("Reject", key="reject_%s" % c["id"], on_click=decide,
+            a2.button(t("Reject"), key="reject_%s" % c["id"], on_click=decide,
                       args=(c["id"], False), **WIDE)
 
     rejected = storage.list_candidates("rejected_auto")[:15]
     if rejected:
-        with st.expander("Rejected automatically (%d most recent)" % len(rejected)):
+        with st.expander(t("Rejected automatically (%d most recent)") % len(rejected)):
             st.dataframe(pd.DataFrame([{
                 "Id": c["id"], "CWE": c.get("cwe", ""), "Pattern": c.get("pattern") or c.get("exclude", ""),
                 "Failed checks": "; ".join("%s: %s" % (x["name"], x["detail"]) for x in
@@ -548,7 +602,7 @@ with tab_learn:
                                            if not x["passed"])} for c in rejected]),
                 hide_index=True, **WIDE)
 
-    st.subheader("Learned rules (%d)" % len(learned))
+    st.subheader(t("Learned rules (%d)") % len(learned))
     if learned:
         st.dataframe(pd.DataFrame([{
             "Id": r["id"], "Languages": ", ".join(r.get("languages", [])), "CWE": r.get("cwe", ""),
@@ -557,13 +611,13 @@ with tab_learn:
             "Approved": (r.get("learned") or {}).get("approved", "")} for r in learned]),
             hide_index=True, **WIDE)
         r1, r2 = st.columns([3, 1])
-        chosen_rule = r1.selectbox("Remove a learned rule", [r["id"] for r in learned],
+        chosen_rule = r1.selectbox(t("Remove a learned rule"), [r["id"] for r in learned],
                                    label_visibility="collapsed")
-        r2.button("Remove rule", on_click=remove_rule, args=(chosen_rule,), **WIDE)
+        r2.button(t("Remove rule"), on_click=remove_rule, args=(chosen_rule,), **WIDE)
     else:
-        st.caption("No learned rules yet. They are stored in learned/rules.yaml.")
+        st.caption(t("No learned rules yet. They are stored in learned/rules.yaml."))
 
-    st.subheader("Rule track record")
+    st.subheader(t("Rule track record"))
     if stats:
         st.dataframe(pd.DataFrame([{
             "Rule": rule_id, "Confirmed": s["tp"], "False positives": s["fp"],
@@ -574,85 +628,57 @@ with tab_learn:
             for rule_id, s in sorted(stats.items(), key=lambda kv: -kv[1]["fp"])]),
             hide_index=True, **WIDE)
     else:
-        st.caption("No reviews yet. Use the buttons under each finding to confirm or dismiss it.")
+        st.caption(t("No reviews yet. Use the buttons under each finding to confirm or dismiss it."))
 
-    st.subheader("Coverage: rules per language and weakness")
+    st.subheader(t("Coverage: rules per language and weakness"))
     matrix = loop.coverage_matrix()
     frame = pd.DataFrame(matrix).T.fillna(0).astype(int)
     frame = frame[sorted(frame.columns, key=lambda c: int(c.split("-")[1]))] if len(frame.columns) else frame
     frame.insert(0, "Rules", frame.sum(axis=1))
     st.dataframe(frame, **WIDE)
-    st.caption("Python is analysed by the AST taint engine and needs no pattern rules. "
+    st.caption(t("Python is analysed by the AST taint engine and needs no pattern rules. "
                "Languages without rules are still covered by the AI deep scan, and by "
-               "Opengrep/Semgrep when installed.")
+               "Opengrep/Semgrep when installed."))
 
 with tab_reports:
     if result is None:
-        st.write("No scan yet.")
+        st.write(t("No scan yet."))
     else:
-        st.write("Download the results of the current scan.")
+        st.write(t("Download the results of the current scan."))
         d1, d2, d3, d4 = st.columns(4)
-        d1.download_button("HTML report", render_html(result), "sca-report.html", "text/html",
+        d1.download_button(t("HTML report"), render_html(result), "sca-report.html", "text/html",
                            **WIDE)
-        d2.download_button("JSON", json.dumps(result.to_dict(), indent=2, ensure_ascii=False),
+        d2.download_button(t("JSON"), json.dumps(result.to_dict(), indent=2, ensure_ascii=False),
                            "sca-report.json", "application/json", **WIDE)
-        d3.download_button("SARIF", json.dumps(to_sarif(result), indent=2, ensure_ascii=False),
+        d3.download_button(t("SARIF"), json.dumps(to_sarif(result), indent=2, ensure_ascii=False),
                            "sca-report.sarif", "application/json", **WIDE)
         try:
-            d4.download_button("PDF report", render_pdf(result), "sca-report.pdf",
+            d4.download_button(t("PDF report"), render_pdf(result), "sca-report.pdf",
                                "application/pdf", **WIDE)
         except Exception as exc:
-            d4.caption("PDF unavailable: %s" % exc)
-        st.caption("The HTML report contains everything, including Arabic text. The PDF uses "
+            d4.caption(t("PDF unavailable: %s") % exc)
+        st.caption(t("The HTML report contains everything, including Arabic text. The PDF uses "
                    "built-in fonts and leaves non-Latin text out. SARIF can be uploaded to "
-                   "GitHub code scanning or opened in VS Code.")
+                   "GitHub code scanning or opened in VS Code."))
 
 with tab_history:
     scans = get_storage().list_scans(200)
     if not scans:
-        st.write("No saved scans yet.")
+        st.write(t("No saved scans yet."))
     else:
         frame = pd.DataFrame(scans)
         targets = sorted(frame["target"].unique())
-        chosen = st.selectbox("Project", targets, index=targets.index(result.target)
+        chosen = st.selectbox(t("Project"), targets, index=targets.index(result.target)
                               if result is not None and result.target in targets else 0)
         project = frame[frame["target"] == chosen].sort_values("id")
-        st.subheader("Security score over time")
+        st.subheader(t("Security score over time"))
         st.line_chart(project.set_index("started_at")[["score"]], height=220)
         st.dataframe(project[["id", "started_at", "score", "grade", "critical", "high",
                               "medium", "low", "files_scanned", "lines_scanned"]]
                      .sort_values("id", ascending=False), hide_index=True, **WIDE)
-        scan_id = st.selectbox("Open a saved scan", list(project["id"])[::-1])
-        if st.button("Load this scan"):
+        scan_id = st.selectbox(t("Open a saved scan"), list(project["id"])[::-1])
+        if st.button(t("Load this scan")):
             loaded = get_storage().load_scan(int(scan_id))
             if loaded is not None:
                 st.session_state["result"] = loaded
                 st.rerun()
-
-with tab_about:
-    st.markdown("""
-### How it works
-
-1. **Collect** - the source files of the chosen folder are read and their language detected.
-2. **Detect** - static engines look for weaknesses: pattern rules (built-in and learned),
-   a Python AST taint analysis that follows user input across functions, a secrets
-   detector and, when installed, Bandit, Opengrep/Semgrep and Gitleaks.
-3. **Refine** - for other languages a lightweight tracer checks whether user input reaches
-   the flagged line; each rule's confidence is adjusted by its track record in your reviews.
-4. **Merge** - the same issue found by several engines becomes one finding.
-5. **AI** - a classifier gives a second opinion; the AI provider you chose can review each
-   finding, explain it, propose a fix, and audit whole files.
-6. **Assess** - findings are split into *confirmed* and *probable*; the project gets a
-   0-100 score and a grade.
-7. **Learn** - what the AI finds becomes a proposed rule, is validated automatically, and
-   waits for your approval. Your reviews teach the tool which rules to trust.
-
-### Limits
-
-- No static analyzer can promise zero false alarms or zero missed vulnerabilities. Strict
-  mode shows only findings backed by independent evidence, at the cost of moving the rest
-  to *Needs review*.
-- AI answers can be wrong. A finding judged false by the AI is kept and labelled, never
-  deleted, and a rule written by the AI is never active before validation and approval.
-- The security score is a heuristic of this tool and not an official CVSS score.
-""")

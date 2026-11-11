@@ -110,3 +110,115 @@
   severity: high
   confidence: 0.8
   pattern: 'ALLOW_ALL_HOSTNAME_VERIFIER|NoopHostnameVerifier|setHostnameVerifier\s*\(\s*\([^)]*\)\s*->\s*true|checkServerTrusted\s*\([^)]*\)\s*\{\s*\}'
+
+# ---- Sink rules. Each one is silent unless user input is traced to the line
+# (requires_taint), so naming a common API here does not flood a report.
+- id: JAVA-PATH-002
+  title: File opened with a path taken from the request
+  languages: [java]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: 'new\s+(java\.io\.)?(File|FileInputStream|FileOutputStream|FileReader|FileWriter|RandomAccessFile)\s*\(|\bPaths\.get\s*\(|\bFiles\.(newInputStream|newOutputStream|readAllBytes|readAllLines|readString|write|writeString|newBufferedReader|newBufferedWriter|delete|copy|move)\s*\('
+  message: A file name that comes from the request can point outside the intended folder with ../ sequences.
+  fix: Resolve the path, check that it stays inside the base folder, or map the input to a fixed list of names.
+
+- id: JAVA-CMDI-003
+  title: Operating-system command receives request data
+  languages: [java]
+  cwe: CWE-78
+  severity: critical
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\.exec\s*\(|new\s+(java\.lang\.)?ProcessBuilder\s*\(|\.command\s*\('
+  near: 'Runtime|ProcessBuilder|\bProcess\b'
+  within: 8
+  message: Request data reaches a command that the operating system runs.
+  fix: Do not build commands from input. Call the program with a fixed argument list and validate each value.
+
+- id: JAVA-SQLI-003
+  title: SQL statement variable built from request data
+  languages: [java]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\.(executeQuery|executeUpdate|execute|prepareStatement|prepareCall|addBatch|queryForObject|queryForList|queryForMap|queryForRowSet|queryForInt|queryForLong|batchUpdate|createQuery|createNativeQuery)\s*\(\s*[A-Za-z_]\w*\s*[,)]'
+  message: The SQL text passed here was built from request data in the lines above.
+  fix: Use a PreparedStatement with ? placeholders and bind the values.
+
+- id: JAVA-XSS-002
+  title: Request data written to the HTTP response
+  languages: [java]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.55
+  requires_taint: true
+  pattern: '\.getWriter\(\)\s*\.(print|println|write|append|format|printf)\s*\(|\bout\.(print|println|write)\s*\('
+  exclude: 'System\.out\.'
+  message: Request data is written into the page without HTML encoding.
+  fix: Encode the value for HTML (for example OWASP Java Encoder, Encode.forHtml) before writing it.
+
+- id: JAVA-LDAP-001
+  title: LDAP search filter built from request data
+  languages: [java]
+  cwe: CWE-90
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\.search\s*\('
+  near: '(?i)ldap|DirContext|javax\.naming'
+  within: 15
+  message: Request data is part of the LDAP filter, so the query can be changed by the user.
+  fix: Escape the value for LDAP filters, or pass it as a filter argument ({0}) instead of concatenating it.
+
+- id: JAVA-XPATH-001
+  title: XPath expression built from request data
+  languages: [java]
+  cwe: CWE-643
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\.(evaluate|compile)\s*\('
+  near: '(?i)xpath'
+  within: 8
+  message: Request data is part of the XPath expression, so the query can be changed by the user.
+  fix: Use an XPathVariableResolver (parameterized XPath) or validate the value against an allow-list.
+
+- id: JAVA-TRUST-001
+  title: Request data stored in the session without validation
+  languages: [java]
+  cwe: CWE-501
+  severity: medium
+  confidence: 0.5
+  requires_taint: true
+  pattern: '\.(setAttribute|putValue)\s*\('
+  near: '(?i)session'
+  within: 2
+  message: A value from the request is placed in the server-side session, where later code treats it as trusted.
+  fix: Validate the value first, and never let the user choose the name of a session attribute.
+
+# ---- Context rules: the pattern alone is ordinary code; the neighbouring lines make it a weakness.
+- id: JAVA-RANDOM-002
+  title: java.util.Random or Math.random used near a security value
+  languages: [java]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.6
+  pattern: '\bnew\s+(java\.util\.)?Random\s*\(|\bMath\.random\s*\('
+  exclude: 'SecureRandom'
+  near: '(?i)remember|token|secret|passw|session|cookie|otp|nonce|salt|csrf|api_?key|auth'
+  within: 3
+  message: java.util.Random and Math.random are predictable; a value for a cookie, token or key must not come from them.
+  fix: Use java.security.SecureRandom.
+
+- id: JAVA-COOKIE-001
+  title: Cookie created with the Secure flag switched off
+  languages: [java]
+  cwe: CWE-614
+  severity: medium
+  confidence: 0.9
+  pattern: '\.setSecure\s*\(\s*false\s*\)'
+  message: The cookie will also be sent over unencrypted HTTP.
+  fix: Call setSecure(true) (and setHttpOnly(true)) on the cookie.

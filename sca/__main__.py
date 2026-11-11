@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -112,7 +113,9 @@ def cmd_scan(args: argparse.Namespace) -> int:
         use_llm=args.llm or args.deep, llm_max_findings=args.llm_max,
         llm_deep_scan=args.deep, lang=args.lang, save=not args.no_save,
         strict=args.strict, use_feedback=not args.no_feedback,
-        include_tests=not args.skip_tests, **_llm_settings(args))
+        include_tests=not args.skip_tests, use_taint_lite=not args.no_taint_lite,
+        llm_deep_max_files=args.deep_max_files, llm_timeout=args.llm_timeout,
+        **_llm_settings(args))
     try:
         result = run_scan(args.path, options, _progress(args))
     except FileNotFoundError as exc:
@@ -468,6 +471,15 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
             else:
                 print(text, end="")
             return 0
+        if not ids and action in ("enable", "disable") and (
+                args.origin or args.lang or args.cwe or args.search):
+            # no id given: act on every rule that matches the filters
+            ids = [r.id for r in rulebook.list_rules(origin=args.origin, language=args.lang,
+                                                     cwe=args.cwe, text=args.search or "")]
+            changed = rulebook.set_enabled_many(ids, action == "enable")
+            print("%s %d of %d matching rule(s)." % (
+                "Enabled" if action == "enable" else "Disabled", changed, len(ids)))
+            return 0
         if not ids:
             print("Give a rule id (or a file for new / import).", file=sys.stderr)
             return 2
@@ -696,6 +708,12 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--deep", action="store_true",
                       help="also let the AI audit whole files (slower; implies --llm)")
     scan.add_argument("--llm-max", type=int, default=30, help="max findings the AI reviews")
+    scan.add_argument("--deep-max-files", type=int, default=10,
+                      help="files the AI audits in a deep scan (default 10)")
+    scan.add_argument("--llm-timeout", type=int, default=180,
+                      help="seconds to wait for one AI answer (default 180)")
+    scan.add_argument("--no-taint-lite", action="store_true",
+                      help="do not trace user input for JS, PHP, Java, Go, C#, Ruby, C")
     _add_llm_arguments(scan)
     scan.set_defaults(func=cmd_scan)
 
@@ -742,6 +760,7 @@ def build_parser() -> argparse.ArgumentParser:
 The rule set:
   catalog                 every rule (--origin, --lang, --cwe, --search, --disabled)
   enable ID... / disable ID...
+                          without an id: every rule matching --origin/--lang/--cwe/--search
   edit ID --set field=value [--set ...]    fields: title, languages, cwe, severity,
                           confidence, pattern, exclude, ignore_case, message, fix
   reset ID...             undo your changes to a rule that ships with the tool
@@ -801,7 +820,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not getattr(args, "func", None):
         parser.print_help()
         return 0
-    return args.func(args)
+    try:
+        return args.func(args)
+    except BrokenPipeError:          # output piped into `head` or a closed pager
+        try:
+            sys.stdout = open(os.devnull, "w")
+        except OSError:
+            pass
+        return 0
 
 
 if __name__ == "__main__":

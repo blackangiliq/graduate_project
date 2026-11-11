@@ -5,7 +5,7 @@ the dashboard and from `evaluation/import_report.json`.
 
 ## The rule set
 
-The tool ships **398 rules, 351 of them active**: 98 built in and
+The tool ships **407 rules, 360 of them active**: 107 built in and
 300 imported from open-source rule sets (253 active). 205 of the
 imported rules are credential formats and run inside the secrets engine. Rules learned from
 the AI and rules you write yourself are added on top.
@@ -85,7 +85,7 @@ analysis, so it has no built-in pattern rules):
 | elixir | 0 | 0 | 6 |
 | go | 8 | 1 | 7 |
 | html | 0 | 0 | 6 |
-| java (+ kotlin, scala, groovy) | 13 | 3 | 11 |
+| java (+ kotlin, scala, groovy) | 22 | 3 | 11 |
 | javascript (+ typescript) | 22 | 2 | 10 |
 | lua | 0 | 0 | 6 |
 | perl | 0 | 0 | 6 |
@@ -121,6 +121,8 @@ are skipped) and reports the line if `pattern` matches and `exclude` does not.
 | `pattern` | Regular expression (Python `re` syntax) that marks a vulnerable line. |
 | `exclude` | Optional expression; if it also matches, the line is ignored. This is how a rule is taught about a safe variant. |
 | `ignore_case` | Match upper and lower case alike. |
+| `near`, `within` | Optional context: the rule fires only if `near` matches a line at most `within` lines above or below. For patterns that are ordinary code on their own. |
+| `requires_taint` | `true` = report only when a variable on the line was filled from user input in the lines above. For rules that name a common function. |
 | `message`, `fix` | Optional explanation and advice shown with the finding. |
 | `examples_vulnerable` | Lines the rule must match. Checked every time the rule is saved. |
 | `examples_safe` | Lines the rule must not match. |
@@ -175,6 +177,9 @@ an update of the tool, and **Restore original** removes it.
   pattern: 'db\.query\(\s*"[^"]*"\s*\+'     # marks a vulnerable line
   exclude: ''                     # optional: if this also matches, the line is ignored
   ignore_case: false
+  near: ''                        # optional: only fire if this matches a neighbouring line
+  within: 5                       # ... at most this many lines above or below
+  requires_taint: false           # true = report only when user input is traced to the line
   message: Why this line is dangerous.
   fix: How to write it safely.
   examples_vulnerable:            # lines the rule MUST match (checked when you save)
@@ -206,6 +211,7 @@ python -m sca rules approve ID                                 # Approve a propo
 python -m sca rules catalog --lang php                         # Every rule for a language.
 python -m sca rules show ID                                    # One rule in full.
 python -m sca rules disable ID                                 # Switch a rule off (enable = on again).
+python -m sca rules disable --origin imported --lang swift     # Switch off every rule that matches the filters.
 python -m sca rules edit ID --set severity=low --set confidence=0.4 # Change fields of a rule.
 python -m sca rules reset ID                                   # Undo your changes to a shipped rule.
 python -m sca rules template > my-rule.yaml                    # An empty rule to fill in.
@@ -221,7 +227,7 @@ python -m sca coverage                                         # Rules per langu
 
 ## مجموعة القواعد
 
-تأتي الأداة مع **398 قاعدة، منها 351 فعّالة**: 98 مدمجة و 300
+تأتي الأداة مع **407 قاعدة، منها 360 فعّالة**: 107 مدمجة و 300
 مستوردة من مجموعات قواعد مفتوحة المصدر (253 منها فعّالة). من المستوردة 205
 صيغة مفتاح تعمل داخل محرك الأسرار. وتُضاف فوقها القواعد المتعلَّمة من الذكاء الاصطناعي
 والقواعد التي تكتبها أنت.
@@ -299,7 +305,7 @@ python -m sca coverage                                         # Rules per langu
 | elixir | 0 | 0 | 6 |
 | go | 8 | 1 | 7 |
 | html | 0 | 0 | 6 |
-| java (+ kotlin, scala, groovy) | 13 | 3 | 11 |
+| java (+ kotlin, scala, groovy) | 22 | 3 | 11 |
 | javascript (+ typescript) | 22 | 2 | 10 |
 | lua | 0 | 0 | 6 |
 | perl | 0 | 0 | 6 |
@@ -335,6 +341,8 @@ python -m sca coverage                                         # Rules per langu
 | `pattern` | تعبير نمطي (بصيغة مكتبة `re` في بايثون) يعلّم السطر المصاب. |
 | `exclude` | تعبير اختياري، إن طابق السطر أيضاً فيُتجاهل. بهذا تتعلّم القاعدة الصيغة الآمنة. |
 | `ignore_case` | عدم التفريق بين الأحرف الكبيرة والصغيرة. |
+| `near` و `within` | سياق اختياري: لا تعمل القاعدة إلا إذا طابق `near` سطراً يبعد `within` أسطر على الأكثر فوق السطر أو تحته. للأنماط التي هي كود عادي بمفردها. |
+| `requires_taint` | القيمة `true` تعني: بلّغ فقط إذا كان متغيّر في السطر قد أُخذ من مدخلات المستخدم في الأسطر السابقة. للقواعد التي تذكر دالة شائعة. |
 | `message` و `fix` | شرح ونصيحة اختياريان يظهران مع النتيجة. |
 | `examples_vulnerable` | أسطر يجب أن تطابقها القاعدة. تُفحص عند كل حفظ. |
 | `examples_safe` | أسطر يجب ألّا تطابقها القاعدة. |
@@ -389,6 +397,7 @@ python -m sca rules approve ID                                 # المصادق�
 python -m sca rules catalog --lang php                         # كل القواعد الخاصة بلغة.
 python -m sca rules show ID                                    # عرض قاعدة كاملة.
 python -m sca rules disable ID                                 # تعطيل قاعدة (enable لإعادتها).
+python -m sca rules disable --origin imported --lang swift     # تعطيل كل القواعد المطابقة للفلاتر.
 python -m sca rules edit ID --set severity=low --set confidence=0.4 # تعديل حقول قاعدة.
 python -m sca rules reset ID                                   # التراجع عن تعديلاتك على قاعدة مرفقة.
 python -m sca rules template > my-rule.yaml                    # قالب قاعدة فارغ لتملأه.

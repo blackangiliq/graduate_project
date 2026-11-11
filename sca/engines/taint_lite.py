@@ -34,8 +34,11 @@ SOURCES: Dict[str, "re.Pattern[str]"] = {
         r"|\bdocument\.(URL|cookie|referrer)\b|\bURLSearchParams\b|\bprocess\.argv\b"),
     "php": re.compile(r"\$_(GET|POST|REQUEST|COOKIE|FILES|SERVER)\b|php://input"),
     "java": re.compile(
-        r"\.getParameter(Values|Map)?\s*\(|\.getHeader\s*\(|\.getCookies\s*\(|\.getQueryString\s*\("
-        r"|@RequestParam|@PathVariable|@RequestBody|\.getInputStream\s*\("),
+        r"\.getParameter(Values|Map|Names)?\s*\(|\.getHeaders?\s*\(|\.getHeaderNames\s*\("
+        r"|\.getCookies\s*\(|\b\w*[cC]ookie\w*\.getValue\s*\(|\.getQueryString\s*\("
+        r"|\.getRequestURI\s*\(|\.getPathInfo\s*\(|\.getReader\s*\("
+        r"|@RequestParam|@PathVariable|@RequestBody|@RequestHeader|@CookieValue"
+        r"|\.getInputStream\s*\("),
     "go": re.compile(r"\.(FormValue|PostFormValue)\s*\(|\.URL\.Query\(\)|mux\.Vars\(|\bos\.Args\b"),
     "csharp": re.compile(r"\bRequest\.(QueryString|Form|Params|Cookies|Headers|Query)\b|\bRequest\["),
     "ruby": re.compile(r"\bparams\[|\brequest\.(params|body|headers)\b|\bcookies\["),
@@ -45,7 +48,8 @@ SANITIZERS = re.compile(
     r"htmlspecialchars|htmlentities|escapeshellarg|escapeshellcmd|intval|\(int\)|parseInt"
     r"|parseFloat|Number\(|encodeURIComponent|escapeHtml|sanitize|basename|Integer\.parseInt"
     r"|Long\.parseLong|strconv\.Atoi|filepath\.Base|\.to_i\b|Convert\.ToInt|int\.Parse"
-    r"|DOMPurify|Encode\.for|HtmlEncode|GetFileName|prepare\(", re.IGNORECASE)
+    r"|DOMPurify|Encode\.for|encodeFor[A-Z]\w*\(|htmlEscape|escapeXml|escapeEcmaScript"
+    r"|HtmlEncode|GetFileName|\.getName\(\)|FilenameUtils\.getName|prepare\(", re.IGNORECASE)
 SOURCE_BASE = re.compile(
     r"^\$_(GET|POST|REQUEST|COOKIE|FILES|SERVER)$"
     r"|(^|\.)(query|params|body|headers|cookies|args|form|argv|QueryString|Form|Params|Cookies)$"
@@ -63,12 +67,25 @@ def strip_lookups(text: str) -> str:
     """Blank the content of ``table[...]`` when ``table`` is not itself a request object.
 
     ``$pages[$_GET['page']]`` reads a value from a fixed table: the result is chosen by the
-    user but not written by the user, so it is not treated as user input."""
+    user but not written by the user, so it is not treated as user input.
+
+    A bracket inside a string literal is text, not a lookup: in
+    ``"/Employee[@id='" + id + "']"`` the variable between the brackets stays visible."""
     out: List[str] = []
     i = 0
+    quote = ""                       # the quote character of the literal we are inside
     while i < len(text):
         ch = text[i]
-        if ch == "[":
+        if quote:
+            if ch == "\\":
+                out.append(text[i:i + 2])
+                i += 2
+                continue
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'`":
+            quote = ch
+        elif ch == "[":
             base = re.search(r"(\$?[\w.]+)$", "".join(out))
             depth, j = 1, i + 1
             while j < len(text) and depth:

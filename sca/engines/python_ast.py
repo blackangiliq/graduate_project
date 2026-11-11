@@ -21,9 +21,10 @@ It is flow-insensitive inside a function. The limits are documented in docs/ARCH
 from __future__ import annotations
 
 import ast
+import operator
 import re
 from dataclasses import replace
-from typing import Dict, Iterable, Iterator, List, Optional, Set
+from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set
 
 from ..models import Finding
 from ..walker import SourceFile
@@ -59,13 +60,35 @@ SENSITIVE_NAME = re.compile(
 SCOPE_TYPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
 
 
-def _iter_scope(node: ast.AST) -> Iterator[ast.AST]:
-    """Yield nodes of one scope in source order without entering nested functions."""
+LDAP_SEARCH = {"search", "search_s", "search_st", "search_ext", "search_ext_s", "paged_search"}
+XPATH_CALLS = {"XPath", "ETXPath", "xpath"}
+SESSION_NAMES = {"session", "flask.session", "request.session"}
+FOLD_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+            ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod, ast.Gt: operator.gt,
+            ast.GtE: operator.ge, ast.Lt: operator.lt, ast.LtE: operator.le,
+            ast.Eq: operator.eq, ast.NotEq: operator.ne}
+
+
+class _Unknown(Exception):
+    """The value of an expression is not known before the program runs."""
+
+
+def _iter_scope(node: ast.AST, fold: Optional[Callable[[ast.AST], Optional[bool]]] = None
+                ) -> Iterator[ast.AST]:
+    """Yield nodes of one scope in source order without entering nested functions.
+
+    With ``fold``, the branch of an ``if`` whose condition is a constant (``if 7 * 18 + n >
+    200`` with ``n = 106``) is known to be dead and is left out: code that can never run
+    must neither spread taint nor be reported."""
+    skip: List[ast.AST] = []
+    if fold is not None and isinstance(node, ast.If):
+        value = fold(node.test)
+        skip = node.orelse if value is True else node.body if value is False else []
     for child in ast.iter_child_nodes(node):
-        if isinstance(child, SCOPE_TYPES):
+        if isinstance(child, SCOPE_TYPES) or any(child is dead for dead in skip):
             continue
         yield child
-        yield from _iter_scope(child)
+        yield from _iter_scope(child, fold)
 
 
 class _Analyzer:
@@ -76,7 +99,51 @@ class _Analyzer:
         self.findings: List[Finding] = []
         self.tainted: Set[str] = set()
         self.dyn: Set[str] = set()       # names holding dynamically built strings
+        self.consts: Dict[str, object] = {}   # names bound once to a literal, per scope
+        self.uses_ldap = bool(re.search(r"^\s*(import|from)\s+[^\n#]*ldap", sf.text, re.M | re.I))
         self._collect_aliases()
+
+    # ------------------------------------------------------------------ constant folding
+    def _eval(self, node: ast.AST) -> object:
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float, bool, str)):
+            return node.value
+        if isinstance(node, ast.Name) and node.id in self.consts:
+            return self.consts[node.id]
+        if isinstance(node, ast.BinOp) and type(node.op) in FOLD_OPS:
+            return FOLD_OPS[type(node.op)](self._eval(node.left), self._eval(node.right))
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.Not, ast.USub)):
+            value = self._eval(node.operand)
+            return (not value) if isinstance(node.op, ast.Not) else -value  # type: ignore
+        if isinstance(node, ast.Compare) and len(node.ops) == 1 and type(node.ops[0]) in FOLD_OPS:
+            return FOLD_OPS[type(node.ops[0])](self._eval(node.left),
+                                               self._eval(node.comparators[0]))
+        if isinstance(node, ast.BoolOp):
+            values = [self._eval(v) for v in node.values]
+            return all(values) if isinstance(node.op, ast.And) else any(values)
+        raise _Unknown
+
+    def fold(self, test: ast.AST) -> Optional[bool]:
+        """True or False if a condition is decided by constants alone, otherwise None."""
+        try:
+            return bool(self._eval(test))
+        except (_Unknown, TypeError, ZeroDivisionError, OverflowError):
+            return None
+
+    def _scope_nodes(self, scope: ast.AST) -> List[ast.AST]:
+        """The live nodes of a scope. Names bound exactly once to a literal count as
+        constants when conditions are folded."""
+        stores: Dict[str, int] = {}
+        literal: Dict[str, object] = {}
+        for node in _iter_scope(scope):
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+                stores[node.id] = stores.get(node.id, 0) + 1
+            elif isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                    and isinstance(node.targets[0], ast.Name) \
+                    and isinstance(node.value, ast.Constant) \
+                    and isinstance(node.value.value, (int, float, bool, str)):
+                literal[node.targets[0].id] = node.value.value
+        self.consts = {name: value for name, value in literal.items() if stores.get(name) == 1}
+        return list(_iter_scope(scope, self.fold))
 
     # ------------------------------------------------------------------ helpers
     def _collect_aliases(self) -> None:
@@ -156,6 +223,10 @@ class _Analyzer:
             return False
         if isinstance(node, ast.Name):
             return node.id in self.tainted
+        if isinstance(node, ast.IfExp):          # a if cond else b: skip the dead side
+            value = self.fold(node.test)
+            if value is not None:
+                return self.is_tainted(node.body if value else node.orelse)
         if isinstance(node, ast.Call):
             name = self.dotted(node.func)
             if name.split(".")[-1] in SANITIZER_LAST:
@@ -218,7 +289,7 @@ class _Analyzer:
     # ------------------------------------------------------------------ analysis
     def run(self) -> List[Finding]:
         # ---- pass 1: every scope on its own (intra-procedural)
-        module_nodes = list(_iter_scope(self.tree))
+        module_nodes = self._scope_nodes(self.tree)
         self._propagate(module_nodes)
         module_tainted, module_dyn = set(self.tainted), set(self.dyn)
         self._check(module_nodes, None)
@@ -231,7 +302,7 @@ class _Analyzer:
                 for arg in func.args.args + func.args.kwonlyargs:
                     if arg.arg not in ("self", "cls", "request", "req", "db", "session"):
                         self.tainted.add(arg.arg)
-            nodes = list(_iter_scope(func))
+            nodes = self._scope_nodes(func)
             self._propagate(nodes)
             self._check(nodes, func)
             scopes.append((nodes, set(self.tainted), set(self.dyn)))
@@ -246,7 +317,7 @@ class _Analyzer:
                 continue
             params = [a.arg for a in func.args.posonlyargs + func.args.args
                       if a.arg not in ("self", "cls")]
-            nodes = list(_iter_scope(func))
+            nodes = self._scope_nodes(func)
             for index, param in enumerate(params):
                 self.findings = []
                 self.tainted, self.dyn = module_tainted | {param}, set(module_dyn)
@@ -351,6 +422,16 @@ class _Analyzer:
                 self._check_assign(node, func is None)
 
     def _check_assign(self, node: ast.Assign, module_level: bool) -> None:
+        for target in node.targets:          # session["key"] = <request data>
+            if isinstance(target, ast.Subscript) and self.dotted(target.value) in SESSION_NAMES \
+                    and (self.is_tainted(node.value) or self.is_tainted(target.slice)):
+                # "traced" only when the request object is read on this very line; a value
+                # that merely passed through other calls (a database row) stays probable
+                direct = any(self._is_source(n) for n in ast.walk(node)
+                             if isinstance(n, (ast.Attribute, ast.Subscript)))
+                self.report(node, "PY-TRUST-001",
+                            "User input stored in the session without validation", "CWE-501",
+                            "medium", 0.6 if direct else 0.45, direct)
         if module_level and self._is_true(node.value):
             fname = self.sf.rel.lower()
             for t in node.targets:
@@ -521,6 +602,42 @@ class _Analyzer:
             return
 
         # ---- sinks that are only dangerous with user-controlled data
+        # ---- LDAP injection: the search filter is the 2nd (ldap3) or 3rd (python-ldap) argument
+        if last in LDAP_SEARCH and self.uses_ldap and not name.startswith("re."):
+            filters = list(node.args[1:3]) + [self._kw(node, "search_filter"),
+                                              self._kw(node, "filterstr")]
+            if any(self.is_tainted(f) for f in filters if f is not None):
+                self.report(node, "PY-LDAP-001", "LDAP search filter built from user input",
+                            "CWE-90", "high", 0.8, True)
+                return
+        # ---- XPath injection
+        xpath_query = None
+        if last in XPATH_CALLS:
+            xpath_query = arg0
+        elif last in ("select", "iter_select") and "elementpath" in name:
+            xpath_query = node.args[1] if len(node.args) > 1 else self._kw(node, "path")
+        if xpath_query is not None and self.is_tainted(xpath_query):
+            self.report(node, "PY-XPATH-001", "XPath expression built from user input",
+                        "CWE-643", "high", 0.8, True)
+            return
+        # ---- XML external entities switched on
+        if last == "setFeature" and len(node.args) > 1 and self._is_true(node.args[1]) and \
+                self.dotted(node.args[0]).endswith(("feature_external_ges",
+                                                    "feature_external_pes")):
+            self.report(node, "PY-XXE-002", "XML parser set to resolve external entities",
+                        "CWE-611", "high", 0.9)
+            return
+        if last == "XMLParser" and (self._is_true(self._kw(node, "resolve_entities"))
+                                    or self._is_true(self._kw(node, "load_dtd"))
+                                    or self._is_false(self._kw(node, "no_network"))):
+            self.report(node, "PY-XXE-003", "XML parser set to resolve external entities",
+                        "CWE-611", "high", 0.75)
+            return
+        # ---- cookie without the Secure flag
+        if last == "set_cookie" and self._is_false(self._kw(node, "secure")):
+            self.report(node, "PY-COOKIE-001", "Cookie created with secure=False", "CWE-614",
+                        "medium", 0.9)
+            return
         if name in PATH_SINKS and self.is_tainted(arg0):
             self.report(node, "PY-PATH-001", "File path built from user input", "CWE-22",
                         "high", 0.75, True)

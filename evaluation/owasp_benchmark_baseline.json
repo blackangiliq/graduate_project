@@ -1,0 +1,589 @@
+{
+ "tool_version": "1.2.0",
+ "projects": [
+  {
+   "name": "BenchmarkJava",
+   "commit": "db99977 2026-11-09",
+   "expected": "expectedresults-1.2.csv",
+   "cases": 2740,
+   "configs": {
+    "default": {
+     "rows": [
+      {
+       "category": "cmdi",
+       "tp": 0,
+       "fn": 126,
+       "fp": 0,
+       "tn": 125,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "crypto",
+       "tp": 130,
+       "fn": 0,
+       "fp": 0,
+       "tn": 116,
+       "tpr": 1.0,
+       "fpr": 0.0,
+       "score": 1.0
+      },
+      {
+       "category": "hash",
+       "tp": 89,
+       "fn": 40,
+       "fp": 0,
+       "tn": 107,
+       "tpr": 0.689922480620155,
+       "fpr": 0.0,
+       "score": 0.689922480620155
+      },
+      {
+       "category": "ldapi",
+       "tp": 0,
+       "fn": 27,
+       "fp": 0,
+       "tn": 32,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "pathtraver",
+       "tp": 0,
+       "fn": 133,
+       "fp": 0,
+       "tn": 135,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "securecookie",
+       "tp": 0,
+       "fn": 36,
+       "fp": 0,
+       "tn": 31,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "sqli",
+       "tp": 241,
+       "fn": 31,
+       "fp": 206,
+       "tn": 26,
+       "tpr": 0.8860294117647058,
+       "fpr": 0.8879310344827587,
+       "score": -0.0019016227180528311
+      },
+      {
+       "category": "trustbound",
+       "tp": 0,
+       "fn": 83,
+       "fp": 0,
+       "tn": 43,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "weakrand",
+       "tp": 0,
+       "fn": 218,
+       "fp": 0,
+       "tn": 275,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xpathi",
+       "tp": 0,
+       "fn": 15,
+       "fp": 0,
+       "tn": 20,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xss",
+       "tp": 13,
+       "fn": 233,
+       "fp": 7,
+       "tn": 202,
+       "tpr": 0.052845528455284556,
+       "fpr": 0.03349282296650718,
+       "score": 0.019352705488777378
+      }
+     ],
+     "summary": {
+      "tpr_avg": 0.2389815837127405,
+      "fpr_avg": 0.08376580522266053,
+      "score_avg": 0.15521577849007995,
+      "tp": 473,
+      "fn": 942,
+      "fp": 213,
+      "tn": 1112,
+      "precision": 0.6895043731778425,
+      "recall": 0.3342756183745583
+     },
+     "seconds": 12.9,
+     "lines": 281009
+    },
+    "strict": {
+     "rows": [
+      {
+       "category": "cmdi",
+       "tp": 0,
+       "fn": 126,
+       "fp": 0,
+       "tn": 125,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "crypto",
+       "tp": 0,
+       "fn": 130,
+       "fp": 0,
+       "tn": 116,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "hash",
+       "tp": 0,
+       "fn": 129,
+       "fp": 0,
+       "tn": 107,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "ldapi",
+       "tp": 0,
+       "fn": 27,
+       "fp": 0,
+       "tn": 32,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "pathtraver",
+       "tp": 0,
+       "fn": 133,
+       "fp": 0,
+       "tn": 135,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "securecookie",
+       "tp": 0,
+       "fn": 36,
+       "fp": 0,
+       "tn": 31,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "sqli",
+       "tp": 140,
+       "fn": 132,
+       "fp": 83,
+       "tn": 149,
+       "tpr": 0.5147058823529411,
+       "fpr": 0.3577586206896552,
+       "score": 0.15694726166328593
+      },
+      {
+       "category": "trustbound",
+       "tp": 0,
+       "fn": 83,
+       "fp": 0,
+       "tn": 43,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "weakrand",
+       "tp": 0,
+       "fn": 218,
+       "fp": 0,
+       "tn": 275,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xpathi",
+       "tp": 0,
+       "fn": 15,
+       "fp": 0,
+       "tn": 20,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xss",
+       "tp": 9,
+       "fn": 237,
+       "fp": 3,
+       "tn": 206,
+       "tpr": 0.036585365853658534,
+       "fpr": 0.014354066985645933,
+       "score": 0.022231298868012603
+      }
+     ],
+     "summary": {
+      "tpr_avg": 0.050117386200599974,
+      "fpr_avg": 0.033828426152300105,
+      "score_avg": 0.01628896004829987,
+      "tp": 149,
+      "fn": 1266,
+      "fp": 86,
+      "tn": 1239,
+      "precision": 0.6340425531914894,
+      "recall": 0.10530035335689046
+     },
+     "seconds": 12.1,
+     "lines": 281009
+    }
+   }
+  },
+  {
+   "name": "BenchmarkPython",
+   "commit": "f129148 2026-05-19",
+   "expected": "expectedresults-0.1.csv",
+   "cases": 1230,
+   "configs": {
+    "default": {
+     "rows": [
+      {
+       "category": "cmdi",
+       "tp": 7,
+       "fn": 6,
+       "fp": 7,
+       "tn": 0,
+       "tpr": 0.5384615384615384,
+       "fpr": 1.0,
+       "score": -0.46153846153846156
+      },
+      {
+       "category": "codeinj",
+       "tp": 20,
+       "fn": 0,
+       "fp": 33,
+       "tn": 0,
+       "tpr": 1.0,
+       "fpr": 1.0,
+       "score": 0.0
+      },
+      {
+       "category": "deserialization",
+       "tp": 18,
+       "fn": 0,
+       "fp": 12,
+       "tn": 24,
+       "tpr": 1.0,
+       "fpr": 0.3333333333333333,
+       "score": 0.6666666666666667
+      },
+      {
+       "category": "hash",
+       "tp": 71,
+       "fn": 0,
+       "fp": 0,
+       "tn": 80,
+       "tpr": 1.0,
+       "fpr": 0.0,
+       "score": 1.0
+      },
+      {
+       "category": "ldapi",
+       "tp": 0,
+       "fn": 16,
+       "fp": 0,
+       "tn": 13,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "pathtraver",
+       "tp": 35,
+       "fn": 30,
+       "fp": 30,
+       "tn": 73,
+       "tpr": 0.5384615384615384,
+       "fpr": 0.2912621359223301,
+       "score": 0.24719940253920836
+      },
+      {
+       "category": "redirect",
+       "tp": 11,
+       "fn": 2,
+       "fp": 9,
+       "tn": 12,
+       "tpr": 0.8461538461538461,
+       "fpr": 0.42857142857142855,
+       "score": 0.4175824175824176
+      },
+      {
+       "category": "securecookie",
+       "tp": 0,
+       "fn": 24,
+       "fp": 0,
+       "tn": 15,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "sqli",
+       "tp": 5,
+       "fn": 0,
+       "fp": 11,
+       "tn": 0,
+       "tpr": 1.0,
+       "fpr": 1.0,
+       "score": 0.0
+      },
+      {
+       "category": "trustbound",
+       "tp": 0,
+       "fn": 18,
+       "fp": 0,
+       "tn": 19,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "weakrand",
+       "tp": 77,
+       "fn": 22,
+       "fp": 0,
+       "tn": 227,
+       "tpr": 0.7777777777777778,
+       "fpr": 0.0,
+       "score": 0.7777777777777778
+      },
+      {
+       "category": "xpathi",
+       "tp": 0,
+       "fn": 51,
+       "fp": 0,
+       "tn": 135,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xss",
+       "tp": 21,
+       "fn": 10,
+       "fp": 13,
+       "tn": 45,
+       "tpr": 0.6774193548387096,
+       "fpr": 0.22413793103448276,
+       "score": 0.45328142380422687
+      },
+      {
+       "category": "xxe",
+       "tp": 0,
+       "fn": 8,
+       "fp": 0,
+       "tn": 20,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      }
+     ],
+     "summary": {
+      "tpr_avg": 0.5270195754066721,
+      "fpr_avg": 0.3055217734901125,
+      "score_avg": 0.22149780191655968,
+      "tp": 265,
+      "fn": 187,
+      "fp": 115,
+      "tn": 663,
+      "precision": 0.6973684210526315,
+      "recall": 0.5862831858407079
+     },
+     "seconds": 6.3,
+     "lines": 78161
+    },
+    "strict": {
+     "rows": [
+      {
+       "category": "cmdi",
+       "tp": 7,
+       "fn": 6,
+       "fp": 1,
+       "tn": 6,
+       "tpr": 0.5384615384615384,
+       "fpr": 0.14285714285714285,
+       "score": 0.3956043956043956
+      },
+      {
+       "category": "codeinj",
+       "tp": 11,
+       "fn": 9,
+       "fp": 18,
+       "tn": 15,
+       "tpr": 0.55,
+       "fpr": 0.5454545454545454,
+       "score": 0.00454545454545463
+      },
+      {
+       "category": "deserialization",
+       "tp": 13,
+       "fn": 5,
+       "fp": 6,
+       "tn": 30,
+       "tpr": 0.7222222222222222,
+       "fpr": 0.16666666666666666,
+       "score": 0.5555555555555556
+      },
+      {
+       "category": "hash",
+       "tp": 71,
+       "fn": 0,
+       "fp": 0,
+       "tn": 80,
+       "tpr": 1.0,
+       "fpr": 0.0,
+       "score": 1.0
+      },
+      {
+       "category": "ldapi",
+       "tp": 0,
+       "fn": 16,
+       "fp": 0,
+       "tn": 13,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "pathtraver",
+       "tp": 35,
+       "fn": 30,
+       "fp": 30,
+       "tn": 73,
+       "tpr": 0.5384615384615384,
+       "fpr": 0.2912621359223301,
+       "score": 0.24719940253920836
+      },
+      {
+       "category": "redirect",
+       "tp": 11,
+       "fn": 2,
+       "fp": 9,
+       "tn": 12,
+       "tpr": 0.8461538461538461,
+       "fpr": 0.42857142857142855,
+       "score": 0.4175824175824176
+      },
+      {
+       "category": "securecookie",
+       "tp": 0,
+       "fn": 24,
+       "fp": 0,
+       "tn": 15,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "sqli",
+       "tp": 2,
+       "fn": 3,
+       "fp": 0,
+       "tn": 11,
+       "tpr": 0.4,
+       "fpr": 0.0,
+       "score": 0.4
+      },
+      {
+       "category": "trustbound",
+       "tp": 0,
+       "fn": 18,
+       "fp": 0,
+       "tn": 19,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "weakrand",
+       "tp": 0,
+       "fn": 99,
+       "fp": 0,
+       "tn": 227,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xpathi",
+       "tp": 0,
+       "fn": 51,
+       "fp": 0,
+       "tn": 135,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      },
+      {
+       "category": "xss",
+       "tp": 21,
+       "fn": 10,
+       "fp": 13,
+       "tn": 45,
+       "tpr": 0.6774193548387096,
+       "fpr": 0.22413793103448276,
+       "score": 0.45328142380422687
+      },
+      {
+       "category": "xxe",
+       "tp": 0,
+       "fn": 8,
+       "fp": 0,
+       "tn": 20,
+       "tpr": 0.0,
+       "fpr": 0.0,
+       "score": 0.0
+      }
+     ],
+     "summary": {
+      "tpr_avg": 0.3766227500098468,
+      "fpr_avg": 0.1284964178933283,
+      "score_avg": 0.2481263321165185,
+      "tp": 171,
+      "fn": 281,
+      "fp": 77,
+      "tn": 701,
+      "precision": 0.6895161290322581,
+      "recall": 0.37831858407079644
+     },
+     "seconds": 6.5,
+     "lines": 78161
+    }
+   }
+  }
+ ]
+}

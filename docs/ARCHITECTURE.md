@@ -52,6 +52,12 @@ edits applied; `load_rules()` returns the enabled pattern rules; `secret_rules()
 rules of `kind: secret`, which the secrets engine runs. A broken user entry or edit is
 skipped, so it can never stop a scan. The set is cached and reloaded when a rule file changes.
 
+A rule may carry two optional conditions. `near` / `within`: the pattern counts only if
+another expression matches a line at most `within` lines away (context rules, e.g.
+`java.util.Random` near a token). `requires_taint: true`: a sink rule, reported only when
+`taint_lite.is_traced` finds that a variable on the line was assigned from a request source
+in the 60 lines above. For Python files, lines inside docstrings are not given to rules.
+
 `sca/rulebook.py` is the management layer used by the Rules tab and by `python -m sca
 rules`: list, check, create, update, enable/disable, reset, delete, export and import. A
 shipped rule file is never rewritten. `check()` separates errors (invalid field, expression

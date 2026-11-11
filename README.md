@@ -105,7 +105,7 @@ Click the image to enlarge it. Source: [docs/diagrams/pipeline.mmd](docs/diagram
 |---|---|---|
 | 0. Input | `app.py`, `sca/__main__.py` | Streamlit dashboard, argparse command line, tkinter folder dialog |
 | 1. Collect | `sca/walker.py` | `os.walk`, extension-to-language map (54 extensions, 22 languages), binary/minified/size filters |
-| 2. Detect | `sca/engines/`, `sca/rules/` | Secrets: regex key formats (8 built in + 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 98 built-in YAML rules + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules. Python: `ast` module, taint analysis with function summaries. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
+| 2. Detect | `sca/engines/`, `sca/rules/` | Secrets: regex key formats (8 built in + 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 107 built-in YAML rules + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules. Python: `ast` module, taint analysis with function summaries. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
 | 3. Refine | `sca/learn/feedback.py`, `sca/engines/taint_lite.py` | Beta-posterior rule confidence and quarantine from your reviews; heuristic input tracing for 9 more languages |
 | 4. Merge | `sca/merge.py`, `sca/cwe.py` | Deduplication, noisy-OR confidence, CWE normalization, OWASP Top 10 (2021) mapping, English/Arabic knowledge base, SHA-256 fingerprints |
 | 5. ML | `sca/ai/classifier.py` | scikit-learn: code tokenizer, TF-IDF 1-3-grams, logistic regression; retrained with reviewed lines |
@@ -156,11 +156,11 @@ AI service.)
 
 ### The rule set: built in, imported, learned, your own
 
-The tool ships **398 rules, 351 of them active**. Full guide: [docs/RULES.md](docs/RULES.md).
+The tool ships **407 rules, 360 of them active**. Full guide: [docs/RULES.md](docs/RULES.md).
 
 | Origin | Rules | Active | File |
 |---|---:|---:|---|
-| Built in, written with the tool | 98 | 98 | `sca/rules/*.yaml` |
+| Built in, written with the tool | 107 | 107 | `sca/rules/*.yaml` |
 | Imported from [Microsoft DevSkim](https://github.com/microsoft/DevSkim) (MIT) | 95 | 49 | `sca/rules/imported/devskim.yaml` |
 | Imported from [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT), credential formats | 205 | 204 | `sca/rules/imported/gitleaks.yaml` |
 | Learned from the AI, approved by you | grows with use | | `learned/rules.yaml` |
@@ -180,6 +180,7 @@ each with the reason. The full record is `evaluation/import_report.json`.
 python -m sca rules catalog --lang php          # every rule for a language
 python -m sca rules show DEVSKIM-DS425070       # one rule, with its source and licence
 python -m sca rules disable JS-EVAL-001         # switch off (enable = on again)
+python -m sca rules enable --origin imported --lang java   # every rule matching the filters
 python -m sca rules edit PHP-SQLI-001 --set severity=medium --set confidence=0.5
 python -m sca rules reset PHP-SQLI-001          # undo your changes to a shipped rule
 python -m sca rules template > my-rule.yaml     # an empty rule to fill in
@@ -187,6 +188,11 @@ python -m sca rules new my-rule.yaml            # add your own rule (checked fir
 python -m sca rules test MY-RULE-001 path/      # which lines does it mark?
 python -m sca rules export --origin custom -o my-rules.yaml
 ```
+
+A rule can also carry a context condition (`near` / `within`: the pattern counts only if
+another expression matches a neighbouring line) or be a sink rule (`requires_taint`: it
+stays silent unless user input is traced to the line). Both keep rules that name a common
+function from flooding a report.
 
 A rule that ships with the tool is never rewritten: your change goes to
 `learned/edits.yaml`, survives an update, and can be undone. A new rule is refused if a
@@ -237,6 +243,40 @@ Read these numbers with care:
   length, an integer overflow, prototype pollution and a password passed as a positional
   argument. The first four are exactly what the AI deep scan and the learning loop are for.
 
+### On the OWASP Benchmark (test cases not written with the tool)
+
+The [OWASP Benchmark](https://owasp.org/www-project-benchmark/) is a public set of small
+programs, each with one planted weakness; about half are real and half only look alike.
+`score = TPR - FPR`: 0 is no better than guessing, 1 is perfect. Static engines only, no AI.
+Reproduce with `python evaluation/owasp_benchmark.py BenchmarkJava BenchmarkPython`;
+full per-category tables are in [evaluation/owasp_benchmark.md](evaluation/owasp_benchmark.md).
+
+| Benchmark | Version of the tool | Found (TPR) | False alarms (FPR) | Score | Strict mode score |
+|---|---|---:|---:|---:|---:|
+| Java, 2,740 cases | 1.2.0, first run | 24% | 8% | +0.16 | +0.02 |
+| Java, 2,740 cases | 1.3.0 | 84% | 40% | **+0.44** | +0.22 |
+| Java, the 1,370 cases never looked at | 1.3.0 | 86% | 40% | +0.46 | +0.24 |
+| Python, 1,230 cases | 1.2.0, first run | 53% | 31% | +0.22 | +0.25 |
+| Python, 1,230 cases | 1.3.0 | 80% | 37% | **+0.43** | +0.33 |
+| Python, the 615 cases never looked at | 1.3.0 | 80% | 38% | +0.42 | +0.28 |
+
+How to read it:
+
+- The first run is the honest starting point: the tool had never seen these programs, and
+  it scored far below its result on its own samples. Whole weakness types were missing
+  (Java: weak randomness, insecure cookies, LDAP, XPath, and every injection whose input is
+  read on an earlier line; Python: LDAP, XPath, XXE, cookies, session data).
+- Version 1.3 added them, looking only at the odd-numbered cases. The even-numbered cases
+  were never looked at and score the same, but the cases of one category are generated from
+  shared templates, so that half is a weaker check than a different benchmark would be.
+- Weaknesses that are visible on one line score high (weak cipher, weak random, insecure
+  cookie: +1.00 in Java). Injection categories stay low (Java SQL injection +0.01, path
+  traversal +0.06): there the safe cases differ from the real ones only in how data flows
+  through maps, lists, helper classes and reflection, which line rules with simple input
+  tracing cannot follow. A real data-flow engine for Java is the main missing piece.
+- A false-alarm rate of 37-40% on this benchmark is high. The benchmark is built to
+  provoke exactly that; on mature real code the tool is much quieter (next table).
+
 ### Noise check on real code
 
 The static engines were also run on the source of four widely reviewed libraries. These are
@@ -246,18 +286,19 @@ rough indicator of how noisy strict mode is.
 
 | Library | Files | Lines | Time | Findings | In test code | Confirmed |
 |---|---:|---:|---:|---:|---:|---:|
-| pandas 3.0.5 | 1423 | 636,343 | 71 s | 113 | 79 | 0 |
-| scikit-learn 1.9.1 | 687 | 389,922 | 38 s | 70 | 54 | 1 |
-| streamlit 1.67.0 | 735 | 149,134 | 11 s | 11 | 0 | 0 |
-| bandit 1.9.4 | 69 | 11,234 | 1 s | 1 | 0 | 0 |
+| pandas 3.0.5 | 1,422 | 636,043 | 92 s | 110 | 79 | 0 |
+| scikit-learn 1.9.1 | 688 | 389,923 | 47 s | 70 | 54 | 1 |
+| streamlit 1.67.0 | 735 | 149,134 | 16 s | 11 | 0 | 0 |
+| bandit 1.9.4 | 70 | 11,235 | 2 s | 13 | 0 | 0 |
 
-One confirmed finding in 1.19 million lines (MD5 used for a dataset checksum). This run is
+Measured with version 1.3.0, all rules included. One confirmed finding in 1.19 million
+lines (MD5 used for a dataset checksum). An earlier version of this run is
 also what showed that the first version of the "two engines agree" rule was too generous:
 it marked 56 findings in pandas as confirmed, mostly `pickle.loads` and `eval` in tests.
 The rule was tightened as described under *Fewer false alarms*.
 
-That table was measured before the rule import. The effect of the 253 imported active rules
-was measured separately on three large projects (static engines without Bandit):
+The effect of the 253 imported active rules alone was measured on three large projects,
+before and after the import (static engines without Bandit):
 
 | Project | Code lines | Findings before → after | Confirmed before → after | Time before → after |
 |---|---:|---:|---:|---:|
@@ -271,7 +312,7 @@ scan about 40% slower. On the labelled samples the precision and recall above di
 ## What was and was not tested
 
 - Tested (Linux and Windows through GitHub Actions, Python 3.10 and 3.12; locally 3.13):
-  271 automated tests covering every engine, the pipeline, reports, the dashboard
+  306 automated tests covering every engine, the pipeline, reports, the dashboard
   (including the learn-and-approve flow, the Rules tab and the Guide tab in both
   languages), the provider clients, the configuration command, the learning loop, feedback,
   quarantine, strict mode, the imported rules, rule management and the evaluation script.
@@ -285,6 +326,12 @@ scan about 40% slower. On the labelled samples the precision and recall above di
 - The Opengrep/Semgrep and Gitleaks adapters were tested on sample tool output only.
 - Imported rules: each one passed the automatic checks and the noise measurement, but they
   were not each proven against real vulnerabilities or real leaked keys.
+- The external programs Gitleaks, Opengrep and Semgrep were never run for real here (they
+  could not be installed in the development environment); only their output format was
+  tested. The built-in engines do not depend on them.
+- "Download and run" was checked from a fresh clone of the repository in a new virtual
+  environment on Linux: installation, a scan with all four report formats, the command
+  line and the dashboard in a browser.
 - `experiments/train_codebert.py` is an optional script that was not executed.
 
 ## Limits
@@ -325,8 +372,8 @@ sca/
 learned/               learned rules, your own rules, your edits and exclusions (YAML)
 tools/                 import_rules.py (import and vet open-source rules), build_docs.py
 samples/               vulnerable_app, safe_app, ground_truth.json
-evaluation/            evaluate.py, results.md, import_report.json
-tests/                 271 tests
+evaluation/            evaluate.py, results.md, owasp_benchmark.py and .md, import_report.json
+tests/                 306 tests
 docs/                  supervisor document, Arabic guide, rules guide, illustrated walk-through,
                        thesis outline, architecture,
                        diagrams/ (Mermaid sources) and images/

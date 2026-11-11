@@ -28,6 +28,9 @@ A rule looks like this:
       enabled: true                  # optional; false = shipped but switched off
       message: '...'                 # optional explanation
       fix: '...'                     # optional advice
+      near: '<optional expression>'  # the rule only fires if this matches a neighbouring line
+      within: 5                      # ... at most this many lines above or below (default 5)
+      requires_taint: false          # true = report only when user input is traced to the line
       examples_vulnerable: [...]     # optional lines the rule must match
       examples_safe: [...]           # optional lines the rule must not match
 
@@ -47,6 +50,7 @@ import yaml
 
 from ..models import Finding
 from ..walker import SourceFile
+from . import taint_lite
 
 RULES_DIR = Path(__file__).resolve().parent.parent / "rules"
 IMPORTED_DIR = RULES_DIR / "imported"
@@ -54,7 +58,8 @@ MAX_LINE_LENGTH = 600  # longer lines are almost always minified or generated co
 ORIGINS = ("builtin", "imported", "learned", "custom")
 # the fields a user may change through learned/edits.yaml
 EDITABLE = ("title", "languages", "cwe", "severity", "confidence", "pattern", "exclude",
-            "ignore_case", "message", "fix", "enabled")
+            "ignore_case", "message", "fix", "enabled", "near", "within", "requires_taint")
+DEFAULT_WITHIN = 5
 
 
 def learned_dir() -> Path:
@@ -91,6 +96,9 @@ class Rule:
     examples_vulnerable: List[str] = field(default_factory=list)
     examples_safe: List[str] = field(default_factory=list)
     file: str = ""                                # the YAML file the rule was read from
+    near: Optional["re.Pattern[str]"] = None      # must match a line close to the match
+    within: int = DEFAULT_WITHIN                  # how close, in lines
+    requires_taint: bool = False                  # only report when input is traced
 
     def matches(self, line: str) -> bool:
         if not self.pattern.search(line):
@@ -114,7 +122,18 @@ class Rule:
             "extra_excludes": [e.pattern for e in self.extra_excludes],
             "examples_vulnerable": list(self.examples_vulnerable),
             "examples_safe": list(self.examples_safe), "file": self.file,
+            "near": self.near.pattern if self.near else "", "within": self.within,
+            "requires_taint": self.requires_taint,
         }
+
+    def near_ok(self, lines: List[str], number: int) -> bool:
+        """True if the rule has no `near` condition, or a line within `within` lines of
+        line `number` (1-based, the line itself included) matches it."""
+        if self.near is None:
+            return True
+        first, last = max(0, number - 1 - self.within), min(len(lines), number + self.within)
+        return any(self.near.search(lines[i]) for i in range(first, last)
+                   if len(lines[i]) <= MAX_LINE_LENGTH)
 
 
 def parse_rule(raw: Dict, origin: str = "builtin", meta: Optional[Dict] = None,
@@ -153,6 +172,9 @@ def parse_rule(raw: Dict, origin: str = "builtin", meta: Optional[Dict] = None,
         examples_safe=[str(x) for x in (raw.get("examples_safe")
                                         or learned.get("examples_safe") or [])],
         file=file,
+        near=re.compile(raw["near"], flags) if raw.get("near") else None,
+        within=max(0, min(60, int(raw.get("within", DEFAULT_WITHIN) or 0))),
+        requires_taint=bool(raw.get("requires_taint")),
     )
 
 
@@ -233,10 +255,23 @@ def _stamp() -> Tuple:
     files = sorted(RULES_DIR.glob("*.yaml")) + sorted(IMPORTED_DIR.glob("*.yaml")) + [
         folder / "rules.yaml", folder / "custom.yaml", folder / "edits.yaml",
         folder / "overrides.yaml"]
-    return tuple((str(p), p.stat().st_mtime_ns if p.exists() else 0) for p in files)
+    stamp = []
+    for path in files:
+        try:
+            info = path.stat()
+            stamp.append((str(path), info.st_mtime_ns, info.st_size))
+        except OSError:
+            stamp.append((str(path), 0, 0))
+    return tuple(stamp)
 
 
 _CACHE: Dict[Tuple, List[Rule]] = {}
+
+
+def invalidate() -> None:
+    """Forget the cached rule set. Called after every write to a rule file: two writes can
+    fall within one tick of the file system clock, which the time stamp alone would miss."""
+    _CACHE.clear()
 
 
 def all_rules(include_user: bool = True) -> List[Rule]:
@@ -303,8 +338,20 @@ def code_lines(sf: SourceFile) -> Iterable[Tuple[int, str]]:
     """Yield (line number, text) for the lines a rule may be applied to: no blank lines,
     no comments, no over-long (minified) lines."""
     in_block_comment = False
+    docstring = ""                   # the quote that closes the Python docstring we are in
+    python = sf.language == "python"
     for number, line in enumerate(sf.lines, start=1):
         stripped = line.strip()
+        if python:                   # a docstring is documentation, not code
+            if docstring:
+                if docstring in stripped:
+                    docstring = ""
+                continue
+            opener = next((q for q in ('"""', "'''") if stripped.lstrip("rRbBuUfF").startswith(q)), "")
+            if opener:
+                if opener not in stripped.lstrip("rRbBuUfF")[3:]:
+                    docstring = opener
+                continue
         if not stripped or len(line) > MAX_LINE_LENGTH:
             continue
         if in_block_comment:
@@ -327,15 +374,21 @@ def scan_file(sf: SourceFile, disabled: Optional[Set[str]] = None,
     findings: List[Finding] = []
     for number, line in code_lines(sf):
         for rule in active:
-            if not rule.matches(line):
+            if not rule.matches(line) or not rule.near_ok(sf.lines, number):
                 continue
+            traced = False
+            if rule.requires_taint:        # a sink rule: silent unless input reaches the line
+                traced = taint_lite.is_traced(sf, number)
+                if not traced:
+                    continue
             findings.append(Finding(
                 rule_id=rule.id, title=rule.title, file=sf.rel, line=number,
                 severity=rule.severity, cwe=rule.cwe, description=rule.message,
-                fix=rule.fix, confidence=rule.confidence,
-                engines=["learned" if rule.origin == "learned" else "rules"],
+                fix=rule.fix, engines=["learned" if rule.origin == "learned" else "rules"],
+                confidence=min(0.95, rule.confidence + taint_lite.BOOST) if traced
+                else rule.confidence,
                 snippet=sf.line_text(number), context=sf.context(number),
-                language=sf.language,
+                language=sf.language, tainted=traced,
             ))
     return findings
 

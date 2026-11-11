@@ -36,6 +36,11 @@ def _toggle(rule_id: str, enabled: bool, t: Callable[[str], str]) -> None:
         _say("error", str(exc))
 
 
+def _toggle_many(rule_ids: List[str], enabled: bool, t: Callable[[str], str]) -> None:
+    changed = rulebook.set_enabled_many(rule_ids, enabled)
+    _say("success", (t("Enabled %d rules.") if enabled else t("Disabled %d rules.")) % changed)
+
+
 def _reset(rule_id: str, t: Callable[[str], str]) -> None:
     rulebook.reset(rule_id)
     for key in [k for k in st.session_state if k.startswith("rule_") and k.endswith(rule_id)]:
@@ -67,6 +72,9 @@ def _form_values(prefix: str, suffix: str) -> Dict[str, Any]:
         "pattern": state[prefix + "pattern" + suffix].strip(),
         "exclude": state[prefix + "exclude" + suffix].strip(),
         "ignore_case": bool(state[prefix + "ignore_case" + suffix]),
+        "near": state[prefix + "near" + suffix].strip(),
+        "within": int(state[prefix + "within" + suffix]),
+        "requires_taint": bool(state[prefix + "requires_taint" + suffix]),
         "message": state[prefix + "message" + suffix].strip(),
         "fix": state[prefix + "fix" + suffix].strip(),
         "examples_vulnerable": _lines(state[prefix + "vulnerable" + suffix]),
@@ -136,6 +144,21 @@ def _rule_fields(prefix: str, suffix: str, values: Dict[str, Any], t: Callable[[
                         "making the pattern complicated."))
     st.checkbox(t("Ignore upper/lower case"), value=bool(values.get("ignore_case")),
                 key=prefix + "ignore_case" + suffix)
+    n1, n2, n3 = st.columns([4, 1, 3])
+    n1.text_input(t("Context (optional: must match a neighbouring line)"),
+                  value=values.get("near", ""), key=prefix + "near" + suffix,
+                  help=t("Use it when the pattern alone is ordinary code and the lines around "
+                         "it make it a weakness, for example a random number used near the "
+                         "word token."))
+    n2.number_input(t("Within lines"), 0, 60, int(values.get("within", 5) or 0),
+                    key=prefix + "within" + suffix,
+                    help=t("How many lines above and below are searched for the context."))
+    n3.checkbox(t("Only when user input is traced to the line"),
+                value=bool(values.get("requires_taint")),
+                key=prefix + "requires_taint" + suffix,
+                help=t("For rules that name a common function (opening a file, running a "
+                       "query): the rule stays silent unless a variable on the line was "
+                       "filled from the request a few lines earlier."))
     st.text_area(t("Why it is dangerous (optional)"), value=values.get("message", ""),
                  key=prefix + "message" + suffix, height=70)
     st.text_area(t("How to fix it (optional)"), value=values.get("fix", ""),
@@ -209,6 +232,15 @@ def _browse(storage: Storage, t: Callable[[str], str], wide: Dict[str, Any]) -> 
     st.download_button(t("Download these rules (YAML)"),
                        rulebook.export_yaml([r.id for r in shown]), "sca-rules.yaml",
                        "text/yaml", key="rules_download")
+
+    with st.expander(t("Change all the rules shown (%d)") % len(shown)):
+        st.caption(t("Applies to every rule in the table above. Use the filters first to "
+                     "choose which ones."))
+        m1, m2, _ = st.columns([1, 1, 3])
+        m1.button(t("Enable all shown"), key="rules_enable_all", on_click=_toggle_many,
+                  args=([r.id for r in shown], True, t), **wide)
+        m2.button(t("Disable all shown"), key="rules_disable_all", on_click=_toggle_many,
+                  args=([r.id for r in shown], False, t), **wide)
 
     st.subheader(t("Rule details"))
     ids = [r.id for r in shown]

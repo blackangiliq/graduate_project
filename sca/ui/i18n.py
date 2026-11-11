@@ -52,6 +52,25 @@ AR = {
     "Open": "مفتوحة", "Needs review": "تحتاج مراجعة",
     "Likely false positives (AI)": "إنذارات كاذبة على الأرجح (الذكاء الاصطناعي)",
     "Dismissed by you": "رفضتَها أنت",
+    "Critical": "حرجة", "High": "عالية", "Medium": "متوسطة", "Low": "منخفضة", "Info": "معلومة",
+    "Engine": "المحرك", "Status": "الحالة", "Line": "السطر", "Tier": "التصنيف",
+    "Confidence %": "الثقة %", "ML %": "المصنّف %", "AI": "الذكاء الاصطناعي",
+    "Id": "المعرّف", "Failed checks": "الفحوص الفاشلة", "Approved": "تاريخ المصادقة",
+    "Confirmed": "مؤكَّدة", "False positives": "إنذارات كاذبة",
+    "Written confidence": "الثقة المكتوبة", "Adjusted confidence": "الثقة المعدَّلة",
+    "Check": "الفحص", "Result": "النتيجة", "Detail": "التفصيل",
+    "No folder was chosen (or the folder dialog is not available here). You can paste the "
+    "path instead.": "لم يُختر مجلد (أو أن نافذة الاختيار غير متاحة هنا). يمكنك لصق المسار.",
+    "%d candidate(s) proposed: %d passed validation, %d rejected automatically.":
+        "اقتُرحت %d قاعدة: %d نجحت في الفحوص و %d رُفضت آلياً.",
+    "%d exclusion(s) proposed.": "اقتُرح %d استثناء.",
+    "Rejected %s.": "رُفضت %s.", "Removed learned rule %s.": "حُذفت القاعدة المتعلَّمة %s.",
+    "Approved %s. It is active from the next scan.": "صودق على %s. تعمل من الفحص القادم.",
+    "Change all the rules shown (%d)": "غيّر كل القواعد المعروضة (%d)",
+    "Applies to every rule in the table above. Use the filters first to choose which ones.":
+        "يُطبَّق على كل قاعدة في الجدول أعلاه. استخدم الفلاتر أولاً لتحديد المطلوب.",
+    "Enable all shown": "فعّل كل المعروض", "Disable all shown": "عطّل كل المعروض",
+    "Enabled %d rules.": "فُعّلت %d قاعدة.", "Disabled %d rules.": "عُطّلت %d قاعدة.",
     # ---- findings tab
     "No scan yet.": "لم يُجرَ فحص بعد.",
     "No findings. A clean scan is not a proof of security.":
@@ -133,10 +152,11 @@ AR = {
     "No reviews yet. Use the buttons under each finding to confirm or dismiss it.":
         "لا مراجعات بعد. استخدم الأزرار تحت كل نتيجة لتأكيدها أو رفضها.",
     "Coverage: rules per language and weakness": "التغطية: عدد القواعد لكل لغة وثغرة",
-    "Python is analysed by the AST taint engine and needs no pattern rules. Languages without "
-    "rules are still covered by the AI deep scan, and by Opengrep/Semgrep when installed.":
-        "بايثون يحلّلها محرك AST ولا تحتاج قواعد أنماط. اللغات التي بلا قواعد يغطيها الفحص "
-        "العميق بالذكاء الاصطناعي، و Opengrep/Semgrep إن كان منصَّباً.",
+    "Python is analysed mainly by the AST taint engine; its few pattern rules are imported "
+    "ones. Languages without rules are still covered by the AI deep scan, and by "
+    "Opengrep/Semgrep when installed.":
+        "بايثون يحلّلها أساساً محرك AST، وقواعد الأنماط القليلة لها مستوردة. اللغات التي بلا "
+        "قواعد يغطيها الفحص العميق بالذكاء الاصطناعي، و Opengrep/Semgrep إن كان منصَّباً.",
     # ---- reports and history
     "Download the results of the current scan.": "نزّل نتائج الفحص الحالي.",
     "HTML report": "تقرير HTML", "PDF report": "تقرير PDF",
@@ -196,6 +216,20 @@ AR = {
     "Exclude (optional: if this also matches, the line is ignored)":
         "الاستثناء (اختياري: إن طابق السطر أيضاً فيُتجاهل)",
     "Ignore upper/lower case": "تجاهل حالة الأحرف",
+    "Context (optional: must match a neighbouring line)":
+        "السياق (اختياري: يجب أن يطابق سطراً مجاوراً)",
+    "Use it when the pattern alone is ordinary code and the lines around it make it a "
+    "weakness, for example a random number used near the word token.":
+        "استخدمه حين يكون النمط وحده كوداً عادياً والأسطر المحيطة هي ما يجعله ثغرة، مثل رقم "
+        "عشوائي قرب كلمة token.",
+    "Within lines": "ضمن أسطر",
+    "How many lines above and below are searched for the context.":
+        "عدد الأسطر فوق السطر وتحته التي يُبحث فيها عن السياق.",
+    "Only when user input is traced to the line": "فقط إذا تُتبِّعت مدخلات المستخدم إلى السطر",
+    "For rules that name a common function (opening a file, running a query): the rule stays "
+    "silent unless a variable on the line was filled from the request a few lines earlier.":
+        "للقواعد التي تذكر دالة شائعة (فتح ملف أو تنفيذ استعلام): تبقى القاعدة صامتة ما لم "
+        "يكن متغيّر في السطر قد أُخذ من الطلب قبل بضعة أسطر.",
     "Why it is dangerous (optional)": "لماذا هي خطرة (اختياري)",
     "How to fix it (optional)": "طريقة الإصلاح (اختياري)",
     "Lines the rule must match (one per line)": "أسطر يجب أن تطابقها القاعدة (سطر لكل مثال)",

@@ -38,7 +38,8 @@ ID_FORMAT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]{2,63}")
 USER_FILES = {"learned": "rules.yaml", "custom": "custom.yaml"}
 # the fields of a rule as they are written to a YAML file, in this order
 FILE_KEYS = ("id", "kind", "title", "languages", "cwe", "severity", "confidence", "pattern",
-             "exclude", "ignore_case", "enabled", "message", "fix", "keywords", "entropy",
+             "exclude", "ignore_case", "near", "within", "requires_taint", "enabled",
+             "message", "fix", "keywords", "entropy",
              "secret_group", "examples_vulnerable", "examples_safe", "note", "learned")
 HEADERS = {
     "custom.yaml": "# Your own rules. Managed by the Rules tab of the dashboard and by\n"
@@ -75,6 +76,7 @@ def _write(name: str, data: Any) -> None:
     body = yaml.safe_dump(data, sort_keys=isinstance(data, dict), allow_unicode=True,
                           width=1000) if data else ("{}\n" if isinstance(data, dict) else "[]\n")
     _path(name).write_text(HEADERS[name] + body, encoding="utf-8")
+    rules_engine.invalidate()
 
 
 def _clean(raw: Dict[str, Any]) -> Dict[str, Any]:
@@ -84,7 +86,9 @@ def _clean(raw: Dict[str, Any]) -> Dict[str, Any]:
         value = raw.get(key)
         if value in (None, "", [], {}) or (key in ("ignore_case",) and not value) \
                 or (key == "enabled" and value is True) or (key == "kind" and value != "secret") \
-                or (key in ("entropy", "secret_group") and not value):
+                or (key in ("entropy", "secret_group", "requires_taint") and not value) \
+                or (key == "within" and (not raw.get("near")
+                                         or value == rules_engine.DEFAULT_WITHIN)):
             continue
         out[key] = value
     return out
@@ -202,6 +206,16 @@ def check(raw: Dict[str, Any], storage: Optional[Storage] = None,
         errors.append("confidence: a number between 0 and 1")
     if not pattern:
         errors.append("pattern: missing")
+    if raw.get("near"):
+        try:
+            re.compile(str(raw["near"]))
+        except re.error as exc:
+            errors.append("near: %s" % exc)
+    try:
+        if not 0 <= int(raw.get("within", rules_engine.DEFAULT_WITHIN) or 0) <= 60:
+            raise ValueError
+    except (TypeError, ValueError):
+        errors.append("within: a number of lines between 0 and 60")
     if errors:
         return {"passed": False, "errors": errors, "warnings": warnings}
 
@@ -334,6 +348,16 @@ def set_enabled(rule_id: str, enabled: bool) -> None:
     _write("edits.yaml", edits)
 
 
+def set_enabled_many(rule_ids: Sequence[str], enabled: bool) -> int:
+    """Switch several rules on or off. Returns how many actually changed."""
+    changed = 0
+    for rule_id in rule_ids:
+        if get(rule_id).enabled != bool(enabled):
+            set_enabled(rule_id, enabled)
+            changed += 1
+    return changed
+
+
 def reset(rule_id: str) -> bool:
     """Undo every change made to a shipped rule. True if there was something to undo."""
     rule = get(rule_id)
@@ -416,6 +440,9 @@ TEMPLATE = """# A rule for Secure Code Analyzer. Fill it in and add it with:
   pattern: 'db\\.query\\(\\s*"[^"]*"\\s*\\+'     # marks a vulnerable line
   exclude: ''                     # optional: if this also matches, the line is ignored
   ignore_case: false
+  near: ''                        # optional: only fire if this matches a neighbouring line
+  within: 5                       # ... at most this many lines above or below
+  requires_taint: false           # true = report only when user input is traced to the line
   message: Why this line is dangerous.
   fix: How to write it safely.
   examples_vulnerable:            # lines the rule MUST match (checked when you save)

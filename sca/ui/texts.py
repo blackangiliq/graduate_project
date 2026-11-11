@@ -446,6 +446,9 @@ REFERENCES: List[Tuple[str, str, str, str]] = [
     ("Gitleaks (MIT)", "https://github.com/gitleaks/gitleaks",
      "Source of the imported credential formats; also an optional external engine.",
      "مصدر صيغ المفاتيح المستوردة، وهو أيضاً محرك خارجي اختياري."),
+    ("OWASP Benchmark", "https://owasp.org/www-project-benchmark/",
+     "Public test cases (Java and Python) used for the external evaluation.",
+     "حالات اختبار عامة (Java و Python) استُخدمت في التقييم الخارجي."),
     ("Bandit (Apache-2.0)", "https://github.com/PyCQA/bandit",
      "Python security scanner used as an engine and as the baseline of the evaluation.",
      "ماسح أمان بايثون المستخدم كمحرك وكخط أساس في التقييم."),
@@ -497,6 +500,12 @@ LIMITS: List[Tuple[str, str]] = [
      "scan cover part of that gap.",
      "القاعدة تعبير نمطي على سطر واحد، فلا ترى ثغرة تمتد على عدة أسطر أو تعتمد على منطق "
      "البرنامج. محرك بايثون والفحص العميق يغطيان جزءاً من هذه الفجوة."),
+    ("On the OWASP Benchmark the tool scores +0.44 (Java) and +0.43 (Python) out of 1. "
+     "Weaknesses visible on one line are found reliably; injection in Java stays close to "
+     "guessing, because there is no real data-flow engine for Java.",
+     "على معيار OWASP Benchmark درجة الأداة +0.44 (Java) و +0.43 (Python) من 1. الثغرات الظاهرة "
+     "في سطر واحد تُكتشف بثبات، أما الحقن في Java فيبقى قريباً من التخمين لغياب محرك تدفق "
+     "بيانات حقيقي لها."),
     ("Imported rules were checked automatically and measured on real code, but were not "
      "each proven against real vulnerabilities. Rules that looked noisy ship switched off.",
      "القواعد المستوردة فُحصت آلياً وقيست على كود حقيقي، لكنها لم تُثبَت واحدةً واحدة على "
@@ -530,6 +539,8 @@ CLI: List[Tuple[str, str, str]] = [
     ("python -m sca rules show ID", "One rule in full.", "عرض قاعدة كاملة."),
     ("python -m sca rules disable ID", "Switch a rule off (enable = on again).",
      "تعطيل قاعدة (enable لإعادتها)."),
+    ("python -m sca rules disable --origin imported --lang swift",
+     "Switch off every rule that matches the filters.", "تعطيل كل القواعد المطابقة للفلاتر."),
     ("python -m sca rules edit ID --set severity=low --set confidence=0.4",
      "Change fields of a rule.", "تعديل حقول قاعدة."),
     ("python -m sca rules reset ID", "Undo your changes to a shipped rule.",
@@ -569,6 +580,8 @@ are skipped) and reports the line if `pattern` matches and `exclude` does not.
 | `pattern` | Regular expression (Python `re` syntax) that marks a vulnerable line. |
 | `exclude` | Optional expression; if it also matches, the line is ignored. This is how a rule is taught about a safe variant. |
 | `ignore_case` | Match upper and lower case alike. |
+| `near`, `within` | Optional context: the rule fires only if `near` matches a line at most `within` lines above or below. For patterns that are ordinary code on their own. |
+| `requires_taint` | `true` = report only when a variable on the line was filled from user input in the lines above. For rules that name a common function. |
 | `message`, `fix` | Optional explanation and advice shown with the finding. |
 | `examples_vulnerable` | Lines the rule must match. Checked every time the rule is saved. |
 | `examples_safe` | Lines the rule must not match. |
@@ -628,6 +641,8 @@ RULE_GUIDE_AR = """
 | `pattern` | تعبير نمطي (بصيغة مكتبة `re` في بايثون) يعلّم السطر المصاب. |
 | `exclude` | تعبير اختياري، إن طابق السطر أيضاً فيُتجاهل. بهذا تتعلّم القاعدة الصيغة الآمنة. |
 | `ignore_case` | عدم التفريق بين الأحرف الكبيرة والصغيرة. |
+| `near` و `within` | سياق اختياري: لا تعمل القاعدة إلا إذا طابق `near` سطراً يبعد `within` أسطر على الأكثر فوق السطر أو تحته. للأنماط التي هي كود عادي بمفردها. |
+| `requires_taint` | القيمة `true` تعني: بلّغ فقط إذا كان متغيّر في السطر قد أُخذ من مدخلات المستخدم في الأسطر السابقة. للقواعد التي تذكر دالة شائعة. |
 | `message` و `fix` | شرح ونصيحة اختياريان يظهران مع النتيجة. |
 | `examples_vulnerable` | أسطر يجب أن تطابقها القاعدة. تُفحص عند كل حفظ. |
 | `examples_safe` | أسطر يجب ألّا تطابقها القاعدة. |

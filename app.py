@@ -65,6 +65,11 @@ def t(text: str) -> str:
     return AR.get(text, text) if ui_lang() == "ar" else text
 
 
+def tframe(*args, **kwargs) -> pd.DataFrame:
+    """A table whose column headers are shown in the language of the dashboard."""
+    return pd.DataFrame(*args, **kwargs).rename(columns=t)
+
+
 def opt(key: str) -> dict:
     """label= and help= of a sidebar control, from the shared settings table."""
     label, help_text = texts.setting(key, ui_lang())
@@ -100,8 +105,8 @@ def browse_clicked() -> None:
     if chosen:
         st.session_state["target"] = chosen
     else:
-        st.session_state["browse_note"] = ("No folder was chosen (or the folder dialog is not "
-                                           "available here). You can paste the path instead.")
+        st.session_state["browse_note"] = t("No folder was chosen (or the folder dialog is not "
+                                            "available here). You can paste the path instead.")
 
 
 def use_sample() -> None:
@@ -159,18 +164,18 @@ def decide(candidate_id: str, approve: bool) -> None:
     try:
         if approve:
             store.approve(get_storage(), candidate_id)
-            st.session_state["learn_note"] = ("Approved %s. It is active from the next scan."
+            st.session_state["learn_note"] = (t("Approved %s. It is active from the next scan.")
                                               % candidate_id)
         else:
             store.reject(get_storage(), candidate_id)
-            st.session_state["learn_note"] = "Rejected %s." % candidate_id
+            st.session_state["learn_note"] = t("Rejected %s.") % candidate_id
     except (KeyError, ValueError) as exc:
         st.session_state["learn_note"] = str(exc)
 
 
 def remove_rule(rule_id: str) -> None:
     store.remove_learned_rule(rule_id)
-    st.session_state["learn_note"] = "Removed learned rule %s." % rule_id
+    st.session_state["learn_note"] = t("Removed learned rule %s.") % rule_id
 
 
 # ------------------------------------------------------------------ sidebar
@@ -337,7 +342,7 @@ with tab_dash:
         cols = st.columns(6)
         cols[0].metric(t("Security score (grade %s)") % result.grade, "%d / 100" % result.score)
         for col, sev in zip(cols[1:], SEVERITIES[:4]):
-            col.metric(sev.capitalize(), counts[sev])
+            col.metric(t(sev.capitalize()), counts[sev])
         confirmed = sum(1 for f in result.open_findings if f.tier == "confirmed")
         cols[5].metric(t("Confirmed / open"), "%d / %d" % (confirmed, len(result.open_findings)))
         others = ["%d %s" % (result.status_count(s), t(STATUS_LABEL[s]).lower())
@@ -351,7 +356,7 @@ with tab_dash:
             st.subheader(t("By severity"))
             # the number prefix keeps the bars in severity order (charts sort labels by name)
             st.bar_chart(pd.DataFrame({"findings": [counts[s] for s in SEVERITIES]},
-                                      index=["%d. %s" % (i, s.capitalize())
+                                      index=["%d. %s" % (i, t(s.capitalize()))
                                              for i, s in enumerate(SEVERITIES, start=1)]),
                          horizontal=True, height=240)
         with right:
@@ -371,13 +376,13 @@ with tab_dash:
             for f in result.open_findings:
                 by_file[f.file] = by_file.get(f.file, 0) + 1
             top = sorted(by_file.items(), key=lambda kv: -kv[1])[:10]
-            st.dataframe(pd.DataFrame(top, columns=["File", "Findings"]), hide_index=True,
+            st.dataframe(tframe(top, columns=["File", "Findings"]), hide_index=True,
                          **WIDE)
         with right:
             st.subheader(t("Engines"))
             rows = [{"Engine": k, "Status": v} for k, v in result.engine_notes.items()]
             rows += [{"Engine": "AI: " + k, "Status": str(v)} for k, v in result.ai.items()]
-            st.dataframe(pd.DataFrame(rows), hide_index=True, **WIDE)
+            st.dataframe(tframe(rows), hide_index=True, **WIDE)
 
 with tab_findings:
     if result is None:
@@ -413,7 +418,7 @@ with tab_findings:
         st.caption(t("%d of %d findings. Your reviews are remembered: a finding you dismiss stays "
                    "dismissed in later scans, and each review adjusts the confidence of the "
                    "rule that produced it.") % (len(shown), len(result.findings)))
-        table = pd.DataFrame([{
+        table = tframe([{
             "Severity": f.severity, "Title": f.title, "File": f.file, "Line": f.line,
             "CWE": f.cwe, "Tier": f.tier, "Risk": f.risk_score,
             "Confidence %": round(f.confidence * 100), "Engines": ", ".join(f.engines),
@@ -505,9 +510,9 @@ with tab_learn:
                 created = loop.learn_from_scan(result, loop.load_files(result.target),
                                                make_client(llm_config), storage)
             ok = sum(1 for c in created if c["status"] == "pending")
-            st.session_state["learn_note"] = (
+            st.session_state["learn_note"] = t(
                 "%d candidate(s) proposed: %d passed validation, %d rejected automatically."
-                % (len(created), ok, len(created) - ok))
+            ) % (len(created), ok, len(created) - ok)
             st.rerun()
     with t2:
         st.markdown(t("**Fill gaps for a language**"))
@@ -527,9 +532,9 @@ with tab_learn:
                 created = (loop.bootstrap_all(client, storage) if language == every
                            else loop.bootstrap(client, storage, language))
             ok = sum(1 for c in created if c["status"] == "pending")
-            st.session_state["learn_note"] = (
+            st.session_state["learn_note"] = t(
                 "%d candidate(s) proposed: %d passed validation, %d rejected automatically."
-                % (len(created), ok, len(created) - ok))
+            ) % (len(created), ok, len(created) - ok)
             st.rerun()
     with t3:
         st.markdown(t("**From your false positives**"))
@@ -538,7 +543,7 @@ with tab_learn:
         if st.button(t("Learn exclusions"), disabled=not llm_ready, **WIDE):
             with st.spinner(t("Proposing and validating exclusions")):
                 created = loop.learn_from_feedback(make_client(llm_config), storage)
-            st.session_state["learn_note"] = "%d exclusion(s) proposed." % len(created)
+            st.session_state["learn_note"] = t("%d exclusion(s) proposed.") % len(created)
             st.rerun()
 
     st.subheader(t("Waiting for your approval (%d)") % len(pending))
@@ -578,14 +583,14 @@ with tab_learn:
                 e2.code("\n".join(c["examples_safe"]), language="text")
             report = c.get("validation") or {}
             st.markdown(t("**Automatic checks**"))
-            st.dataframe(pd.DataFrame([{"Check": x["name"],
+            st.dataframe(tframe([{"Check": x["name"],
                                         "Result": "passed" if x["passed"] else "FAILED",
                                         "Detail": x["detail"]} for x in report.get("checks", [])]),
                          hide_index=True, **WIDE)
             if report.get("project_matches"):
                 st.markdown(t("**What it would flag in the scanned project (%d lines)**")
                             % report.get("match_count", 0))
-                st.dataframe(pd.DataFrame(report["project_matches"]), hide_index=True, **WIDE)
+                st.dataframe(tframe(report["project_matches"]), hide_index=True, **WIDE)
             a1, a2, _ = st.columns([1, 1, 3])
             a1.button(t("Approve"), key="approve_%s" % c["id"], type="primary", on_click=decide,
                       args=(c["id"], True), **WIDE)
@@ -595,7 +600,7 @@ with tab_learn:
     rejected = storage.list_candidates("rejected_auto")[:15]
     if rejected:
         with st.expander(t("Rejected automatically (%d most recent)") % len(rejected)):
-            st.dataframe(pd.DataFrame([{
+            st.dataframe(tframe([{
                 "Id": c["id"], "CWE": c.get("cwe", ""), "Pattern": c.get("pattern") or c.get("exclude", ""),
                 "Failed checks": "; ".join("%s: %s" % (x["name"], x["detail"]) for x in
                                            (c.get("validation") or {}).get("checks", [])
@@ -604,7 +609,7 @@ with tab_learn:
 
     st.subheader(t("Learned rules (%d)") % len(learned))
     if learned:
-        st.dataframe(pd.DataFrame([{
+        st.dataframe(tframe([{
             "Id": r["id"], "Languages": ", ".join(r.get("languages", [])), "CWE": r.get("cwe", ""),
             "Title": r.get("title", ""), "Pattern": r.get("pattern", ""),
             "Source": (r.get("learned") or {}).get("source", ""),
@@ -619,7 +624,7 @@ with tab_learn:
 
     st.subheader(t("Rule track record"))
     if stats:
-        st.dataframe(pd.DataFrame([{
+        st.dataframe(tframe([{
             "Rule": rule_id, "Confirmed": s["tp"], "False positives": s["fp"],
             "Written confidence": confidences.get(rule_id, 0.6),
             "Adjusted confidence": round(feedback_module.adjusted_confidence(
@@ -636,9 +641,9 @@ with tab_learn:
     frame = frame[sorted(frame.columns, key=lambda c: int(c.split("-")[1]))] if len(frame.columns) else frame
     frame.insert(0, "Rules", frame.sum(axis=1))
     st.dataframe(frame, **WIDE)
-    st.caption(t("Python is analysed by the AST taint engine and needs no pattern rules. "
-               "Languages without rules are still covered by the AI deep scan, and by "
-               "Opengrep/Semgrep when installed."))
+    st.caption(t("Python is analysed mainly by the AST taint engine; its few pattern rules "
+               "are imported ones. Languages without rules are still covered by the AI deep "
+               "scan, and by Opengrep/Semgrep when installed."))
 
 with tab_reports:
     if result is None:

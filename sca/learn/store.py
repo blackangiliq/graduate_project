@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 
 import yaml
 
+from ..engines import rules_engine
 from ..engines.rules_engine import learned_dir
 from ..storage import Storage
 
@@ -41,6 +42,7 @@ def _write_learned(rules: List[Dict[str, Any]]) -> None:
               "You can edit or delete entries by hand.\n")
     body = yaml.safe_dump(rules, sort_keys=False, allow_unicode=True, width=1000) if rules else "[]\n"
     _path("rules.yaml").write_text(header + body, encoding="utf-8")
+    rules_engine.invalidate()
 
 
 def add_learned_rule(candidate: Dict[str, Any]) -> Dict[str, Any]:
@@ -85,6 +87,7 @@ def add_override(rule_id: str, exclude: str) -> None:
     _path("overrides.yaml").write_text(
         header + yaml.safe_dump(overrides, sort_keys=True, allow_unicode=True, width=1000),
         encoding="utf-8")
+    rules_engine.invalidate()
 
 
 def approve(storage: Storage, candidate_id: str) -> Dict[str, Any]:

@@ -136,6 +136,26 @@ _KB = {
                 "Restrict Access-Control-Allow-Origin to the origins that need it.",
                 "يُسمح لأي موقع بقراءة ردود هذا التطبيق.",
                 "حدد Access-Control-Allow-Origin بالنطاقات التي تحتاجه فقط."),
+    "CWE-90": ("LDAP Injection", "A03",
+               "User input is placed in an LDAP search filter, so an attacker can change what the directory query matches.",
+               "Escape the value for LDAP filters (RFC 4515) or use the library's filter-building helpers.",
+               "تُوضع مدخلات المستخدم داخل فلتر بحث LDAP، فيستطيع المهاجم تغيير ما يطابقه استعلام الدليل.",
+               "رمّز القيمة لفلاتر LDAP (RFC 4515) أو استخدم أدوات بناء الفلتر في المكتبة."),
+    "CWE-643": ("XPath Injection", "A03",
+                "User input is concatenated into an XPath expression, so an attacker can read other parts of the XML document.",
+                "Use parameterized XPath (variables) or validate the value against a strict allow-list.",
+                "تُدمج مدخلات المستخدم داخل تعبير XPath، فيستطيع المهاجم قراءة أجزاء أخرى من مستند XML.",
+                "استخدم XPath بمتغيّرات (parameterized) أو تحقق من القيمة بقائمة سماح صارمة."),
+    "CWE-614": ("Sensitive Cookie Without the Secure Flag", "A05",
+                "The cookie is sent over unencrypted HTTP as well, where it can be read on the network.",
+                "Set the Secure flag (and HttpOnly) on cookies that carry session or identity data.",
+                "يُرسَل ملف تعريف الارتباط عبر HTTP غير المشفَّر أيضاً، فيمكن قراءته على الشبكة.",
+                "فعّل خاصية Secure (و HttpOnly) على ملفات الارتباط التي تحمل بيانات جلسة أو هوية."),
+    "CWE-501": ("Trust Boundary Violation", "A04",
+                "Unvalidated user input is stored in the server-side session, where later code treats it as trusted.",
+                "Validate the value before storing it in the session, and never use a user-chosen name as the session key.",
+                "تُخزَّن مدخلات المستخدم دون تحقق في جلسة الخادم، ثم يعاملها الكود اللاحق كبيانات موثوقة.",
+                "تحقق من القيمة قبل تخزينها في الجلسة، ولا تستخدم اسماً يختاره المستخدم مفتاحاً للجلسة."),
     "CWE-1004": ("Cookie Without HttpOnly", "A05",
                  "The cookie can be read by JavaScript, so an XSS bug can steal the session.",
                  "Set httpOnly (and secure) on session cookies.",
@@ -213,6 +233,7 @@ _KB = {
 # The others (weak algorithm, disabled TLS check, hard-coded secret, gets() ...) are a
 # property of the line itself.
 FLOW_CWES = {"CWE-89", "CWE-78", "CWE-79", "CWE-95", "CWE-22", "CWE-98", "CWE-601", "CWE-918",
+             "CWE-90", "CWE-643", "CWE-501",
              "CWE-943", "CWE-502", "CWE-1336", "CWE-134", "CWE-120", "CWE-434", "CWE-621"}
 
 _EQUIVALENT = {  # CWEs that describe the same weakness for merging purposes

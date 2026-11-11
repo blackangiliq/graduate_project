@@ -225,8 +225,8 @@ def test_custom_rule_edit_disable_delete():
 
 def test_list_filters_and_summary():
     counts = rulebook.summary()
-    assert counts["by_origin"]["builtin"]["total"] == 98
-    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 98
+    assert counts["by_origin"]["builtin"]["total"] == 107
+    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 107
     assert counts["enabled"] < counts["total"] and counts["secret"] > 150
     php = rulebook.list_rules(language="php", origin="builtin")
     assert php and all("php" in r.languages for r in php)
@@ -315,3 +315,194 @@ def test_cli_rule_management(tmp_path, capsys):
     assert cli(["rules", "show", "NO-SUCH-RULE"]) == 1
     assert cli(["doctor"]) == 0
     assert "imported" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------ context and sink rules
+def ids_found(tmp_path, name: str, text: str):
+    return {i for f in scan_text(tmp_path, name, text).findings for i in f.rule_ids}
+
+
+def test_near_condition_needs_the_context_close_by(tmp_path):
+    close = "float r = new java.util.Random().nextFloat();\nString rememberMeKey = Float.toString(r);\n"
+    far = "int banner = new java.util.Random().nextInt(5);\n" + "int x = 1;\n" * 6 + "String token = t;\n"
+    assert "JAVA-RANDOM-002" in ids_found(tmp_path, "A.java", close)
+    assert "JAVA-RANDOM-002" not in ids_found(tmp_path, "A.java", far)
+    assert "JAVA-RANDOM-002" not in ids_found(
+        tmp_path, "A.java", "byte[] sessionKey = new java.security.SecureRandom().generateSeed(16);\n")
+
+
+def test_sink_rule_is_silent_until_input_is_traced(tmp_path):
+    traced = ('String name = request.getParameter("f");\n'
+              'String path = BASE + name;\n'
+              'java.io.FileInputStream in = new java.io.FileInputStream(path);\n')
+    result = scan_text(tmp_path, "A.java", traced)
+    finding = next(f for f in result.findings if "JAVA-PATH-002" in f.rule_ids)
+    assert finding.tainted and finding.tier == "confirmed" and finding.cwe == "CWE-22"
+    constant = 'String path = BASE + "report.txt";\nnew java.io.FileInputStream(path);\n'
+    assert "JAVA-PATH-002" not in ids_found(tmp_path, "A.java", constant)
+    cleaned = ('String name = new java.io.File(request.getParameter("f")).getName();\n'
+               'new java.io.FileInputStream(BASE + name);\n')
+    assert "JAVA-PATH-002" not in ids_found(tmp_path, "A.java", cleaned)
+
+
+@pytest.mark.parametrize("rule_id, code", [
+    ("JAVA-CMDI-003", 'String p = request.getHeader("x");\nString[] args = {"sh", "-c", "echo " + p};\n'
+                      'ProcessBuilder pb = new ProcessBuilder(args);\n'),
+    ("JAVA-SQLI-003", 'String id = request.getParameter("id");\nString sql = "SELECT * FROM t WHERE id=" + id;\n'
+                      'statement.executeQuery(sql);\n'),
+    ("JAVA-XSS-002", 'String q = request.getParameter("q");\nresponse.getWriter().println(q);\n'),
+    ("JAVA-LDAP-001", 'String u = request.getParameter("u");\nString filter = "(uid=" + u + ")";\n'
+                      'javax.naming.directory.DirContext ctx = ads.getDirContext();\nctx.search(base, filter, sc);\n'),
+    ("JAVA-XPATH-001", 'String id = request.getParameter("id");\n'
+                       'String expression = "/Employees/Employee[@emplid=\'" + id + "\']";\n'
+                       'javax.xml.xpath.XPath xp = xpf.newXPath();\nString r = xp.evaluate(expression, doc);\n'),
+    ("JAVA-TRUST-001", 'String v = request.getParameter("v");\nrequest.getSession().setAttribute("userid", v);\n'),
+    ("JAVA-COOKIE-001", 'cookie.setSecure(false);\n'),
+])
+def test_new_java_rules_fire(tmp_path, rule_id, code):
+    assert rule_id in ids_found(tmp_path, "A.java", code)
+
+
+@pytest.mark.parametrize("code", [
+    'String q = "fixed";\nresponse.getWriter().println(q);\n',
+    'String q = request.getParameter("q");\nresponse.getWriter().println(org.owasp.esapi.ESAPI.encoder().encodeForHTML(q));\n',
+    'String v = "constant";\nrequest.getSession().setAttribute("userid", v);\n',
+    'cookie.setSecure(true);\n',
+    'String sql = "SELECT 1";\nstatement.executeQuery(sql);\n',
+])
+def test_new_java_rules_stay_silent_on_safe_code(tmp_path, code):
+    assert not {i for i in ids_found(tmp_path, "A.java", code) if i.startswith("JAVA-")}
+
+
+PY_HEAD = "import flask, ldap3, lxml.etree, xml.sax, elementpath\nfrom flask import request\n\n"
+
+
+@pytest.mark.parametrize("rule_id, cwe, body", [
+    ("PY-LDAP-001", "CWE-90", "    f = '(uid=%s)' % request.form['u']\n    conn.search(base, f)\n"),
+    ("PY-XPATH-001", "CWE-643", "    q = \"/E[@id='%s']\" % request.args.get('id')\n    run = lxml.etree.XPath(q)\n"),
+    ("PY-XPATH-001", "CWE-643", "    q = '/E/' + request.args['p']\n    elementpath.select(root, q)\n"),
+    ("PY-XXE-002", "CWE-611", "    p = xml.sax.make_parser()\n"
+                              "    p.setFeature(xml.sax.handler.feature_external_ges, True)\n"),
+    ("PY-XXE-003", "CWE-611", "    p = lxml.etree.XMLParser(resolve_entities=True)\n"),
+    ("PY-COOKIE-001", "CWE-614", "    resp.set_cookie('sid', value, secure=False, httponly=True)\n"),
+    ("PY-TRUST-001", "CWE-501", "    flask.session['userid'] = request.form['u']\n"),
+])
+def test_new_python_sinks(tmp_path, rule_id, cwe, body):
+    result = scan_text(tmp_path, "app.py", PY_HEAD + "def view():\n" + body)
+    finding = next(f for f in result.findings if rule_id in f.rule_ids)
+    assert finding.cwe == cwe and finding.engines == ["ast"]
+
+
+@pytest.mark.parametrize("body", [
+    "    conn.search(base, '(uid=admin)')\n",
+    "    import re\n    m = re.search('a+', request.args['q'])\n",
+    "    run = lxml.etree.XPath('/E[@id=1]')\n",
+    "    p = xml.sax.make_parser()\n    p.setFeature(xml.sax.handler.feature_external_ges, False)\n",
+    "    resp.set_cookie('sid', value, secure=True)\n",
+    "    flask.session['theme'] = 'dark'\n",
+])
+def test_new_python_sinks_stay_silent_on_safe_code(tmp_path, body):
+    result = scan_text(tmp_path, "app.py", PY_HEAD + "def view():\n" + body)
+    assert not {i for f in result.findings for i in f.rule_ids
+                if i.startswith(("PY-LDAP", "PY-XPATH", "PY-XXE", "PY-COOKIE", "PY-TRUST"))}
+
+
+def test_session_value_from_a_database_row_is_only_probable(tmp_path):
+    body = ("    user = db.execute('SELECT * FROM u WHERE n = ?', (request.form['n'],)).fetchone()\n"
+            "    flask.session['user_id'] = user['id']\n")
+    result = scan_text(tmp_path, "app.py", PY_HEAD + "def view():\n" + body)
+    finding = next(f for f in result.findings if "PY-TRUST-001" in f.rule_ids)
+    assert not finding.tainted and finding.tier == "probable"
+
+
+def test_dead_branches_are_not_analysed(tmp_path):
+    def sqli(body):
+        result = scan_text(tmp_path, "app.py", PY_HEAD + "def view():\n" + body)
+        return [f for f in result.findings if f.cwe == "CWE-89" and f.tainted]
+    dead = ("    num = 106\n    if 7 * 18 + num > 200:\n        bar = 'always'\n    else:\n"
+            "        bar = request.args['q']\n    cur.execute('SELECT * FROM t WHERE a = ' + bar)\n")
+    live = dead.replace("> 200", "> 2000")
+    assert not sqli(dead) and sqli(live)
+    ternary = ("    bar = 'always' if 7 * 42 - 86 > 200 else request.args['q']\n"
+               "    cur.execute('SELECT * FROM t WHERE a = ' + bar)\n")
+    assert not sqli(ternary) and sqli(ternary.replace("> 200", "> 2000"))
+    unknown = dead.replace("num = 106", "num = int(limit)")       # not a constant: keep both
+    assert sqli(unknown)
+    reassigned = dead.replace("    if 7", "    num = num + 1000\n    if 7")   # bound twice
+    assert sqli(reassigned)
+
+
+def test_bracket_inside_a_string_is_not_a_table_lookup():
+    from sca.engines.taint_lite import strip_lookups
+    assert strip_lookups('$pages[$_GET["p"]]') == "$pages[]"
+    line = 'String e = "/Employees/Employee[@id=\'" + bar + "\']";'
+    assert strip_lookups(line) == line
+
+
+def test_rule_book_accepts_context_and_tracing_fields(tmp_path):
+    rule = {**RULE, "id": "MY-CTX-001", "pattern": r"\bMath\.random\(", "near": "(?i)token",
+            "within": 2, "requires_taint": False, "languages": ["javascript"], "cwe": "CWE-338",
+            "examples_vulnerable": [], "examples_safe": []}
+    rulebook.create(rule)
+    saved = rulebook.get("MY-CTX-001")
+    assert saved.near.pattern == "(?i)token" and saved.within == 2
+    assert "MY-CTX-001" in ids_found(tmp_path, "a.js", "const token = Math.random();\n")
+    assert "MY-CTX-001" not in ids_found(tmp_path, "a.js", "const x = Math.random();\n")
+    rulebook.update("MY-CTX-001", {"requires_taint": True, "near": ""})
+    assert rulebook.get("MY-CTX-001").requires_taint and rulebook.get("MY-CTX-001").near is None
+    with pytest.raises(rulebook.RuleError):
+        rulebook.create({**rule, "id": "MY-CTX-002", "near": "(("})
+    with pytest.raises(rulebook.RuleError):
+        rulebook.create({**rule, "id": "MY-CTX-003", "within": 500})
+
+
+def test_owasp_benchmark_scoring(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "owasp_benchmark", rules_engine.RULES_DIR.parent.parent / "evaluation" / "owasp_benchmark.py")
+    bench = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bench)
+    code = tmp_path / "testcode"
+    code.mkdir()
+    (tmp_path / "expectedresults-0.1.csv").write_text(
+        "# test name, category, real vulnerability, cwe\n"
+        "BenchmarkTest00001,securecookie,true,614\nBenchmarkTest00002,securecookie,false,614\n"
+        "BenchmarkTest00003,sqli,true,89\n", encoding="utf-8")
+    head = "from flask import request\ndef view():\n"
+    (code / "BenchmarkTest00001.py").write_text(head + "    r.set_cookie('a', 'b', secure=False)\n")
+    (code / "BenchmarkTest00002.py").write_text(head + "    r.set_cookie('a', 'b', secure=True)\n")
+    (code / "BenchmarkTest00003.py").write_text(head + "    return 1\n")
+    expected, _name = bench.load_expected(tmp_path)
+    found, _seconds, _lines = bench.flagged_cases(bench.test_folder(tmp_path), {})
+    rows = {r["category"]: r for r in bench.score(expected, found)}
+    assert (rows["securecookie"]["tp"], rows["securecookie"]["fp"]) == (1, 0)
+    assert rows["securecookie"]["score"] == 1.0 and rows["sqli"]["fn"] == 1
+    assert bench.summary(list(rows.values()))["score_avg"] == 0.5
+
+
+def test_bulk_enable_and_disable(capsys):
+    swift = [r.id for r in rulebook.list_rules(language="swift", origin="imported", kind="pattern")
+             if "swift" in r.languages and r.enabled]
+    assert swift
+    assert rulebook.set_enabled_many(swift, False) == len(swift)
+    assert not any(rulebook.get(i).enabled for i in swift)
+    assert rulebook.set_enabled_many(swift, False) == 0           # nothing left to change
+    assert cli(["rules", "enable", "--origin", "imported", "--search", "DEVSKIM"]) == 0
+    assert "Enabled" in capsys.readouterr().out
+    assert all(r.enabled for r in rulebook.list_rules(text="DEVSKIM"))
+    assert cli(["rules", "disable"]) == 2                         # no id and no filter
+
+
+def test_cli_scan_accepts_every_option(tmp_path, capsys):
+    (tmp_path / "a.php").write_text("<?php $n = $_GET['n']; echo $n;\n", encoding="utf-8")
+    code = cli(["scan", str(tmp_path), "--no-save", "--quiet", "--format", "", "--no-bandit",
+                "--no-ml", "--no-taint-lite", "--deep-max-files", "3", "--llm-timeout", "30"])
+    assert code == 0 and "Scanned: 1 files" in capsys.readouterr().out
+
+
+def test_pattern_rules_skip_python_docstrings(tmp_path):
+    code = ('def f():\n    """Tables of banned calls:\n    - Crypto.Cipher.DES.new\n    """\n'
+            "    return 1\n")
+    assert not scan_text(tmp_path, "notes.py", code).findings
+    used = "from Crypto.Cipher import DES\ncipher = DES.new(key, DES.MODE_ECB)\n"
+    assert any(f.cwe == "CWE-327" for f in scan_text(tmp_path, "crypto.py", used).findings)

@@ -6,7 +6,7 @@
   cwe: CWE-89
   severity: high
   confidence: 0.75
-  pattern: '\.(query|execute|raw|all|run|get|exec)\s*\(\s*(`[^`]*\$\{|"[^"]*\b(SELECT|INSERT|UPDATE|DELETE)\b[^"]*"\s*\+|''[^'']*\b(SELECT|INSERT|UPDATE|DELETE)\b[^'']*''\s*\+)'
+  pattern: '\.(query|execute|raw|all|run|get|exec)\s*\(\s*(`[^`]*\b(SELECT|INSERT|UPDATE|DELETE|select|insert|update|delete)\b[^`]*\$\{|"[^"]*\b(SELECT|INSERT|UPDATE|DELETE)\b[^"]*"\s*\+|''[^'']*\b(SELECT|INSERT|UPDATE|DELETE)\b[^'']*''\s*\+)'
   ignore_case: true
 
 - id: JS-SQLI-002
@@ -56,8 +56,8 @@
   cwe: CWE-79
   severity: medium
   confidence: 0.6
-  pattern: '\.(innerHTML|outerHTML)\s*\+?=\s*(?!\s*(["''`])[^"''`$+]*\2\s*;?\s*(//.*)?$)'
-  exclude: 'DOMPurify\.sanitize|escapeHtml|sanitize\('
+  pattern: '\.(innerHTML|outerHTML)\s*\+?=(?!=)\s*(?!\s*(["''`])(?:(?!\2)[^$+\\])*\2\s*;?\s*(//.*)?$)'
+  exclude: 'DOMPurify\.sanitize|escapeHtml|sanitize\(|\.(innerHTML|outerHTML)\s*=\s*[^;]*?\?\s*(["''])[^"''+$]*\2\s*:\s*(["''])[^"''+$]*\3\s*;?\s*$'
 
 - id: JS-XSS-002
   title: document.write with dynamic content
@@ -65,7 +65,7 @@
   cwe: CWE-79
   severity: medium
   confidence: 0.5
-  pattern: '\bdocument\.write(ln)?\s*\(\s*(?!\s*(["''])[^"'']*\2\s*\))'
+  pattern: '\bdocument\.write(ln)?\s*\(\s*(?!\s*(["''`])(?:(?!\2)[^$+\\])*\2\s*\))'
 
 - id: JS-XSS-003
   title: Request data sent back in the HTTP response without encoding
@@ -108,6 +108,7 @@
   severity: high
   confidence: 0.65
   pattern: '\.(find|findOne|findOneAndUpdate|updateOne|updateMany|deleteOne|deleteMany|count|countDocuments)\s*\(\s*(req\.(body|query)\s*[,)]|\{[^}]*:\s*req\.(body|query)\.\w+\s*[,}])'
+  exclude: '\bwhere\s*:'
 
 - id: JS-SSRF-001
   title: Outgoing request to a URL taken from the request
@@ -184,3 +185,190 @@
   severity: low
   confidence: 0.75
   pattern: 'httpOnly\s*:\s*false'
+
+- id: JS-XXE-001
+  title: XML parsed with external entities enabled
+  languages: [javascript]
+  cwe: CWE-611
+  severity: high
+  confidence: 0.8
+  pattern: '\bnoent\s*:\s*true\b'
+  message: With noent the parser expands external entities, so an uploaded XML file can read local files or call internal URLs.
+  fix: Remove noent:true (the default is off) or parse with a library that does not resolve entities.
+  examples_vulnerable: ['var doc = libxmljs.parseXmlString(xml, {noent: true, noblanks: true})']
+  examples_safe: ['var doc = libxmljs.parseXmlString(xml, {noblanks: true})']
+
+- id: JS-EVAL-004
+  title: Expression from the request evaluated by a library (mathjs, vm, ...)
+  languages: [javascript]
+  cwe: CWE-95
+  severity: critical
+  confidence: 0.8
+  pattern: '\.(eval|evaluate|runInNewContext|runInThisContext|compile)\s*\(\s*req(uest)?\.(body|query|params)\b'
+  message: The request text is evaluated as code or as an expression; old mathjs versions and vm allow running arbitrary code this way.
+  fix: Do not evaluate request text. Parse the expected values, or use a sandboxed parser with a fixed function list.
+  examples_vulnerable: ['var out = mathjs.eval(req.body.eqn)']
+  examples_safe: ['var out = mathjs.eval("1 + 2")']
+
+- id: JS-XSS-005
+  title: Unescaped template output (EJS <%- ... %>)
+  languages: [javascript]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.55
+  pattern: '<%-\s*(?!\s*include\b)[A-Za-z_$]'
+  message: <%- writes the value as raw HTML. If a user can influence it, it runs as script in the page.
+  fix: Use <%= %>, which escapes HTML, unless the value is HTML you produced yourself.
+  examples_vulnerable: ['<p>Results for <%- output.searchTerm %></p>']
+  examples_safe: ['<%- include("common/navigation") %>', '<p>Results for <%= output.searchTerm %></p>']
+
+# ---- Added after reviewing NodeGoat and OWASP Juice Shop
+- id: JS-NOSQL-002
+  title: MongoDB $where built from a string
+  languages: [javascript]
+  cwe: CWE-943
+  severity: high
+  confidence: 0.75
+  pattern: '\$where\s*:\s*(`[^`]*\$\{|["''][^"''\n]*["'']\s*\+)'
+  message: $where runs JavaScript inside the database; a value joined into it can change the query or run code.
+  fix: 'Replace $where with normal query operators ({ field: value }) and cast the value to the expected type.'
+  examples_vulnerable: ['return db.find({ $where: `this.orderId === ''${id}''` })', 'find({ $where: ''this.product == '' + id })']
+  examples_safe: ['find({ orderId: String(id) })']
+
+- id: JS-XXE-002
+  title: libxml2 parse option that expands external entities
+  languages: [javascript]
+  cwe: CWE-611
+  severity: high
+  confidence: 0.8
+  pattern: '\bXML_PARSE_(NOENT|DTDLOAD)\b'
+  message: The parser loads the DTD or expands entities, so an uploaded XML file can read local files.
+  fix: Do not pass XML_PARSE_NOENT or XML_PARSE_DTDLOAD when parsing untrusted XML.
+  examples_vulnerable: ['libxml2.ParseOption.XML_PARSE_NOENT | libxml2.ParseOption.XML_PARSE_DTDLOAD']
+  examples_safe: ['libxml2.ParseOption.XML_PARSE_NONET']
+
+- id: JS-XSS-006
+  title: HTML escaping of the template engine switched off
+  languages: [javascript]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.75
+  pattern: '\b(autoescape|autoEscape)\s*:\s*false\b|\bnoEscape\s*:\s*true\b'
+  message: Every value written by the templates becomes raw HTML, so any user value can carry script.
+  fix: Keep autoescape on, and mark only trusted HTML as safe where it is needed.
+  examples_vulnerable: ['swig.setDefaults({ autoescape: false })']
+  examples_safe: ['swig.setDefaults({ autoescape: true })']
+
+- id: JS-XSS-007
+  title: Angular sanitizer bypassed for a dynamic value
+  languages: [javascript]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.6
+  pattern: '\bbypassSecurityTrust(Html|Script|Style|Url|ResourceUrl)\s*\(\s*(?!["''][^"''`$]*["'']\s*\))'
+  message: bypassSecurityTrust tells Angular that the value is safe HTML; if a user can influence it, it runs as script.
+  fix: Let Angular sanitize the value (bind it normally) or clean it with DOMPurify first.
+  examples_vulnerable: ['this.searchValue = this.sanitizer.bypassSecurityTrustHtml(queryParam)']
+  examples_safe: ['this.icon = this.sanitizer.bypassSecurityTrustHtml("<svg></svg>")']
+
+- id: JS-EVAL-005
+  title: Code run in a vm context or with notevil
+  languages: [javascript]
+  cwe: CWE-95
+  severity: high
+  confidence: 0.5
+  pattern: '\bvm\.runIn(New|This)?Context\s*\(|\bfrom\s+["'']notevil["'']|require\s*\(\s*["'']notevil["'']\s*\)'
+  message: The vm module and notevil are not security boundaries; code that reaches them can escape and run on the server.
+  fix: Do not evaluate data. Parse the expected structure (JSON.parse) instead.
+  examples_vulnerable: ['vm.runInContext(''safeEval(orderLinesData)'', sandbox, { timeout: 2000 })']
+  examples_safe: ['const order = JSON.parse(orderLinesData)']
+
+- id: JS-REDOS-001
+  title: Regular expression with a nested quantifier (ReDoS)
+  languages: [javascript]
+  cwe: CWE-1333
+  severity: medium
+  confidence: 0.55
+  pattern: '[=(,:]\s*/(?:[^/\\\n]|\\.)*\((?:[^()\\\n]|\\.)*[+*]\)[+*{](?:[^/\\\n]|\\.)*/[dgimsuy]*'
+  message: A repeated group that itself repeats, such as ([0-9]+)+, can take exponential time on a crafted input and block the server.
+  fix: Remove the nested repetition (([0-9]+)+ becomes [0-9]+) or limit the input length first.
+  examples_vulnerable: ['const regexPattern = /([0-9]+)+\#/;']
+  examples_safe: ['const regexPattern = /[0-9]+#/;']
+
+- id: JS-SSRF-002
+  title: Server-side request to a URL taken from the request
+  languages: [javascript]
+  cwe: CWE-918
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\b(fetch|needle|superagent|got|request|axios|https?\.(get|request))(\.(get|post|put|patch|delete|head|request))?\s*\(\s*[A-Za-z_$][\w$.]*\s*[,)]'
+  message: The server fetches a URL that a user chose, which can reach internal services and cloud metadata.
+  fix: Allow only known hosts and schemes, and block private and link-local addresses.
+
+# ---- Added after reviewing WebGoat, DVGA and the code snippets
+- id: JS-XSS-008
+  title: jQuery inserts HTML built with concatenation
+  languages: [javascript]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.5
+  pattern: '\.(html|append|prepend|after|before)\s*\(\s*(["''][^"'']*<[^"'']*["'']\s*\+|[A-Za-z_$][\w$]*\s*\+\s*["'']\s*<)'
+  message: jQuery parses the joined string as HTML, so a user value inside it can carry script.
+  fix: Insert user values with .text() or escape them before building HTML.
+  examples_vulnerable: ['$("#out").html("<p>test:" + param + "</p>");']
+  examples_safe: ['$("#out").text(param);']
+
+- id: JS-MSG-001
+  title: postMessage sent to any origin
+  languages: [javascript]
+  cwe: CWE-345
+  severity: medium
+  confidence: 0.7
+  pattern: '\.postMessage\s*\([^)]*,\s*["'']\*["'']\s*\)'
+  message: Any page that holds a reference to the window can receive the message and its data.
+  fix: Pass the exact target origin instead of "*".
+  examples_vulnerable: ['parent.postMessage(token, "*")']
+  examples_safe: ['parent.postMessage(token, "https://app.example.com")']
+
+- id: JS-PROTO-001
+  title: Request data deep-merged into an object (prototype pollution)
+  languages: [javascript]
+  cwe: CWE-1321
+  severity: high
+  confidence: 0.7
+  pattern: '\b(_|lodash)\.(merge|mergeWith|defaultsDeep|set|setWith|zipObjectDeep)\s*\([^;]*req\.(body|query|params)'
+  message: Keys like __proto__ in the request change the prototype of every object in the application.
+  fix: Merge only known fields, or reject __proto__, constructor and prototype keys.
+
+- id: JS-DESER-002
+  title: js-yaml loads with the full schema (functions and regexps)
+  languages: [javascript]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.75
+  pattern: '\bDEFAULT_FULL_SCHEMA\b'
+  message: The full schema builds JavaScript functions from the document, which can run code.
+  fix: Use the default safe schema (yaml.load in js-yaml 4, or safeLoad).
+
+- id: JS-REDIRECT-002
+  title: Redirect to a URL taken from the request
+  languages: [javascript]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\b(res|ctx)\.redirect\s*\(\s*[A-Za-z_$][\w$]*\s*\)'
+  message: A URL that comes from the request decides where the user is sent.
+  fix: Redirect only to relative paths or to a fixed list of allowed hosts.
+
+- id: JS-NOSQL-003
+  title: Database query object built from request data
+  languages: [javascript]
+  cwe: CWE-943
+  severity: high
+  confidence: 0.55
+  requires_taint: true
+  pattern: '\.(find|findOne|findOneAndUpdate|updateOne|updateMany|deleteOne|deleteMany|countDocuments)\s*\(\s*[A-Za-z_$][\w$]*\s*[,)]'
+  message: An object from the request can carry operators such as $ne or $gt and change the query.
+  fix: Build the query from validated fields and cast each value to the expected type.

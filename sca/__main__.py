@@ -93,8 +93,28 @@ def _client(args: argparse.Namespace):
 
 
 def _progress(args: argparse.Namespace):
+    """Print what the scan is doing while it does it: each step, what the step found, and
+    (in a terminal) the file being read, rewritten in place on one line."""
+    live = sys.stderr.isatty()
+    width = 96
+    on_screen = [False]          # a "file" line is shown and must be cleared first
+
     def progress(message: str, fraction: float) -> None:
-        if not getattr(args, "quiet", False):
+        if getattr(args, "quiet", False):
+            return
+        kind = getattr(message, "kind", "step")
+        if kind == "file":
+            if live:
+                print("\r       %-*.*s" % (width, width, message), end="", file=sys.stderr,
+                      flush=True)
+                on_screen[0] = True
+            return
+        if on_screen[0]:
+            print("\r" + " " * (width + 7) + "\r", end="", file=sys.stderr)
+            on_screen[0] = False
+        if kind == "result":
+            print("       -> %s" % message, file=sys.stderr)
+        else:
             print("[%3d%%] %s" % (round(fraction * 100), message), file=sys.stderr)
     return progress
 
@@ -114,6 +134,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         llm_deep_scan=args.deep, lang=args.lang, save=not args.no_save,
         strict=args.strict, use_feedback=not args.no_feedback,
         include_tests=not args.skip_tests, use_taint_lite=not args.no_taint_lite,
+        use_c_memory=not args.no_c_memory,
         llm_deep_max_files=args.deep_max_files, llm_timeout=args.llm_timeout,
         **_llm_settings(args))
     try:
@@ -239,6 +260,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
              origins["custom"]["enabled"], counts["secret"]))
     print("  [ok] ast        Python taint analysis, inter-procedural within a file (built in)")
     print("  [ok] taint-lite input tracing for JS, PHP, Java, Go, C#, Ruby, C (built in)")
+    print("  [ok] c-memory   C/C++ double free, use after free, leaks, overflowing sizes, "
+          "bounds (built in)")
     print("  [ok] secrets    key formats + entropy (built in)")
     tools = external.availability()
     hints = {"bandit": "pip install bandit",
@@ -296,7 +319,8 @@ def cmd_learn(args: argparse.Namespace) -> int:
     if args.path:
         options = ScanOptions(use_llm=True, llm_deep_scan=True,
                               llm_deep_max_files=args.max_files, llm_max_findings=args.llm_max,
-                              save=False, **_llm_settings(args))
+                              use_c_memory=not args.no_c_memory, save=False,
+                              **_llm_settings(args))
         try:
             report = loop.learn_until_stable(
                 args.path, client, storage,
@@ -714,6 +738,8 @@ def build_parser() -> argparse.ArgumentParser:
                       help="seconds to wait for one AI answer (default 180)")
     scan.add_argument("--no-taint-lite", action="store_true",
                       help="do not trace user input for JS, PHP, Java, Go, C#, Ruby, C")
+    scan.add_argument("--no-c-memory", action="store_true",
+                      help="skip the C/C++ memory checks (double free, use after free, ...)")
     _add_llm_arguments(scan)
     scan.set_defaults(func=cmd_scan)
 
@@ -743,6 +769,8 @@ def build_parser() -> argparse.ArgumentParser:
     learn.add_argument("--max-files", type=int, default=10, help="files the AI audits")
     learn.add_argument("--max-rules", type=int, default=20, help="candidates per run")
     learn.add_argument("--llm-max", type=int, default=60, help="max findings the AI reviews")
+    learn.add_argument("--no-c-memory", action="store_true",
+                       help="skip the C/C++ memory checks in the scans of the learning loop")
     learn.add_argument("--quiet", action="store_true")
     _add_llm_arguments(learn)
     learn.set_defaults(func=cmd_learn)

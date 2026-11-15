@@ -30,6 +30,62 @@ AR = {
     "Choose a project folder first.": "اختر مجلد المشروع أولاً.",
     "This path does not exist: %s": "هذا المسار غير موجود: %s",
     "The scan failed: %s": "فشل الفحص: %s",
+    # ---- what the scan is doing (sca.pipeline.Message)
+    "Scanning %s": "جارٍ فحص %s",
+    "Starting": "البدء",
+    "Scan finished in %.1f s: %d files, %d findings":
+        "انتهى الفحص في %.1f ثانية: %d ملف، %d نتيجة",
+    "What the scan did, step by step": "ماذا فعل الفحص، خطوة بخطوة",
+    "Collecting the source files of %s": "جمع ملفات الكود المصدري في %s",
+    "Left out %d test files": "استُبعد %d ملف اختبار",
+    "%d files, %d lines: %s": "%d ملف، %d سطر: %s",
+    "%s: skipped - %s": "%s: تُخطّي - %s",
+    "%s: failed - %s": "%s: فشل - %s",
+    "%s: file %d of %d - %s": "%s: الملف %d من %d - %s",
+    "%s: %d found in %.1f s": "%s: وُجد %d في %.1f ثانية",
+    "Secrets": "الأسرار",
+    "Pattern rules": "قواعد الأنماط",
+    "looking for keys, passwords and tokens": "البحث عن المفاتيح وكلمات المرور والرموز",
+    "checking every line against the active rules": "مطابقة كل سطر مع القواعد الفعّالة",
+    "Python AST": "تحليل بايثون (AST)",
+    "C memory checks": "فحوص الذاكرة في C",
+    "following pointers and outside data through each C function":
+        "تتبّع المؤشرات والبيانات الخارجية داخل كل دالة C",
+    "no C or C++ files": "لا توجد ملفات C أو C++",
+    "following user input through the Python code": "تتبّع مدخلات المستخدم داخل كود بايثون",
+    "running the Bandit analyzer on the Python files": "تشغيل محلّل Bandit على ملفات بايثون",
+    "running the external rule engine": "تشغيل محرّك القواعد الخارجي",
+    "searching the files for leaked credentials": "البحث في الملفات عن بيانات اعتماد مسرَّبة",
+    "switched off": "معطَّل",
+    "not installed": "غير منصَّب",
+    "no Python files": "لا توجد ملفات بايثون",
+    "Rules switched off after repeated false positives: %s":
+        "قواعد أُوقفت بعد إنذارات كاذبة متكررة: %s",
+    "Input tracing: checking whether user input reaches each finding":
+        "تتبّع المدخلات: هل تصل مدخلات المستخدم إلى كل نتيجة؟",
+    "Input tracing: user input reaches %d findings":
+        "تتبّع المدخلات: تصل مدخلات المستخدم إلى %d نتيجة",
+    "Merging: removing duplicates and combining the evidence of the engines":
+        "الدمج: إزالة التكرار وجمع أدلة المحركات",
+    "%d raw results merged into %d findings": "دُمجت %d نتيجة أولية في %d نتيجة",
+    "%d findings are in test code: lower confidence, never confirmed automatically":
+        "%d نتيجة في كود الاختبار: ثقة أقل، ولا تؤكَّد تلقائياً",
+    "Your earlier reviews: %d dismissed, %d confirmed": "مراجعاتك السابقة: %d مستبعدة، %d مؤكَّدة",
+    "ML classifier": "مصنِّف التعلّم الآلي",
+    "ML classifier: a second opinion on each finding": "مصنِّف التعلّم الآلي: رأي ثانٍ في كل نتيجة",
+    "ML classifier: scored %d findings": "مصنِّف التعلّم الآلي: قيّم %d نتيجة",
+    "AI review": "مراجعة الذكاء الاصطناعي",
+    "AI review: asking the model about the most severe findings":
+        "مراجعة الذكاء الاصطناعي: سؤال النموذج عن أخطر النتائج",
+    "AI review %d of %d: %s": "مراجعة الذكاء الاصطناعي %d من %d: %s",
+    "AI deep scan %d of %d: %s": "الفحص العميق بالذكاء الاصطناعي %d من %d: %s",
+    "AI verification %d of %d": "تحقّق الذكاء الاصطناعي %d من %d",
+    "Scoring: the risk of each finding and the score of the project":
+        "التقييم: خطورة كل نتيجة ودرجة المشروع",
+    "Score %d/100, grade %s: %d open findings, %d confirmed":
+        "الدرجة %d/100، التقدير %s: %d نتيجة مفتوحة، %d مؤكَّدة",
+    "Scan finished in %.1f s": "انتهى الفحص في %.1f ثانية",
+    "Saved in the history": "حُفظ في السجل",
     # ---- dashboard tab
     "Scan a project to begin": "افحص مشروعاً للبدء",
     "Choose a folder in the sidebar and press **Run scan**. To see a full example, press "

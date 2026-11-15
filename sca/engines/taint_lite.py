@@ -49,14 +49,17 @@ SANITIZERS = re.compile(
     r"|parseFloat|Number\(|encodeURIComponent|escapeHtml|sanitize|basename|Integer\.parseInt"
     r"|Long\.parseLong|strconv\.Atoi|filepath\.Base|\.to_i\b|Convert\.ToInt|int\.Parse"
     r"|DOMPurify|Encode\.for|encodeFor[A-Z]\w*\(|htmlEscape|escapeXml|escapeEcmaScript"
-    r"|HtmlEncode|GetFileName|\.getName\(\)|FilenameUtils\.getName|prepare\(", re.IGNORECASE)
+    r"|HtmlEncode|GetFileName|\.getName\(\)|FilenameUtils\.getName|prepare\("
+    r"|real_escape_string|pg_escape_(string|literal)|->quote\(|PDO::quote|esc_sql",
+    re.IGNORECASE)
 SOURCE_BASE = re.compile(
     r"^\$_(GET|POST|REQUEST|COOKIE|FILES|SERVER)$"
     r"|(^|\.)(query|params|body|headers|cookies|args|form|argv|QueryString|Form|Params|Cookies)$"
     r"|^Request$")
 IDENT = re.compile(r"\$?[A-Za-z_]\w*")
-ASSIGN = re.compile(
-    r"((?:\$?[A-Za-z_]\w*\s*,\s*)*\$?[A-Za-z_]\w*)\s*(?::=|\+=|\.=|=)(?![=>~])\s*(.+)")
+ASSIGN = re.compile(  # a TypeScript type is skipped: let criteria: any = req.query.q
+    r"((?:\$?[A-Za-z_]\w*\s*,\s*)*\$?[A-Za-z_]\w*)(?:\s*:\s*[\w.<>\[\]|? ]+?)?"
+    r"\s*(?::=|\+=|\.=|=)(?![=>~])\s*(.+)")
 DESTRUCTURE = re.compile(r"\{\s*([\w\s,:$]+)\}\s*=(?!=)\s*(.+)")
 KEYWORDS = {"if", "else", "for", "while", "return", "const", "let", "var", "new", "function",
             "echo", "print", "true", "false", "null", "nil", "this", "self", "String", "int",
@@ -100,8 +103,44 @@ def strip_lookups(text: str) -> str:
     return "".join(out)
 
 
+# A Spring handler parameter filled from the request is user input from the first line.
+REQUEST_PARAMETER = re.compile(
+    r"@(?:RequestParam|PathVariable|RequestBody|RequestHeader|CookieValue)\b(?:\([^)]*\))?\s+"
+    r"(?:final\s+)?[\w.<>\[\]?, ]+?\s+(\w+)\s*[,)]")
+INTERPOLATION = re.compile(r"\$\{([^}]*)\}|#\{([^}]*)\}|\{(\$[^}]*)\}|(\$[A-Za-z_]\w*)")
+CSHARP_HOLE = re.compile(r"\{([^}]*)\}")
+
+
+def code_only(text: str) -> str:
+    """The line with the words of its string literals removed. A literal is text, not
+    variables: ``out.print("Missing url parameter")`` mentions no variable ``url``. What a
+    string interpolates stays: "$name", "{$name}", `${name}`, "#{name}", C# $"{name}"."""
+    out: List[str] = []
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch not in "\"'`":
+            out.append(ch)
+            i += 1
+            continue
+        j = i + 1
+        while j < len(text) and text[j] != ch:
+            j += 2 if text[j] == "\\" else 1
+        literal = text[i + 1:j]
+        if ch != "'":                               # single quotes interpolate nothing
+            holes = [next(g for g in m.groups() if g is not None)
+                     for m in INTERPOLATION.finditer(literal)]
+            if i > 0 and text[i - 1] == "$":        # C# interpolated string $"...{x}..."
+                holes += CSHARP_HOLE.findall(literal)
+            out.append(" " + " ".join(holes) + " ")
+        else:
+            out.append(" ")
+        i = j + 1
+    return "".join(out)
+
+
 def _idents(text: str) -> Set[str]:
-    return {m.group(0) for m in IDENT.finditer(text)} - KEYWORDS
+    return {m.group(0) for m in IDENT.finditer(code_only(text))} - KEYWORDS
 
 
 def tainted_names(sf: SourceFile, line: int, source: "re.Pattern[str]") -> Set[str]:
@@ -111,6 +150,8 @@ def tainted_names(sf: SourceFile, line: int, source: "re.Pattern[str]") -> Set[s
         if sf.is_comment(number):
             continue
         text = sf.lines[number - 1]
+        if sf.rule_language == "java":         # Spring: @RequestParam String query
+            tainted.update(m.group(1) for m in REQUEST_PARAMETER.finditer(text))
         match = DESTRUCTURE.search(text)
         if match:
             names = [n.split(":")[-1].strip() for n in match.group(1).split(",")]

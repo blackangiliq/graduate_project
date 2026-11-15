@@ -222,3 +222,112 @@
   pattern: '\.setSecure\s*\(\s*false\s*\)'
   message: The cookie will also be sent over unencrypted HTTP.
   fix: Call setSecure(true) (and setHttpOnly(true)) on the cookie.
+
+# ---- JSP pages (scanned with the Java rules)
+- id: JSP-XSS-001
+  title: Request data written into a JSP page with <%= %>
+  languages: [java]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.85
+  pattern: '<%=\s*request\.get(Parameter|Header|QueryString)\s*\('
+  exclude: 'escapeHtml|encodeForHTML|escapeXml'
+  message: The value from the request is written into the page without HTML encoding.
+  fix: Write values with <c:out value="..."/> or encode them with Encode.forHtml().
+  examples_vulnerable: ['<p>You searched for <%= request.getParameter("q") %></p>']
+  examples_safe: ['<p>You searched for <c:out value="${param.q}"/></p>']
+
+- id: JSP-XSS-002
+  title: Value from the request written into a JSP page with <%= %>
+  languages: [java]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '<%=\s*[a-zA-Z_][\w.]*\s*%>'
+  message: A value that comes from the request is written into the page without HTML encoding.
+  fix: Write values with <c:out value="..."/> or encode them with Encode.forHtml().
+
+# ---- More sink rules (requires_taint)
+- id: JAVA-REDIRECT-002
+  title: Redirect or forward to a location taken from the request
+  languages: [java]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\.sendRedirect\s*\(\s*[a-zA-Z_]\w*\s*\)|\.getRequestDispatcher\s*\(\s*[a-zA-Z_]\w*\s*\)'
+  message: A location that comes from the request decides where the user is sent.
+  fix: Redirect only to relative paths or to a fixed list of allowed locations.
+
+- id: JAVA-SSRF-001
+  title: Server-side request to a URL taken from the request
+  languages: [java]
+  cwe: CWE-918
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: 'new\s+(java\.net\.)?URL\s*\(\s*[a-zA-Z_]\w*\s*\)|\bURI\.create\s*\(\s*[a-zA-Z_]\w*\s*\)'
+  message: The server fetches a URL chosen by the user, which can reach internal services and cloud metadata.
+  fix: Allow only known hosts and schemes, and block private and link-local addresses.
+
+# ---- Added after reviewing OWASP WebGoat
+- id: JAVA-SQLI-004
+  title: SQL statement continued with a value on the next line
+  languages: [java]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.6
+  ignore_case: true
+  pattern: '"\s*(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b[^"]*"\s*\+?\s*$'
+  near: '^\s*\+\s*[A-Za-z_]\w*'
+  within: 2
+  message: The SQL text is joined with a variable on the following line, so the value can change the statement.
+  fix: Use a PreparedStatement with ? placeholders.
+  examples_vulnerable: ['String query = "SELECT * FROM employees WHERE last_name = ''"']
+
+- id: JAVA-DESER-002
+  title: XStream deserializes data without a type allow-list
+  languages: [java]
+  cwe: CWE-502
+  severity: critical
+  confidence: 0.6
+  pattern: '\.fromXML\s*\('
+  near: 'XStream'
+  within: 30
+  message: XStream can build any class from the XML, which leads to remote code execution with known gadget chains.
+  fix: Configure XStream security (allowTypes / denyTypes) or use a plain data format.
+
+- id: JAVA-JWT-001
+  title: JWT parsed without requiring a signature
+  languages: [java]
+  cwe: CWE-347
+  severity: high
+  confidence: 0.75
+  pattern: 'Jwts\.parser\(\)[^;]*\.parse\s*\('
+  message: parse() also accepts an unsigned token (alg none), so a user can forge any claim.
+  fix: Use parseClaimsJws(), which rejects tokens without a valid signature.
+  examples_vulnerable: ['Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parse(accessToken);']
+  examples_safe: ['Jws<Claims> jws = Jwts.parser().setSigningKey(key).parseClaimsJws(token);']
+
+- id: JAVA-REDIRECT-003
+  title: Spring redirect to a location taken from the request
+  languages: [java]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.6
+  requires_taint: true
+  pattern: '"redirect:"\s*\+\s*[A-Za-z_]'
+  message: A location that comes from the request decides where the user is sent.
+  fix: Redirect only to relative paths or to a fixed list of allowed locations.
+
+- id: JAVA-PATH-003
+  title: File created from the name of a zip entry (Zip Slip)
+  languages: [java]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.6
+  pattern: 'new\s+File\s*\([^;]*\b\w*[eE]ntry\w*\.getName\s*\(\s*\)'
+  message: A zip entry named ../../x writes outside the target folder when the archive is extracted.
+  fix: Resolve the path and check that it starts with the target folder before writing.
+  examples_vulnerable: ['File f = new File(destDir, zipEntry.getName());']

@@ -1,0 +1,843 @@
+[
+ {
+  "name": "DVWA",
+  "repo": "digininja/DVWA",
+  "commit": "a1978a2fed195acd093010af6395f86a281537ca",
+  "languages": "PHP, JavaScript",
+  "files": 197,
+  "lines": 14682,
+  "seconds": 1.9,
+  "score": 39,
+  "grade": "F",
+  "open": 94,
+  "confirmed": 27,
+  "severity": {
+   "critical": 11,
+   "high": 57,
+   "medium": 15,
+   "low": 11,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-89",
+    "SQL Injection",
+    31
+   ],
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    31
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    13
+   ],
+   [
+    "CWE-78",
+    "OS Command Injection",
+    9
+   ],
+   [
+    "CWE-95",
+    "Code Injection (eval)",
+    4
+   ]
+  ]
+ },
+ {
+  "name": "pygoat",
+  "repo": "adeyosemanputra/pygoat",
+  "commit": "2aa4cc14f251e4a780e94e200aed6b36a5b15c21",
+  "languages": "Python (Django, Flask), HTML",
+  "files": 337,
+  "lines": 25934,
+  "seconds": 2.8,
+  "score": 51,
+  "grade": "D",
+  "open": 169,
+  "confirmed": 90,
+  "severity": {
+   "critical": 3,
+   "high": 79,
+   "medium": 66,
+   "low": 21,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    64
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    31
+   ],
+   [
+    "CWE-605",
+    "Service Bound to All Interfaces",
+    24
+   ],
+   [
+    "CWE-489",
+    "Active Debug Code",
+    21
+   ],
+   [
+    "CWE-501",
+    "Trust Boundary Violation",
+    6
+   ]
+  ]
+ },
+ {
+  "name": "dvna",
+  "repo": "appsecco/dvna",
+  "commit": "9ba473add536f66ac9007966acb2a775dd31277a",
+  "languages": "JavaScript (Node.js, Express), EJS",
+  "files": 73,
+  "lines": 2294,
+  "seconds": 0.3,
+  "score": 43,
+  "grade": "D",
+  "open": 17,
+  "confirmed": 4,
+  "severity": {
+   "critical": 2,
+   "high": 5,
+   "medium": 10,
+   "low": 0,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    9
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    2
+   ],
+   [
+    "CWE-502",
+    "Insecure Deserialization",
+    2
+   ],
+   [
+    "CWE-95",
+    "Code Injection (eval)",
+    1
+   ],
+   [
+    "CWE-78",
+    "OS Command Injection",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "JavaVulnerableLab",
+  "repo": "CSPF-Founder/JavaVulnerableLab",
+  "commit": "626a106a49777507beb51955d19ef9d271a9d4a5",
+  "languages": "Java, JSP",
+  "files": 96,
+  "lines": 5395,
+  "seconds": 0.7,
+  "score": 8,
+  "grade": "F",
+  "open": 93,
+  "confirmed": 78,
+  "severity": {
+   "critical": 3,
+   "high": 74,
+   "medium": 16,
+   "low": 0,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    30
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    27
+   ],
+   [
+    "CWE-501",
+    "Trust Boundary Violation",
+    10
+   ],
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    8
+   ],
+   [
+    "CWE-22",
+    "Path Traversal",
+    8
+   ]
+  ]
+ },
+ {
+  "name": "govwa",
+  "repo": "0c34/govwa",
+  "commit": "4058f79f31eeb4a36d8f1e64bba1f0c899646e6f",
+  "languages": "Go, HTML",
+  "files": 41,
+  "lines": 2408,
+  "seconds": 0.2,
+  "score": 67,
+  "grade": "C",
+  "open": 15,
+  "confirmed": 0,
+  "severity": {
+   "critical": 0,
+   "high": 3,
+   "medium": 11,
+   "low": 1,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    6
+   ],
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    3
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    2
+   ],
+   [
+    "CWE-1004",
+    "Cookie Without HttpOnly",
+    2
+   ],
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "railsgoat",
+  "repo": "OWASP/railsgoat",
+  "commit": "f5951f13089d85c979de09e7da3c8c0fb982f94a",
+  "languages": "Ruby on Rails, ERB",
+  "files": 169,
+  "lines": 17365,
+  "seconds": 1.1,
+  "score": 73,
+  "grade": "C",
+  "open": 52,
+  "confirmed": 6,
+  "severity": {
+   "critical": 1,
+   "high": 33,
+   "medium": 18,
+   "low": 0,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    23
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    9
+   ],
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    7
+   ],
+   [
+    "CWE-470",
+    "Unsafe Reflection",
+    4
+   ],
+   [
+    "CWE-915",
+    "Mass Assignment",
+    2
+   ]
+  ]
+ },
+ {
+  "name": "WebGoat.NET",
+  "repo": "OWASP/WebGoat.NET",
+  "commit": "e9603b9d5f401a8894d786540998f28508849140",
+  "languages": "C# (ASP.NET WebForms), Web.config",
+  "files": 228,
+  "lines": 45368,
+  "seconds": 2.8,
+  "score": 78,
+  "grade": "B",
+  "open": 75,
+  "confirmed": 10,
+  "severity": {
+   "critical": 0,
+   "high": 70,
+   "medium": 4,
+   "low": 1,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-89",
+    "SQL Injection",
+    54
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    10
+   ],
+   [
+    "CWE-502",
+    "Insecure Deserialization",
+    4
+   ],
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    1
+   ],
+   [
+    "CWE-643",
+    "XPath Injection",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "Damn_Vulnerable_C_Program",
+  "repo": "hardik05/Damn_Vulnerable_C_Program",
+  "commit": "8dcbd202887f587783952a320a2301de701be529",
+  "languages": "C",
+  "files": 16,
+  "lines": 1163,
+  "seconds": 0.2,
+  "score": 0,
+  "grade": "F",
+  "open": 83,
+  "confirmed": 39,
+  "severity": {
+   "critical": 0,
+   "high": 56,
+   "medium": 21,
+   "low": 6,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "c-memory"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-120",
+    "Buffer Overflow",
+    29
+   ],
+   [
+    "CWE-190",
+    "Integer Overflow",
+    14
+   ],
+   [
+    "CWE-125",
+    "Out-of-bounds Read",
+    8
+   ],
+   [
+    "CWE-416",
+    "Use After Free",
+    7
+   ],
+   [
+    "CWE-415",
+    "Double Free",
+    6
+   ]
+  ]
+ },
+ {
+  "name": "NodeGoat",
+  "repo": "OWASP/NodeGoat",
+  "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+  "languages": "JavaScript (Node.js, Express), HTML",
+  "files": 81,
+  "lines": 6207,
+  "seconds": 0.4,
+  "score": 68,
+  "grade": "C",
+  "open": 17,
+  "confirmed": 6,
+  "severity": {
+   "critical": 1,
+   "high": 13,
+   "medium": 3,
+   "low": 0,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    8
+   ],
+   [
+    "CWE-95",
+    "Code Injection (eval)",
+    3
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    2
+   ],
+   [
+    "CWE-943",
+    "NoSQL Injection",
+    1
+   ],
+   [
+    "CWE-918",
+    "Server-Side Request Forgery (SSRF)",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "juice-shop",
+  "repo": "juice-shop/juice-shop",
+  "commit": "266448aba68cd8ba5915f526a128da4fa7bc3f9f",
+  "languages": "TypeScript (Node.js, Angular)",
+  "files": 991,
+  "lines": 170513,
+  "seconds": 12.5,
+  "score": 85,
+  "grade": "B",
+  "open": 276,
+  "confirmed": 17,
+  "severity": {
+   "critical": 1,
+   "high": 260,
+   "medium": 15,
+   "low": 0,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    226
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    17
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    13
+   ],
+   [
+    "CWE-95",
+    "Code Injection (eval)",
+    8
+   ],
+   [
+    "CWE-943",
+    "NoSQL Injection",
+    7
+   ]
+  ]
+ },
+ {
+  "name": "WebGoat",
+  "repo": "WebGoat/WebGoat",
+  "commit": "4e98f1cbbf896fdd06edcc9930515ebe0ade7c69",
+  "languages": "Java (Spring Boot), JavaScript",
+  "files": 837,
+  "lines": 52992,
+  "seconds": 4.1,
+  "score": 80,
+  "grade": "B",
+  "open": 104,
+  "confirmed": 23,
+  "severity": {
+   "critical": 7,
+   "high": 65,
+   "medium": 32,
+   "low": 0,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    28
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    20
+   ],
+   [
+    "CWE-22",
+    "Path Traversal",
+    13
+   ],
+   [
+    "CWE-338",
+    "Weak Random Number Generator",
+    10
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    8
+   ]
+  ]
+ },
+ {
+  "name": "Broken-Vulnerable-Code-Snippets",
+  "repo": "snoopysecurity/Broken-Vulnerable-Code-Snippets",
+  "commit": "07669239ed45467b3c169b9747b3ccdc229632ca",
+  "languages": "PHP, Java, C#, JavaScript, Python, Go, C, Ruby and more",
+  "files": 123,
+  "lines": 3347,
+  "seconds": 0.9,
+  "score": 0,
+  "grade": "F",
+  "open": 142,
+  "confirmed": 68,
+  "severity": {
+   "critical": 29,
+   "high": 80,
+   "medium": 26,
+   "low": 7,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "c-memory",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-120",
+    "Buffer Overflow",
+    17
+   ],
+   [
+    "CWE-78",
+    "OS Command Injection",
+    14
+   ],
+   [
+    "CWE-98",
+    "Remote/Local File Inclusion",
+    12
+   ],
+   [
+    "CWE-502",
+    "Insecure Deserialization",
+    10
+   ],
+   [
+    "CWE-611",
+    "XML External Entity (XXE)",
+    10
+   ]
+  ]
+ },
+ {
+  "name": "DSVW",
+  "repo": "stamparm/DSVW",
+  "commit": "9ca3c9acf3defa0a6148d40e5f5cebeb5dcbb908",
+  "languages": "Python",
+  "files": 9,
+  "lines": 1341,
+  "seconds": 1.0,
+  "score": 33,
+  "grade": "F",
+  "open": 13,
+  "confirmed": 0,
+  "severity": {
+   "critical": 1,
+   "high": 6,
+   "medium": 5,
+   "low": 1,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-20",
+    "",
+    4
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    3
+   ],
+   [
+    "CWE-78",
+    "OS Command Injection",
+    1
+   ],
+   [
+    "CWE-95",
+    "Code Injection (eval)",
+    1
+   ],
+   [
+    "CWE-502",
+    "Insecure Deserialization",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "VAmPI",
+  "repo": "erev0s/VAmPI",
+  "commit": "f16052dce83f05847133ec98f01c5193a41de7d8",
+  "languages": "Python (Flask REST API)",
+  "files": 17,
+  "lines": 2222,
+  "seconds": 0.7,
+  "score": 80,
+  "grade": "B",
+  "open": 7,
+  "confirmed": 2,
+  "severity": {
+   "critical": 0,
+   "high": 2,
+   "medium": 3,
+   "low": 2,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    3
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    1
+   ],
+   [
+    "CWE-489",
+    "Active Debug Code",
+    1
+   ],
+   [
+    "CWE-605",
+    "Service Bound to All Interfaces",
+    1
+   ],
+   [
+    "CWE-338",
+    "Weak Random Number Generator",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "xvwa",
+  "repo": "s4n7h0/xvwa",
+  "commit": "fb30fa517d288e618b521d252f61107ef6a24797",
+  "languages": "PHP",
+  "files": 59,
+  "lines": 3479,
+  "seconds": 0.4,
+  "score": 31,
+  "grade": "F",
+  "open": 31,
+  "confirmed": 15,
+  "severity": {
+   "critical": 3,
+   "high": 17,
+   "medium": 5,
+   "low": 6,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    7
+   ],
+   [
+    "CWE-89",
+    "SQL Injection",
+    5
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    4
+   ],
+   [
+    "CWE-1336",
+    "Server-Side Template Injection",
+    4
+   ],
+   [
+    "CWE-78",
+    "OS Command Injection",
+    2
+   ]
+  ]
+ },
+ {
+  "name": "DVGA",
+  "repo": "dolevf/Damn-Vulnerable-GraphQL-Application",
+  "commit": "a961308c02d1fb462b192681c336b0739e432da7",
+  "languages": "Python (GraphQL), JavaScript",
+  "files": 75,
+  "lines": 4357,
+  "seconds": 1.0,
+  "score": 59,
+  "grade": "D",
+  "open": 40,
+  "confirmed": 3,
+  "severity": {
+   "critical": 1,
+   "high": 11,
+   "medium": 17,
+   "low": 11,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-400",
+    "",
+    14
+   ],
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    10
+   ],
+   [
+    "CWE-338",
+    "Weak Random Number Generator",
+    7
+   ],
+   [
+    "CWE-295",
+    "Improper Certificate Validation",
+    3
+   ],
+   [
+    "CWE-78",
+    "OS Command Injection",
+    2
+   ]
+  ]
+ }
+]

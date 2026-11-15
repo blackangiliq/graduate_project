@@ -15,6 +15,7 @@ def home(tmp_path, monkeypatch):
     monkeypatch.setenv("SCA_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("SCA_LEARNED_DIR", str(tmp_path / "learned"))
     monkeypatch.setenv("SCA_ENV_FILE", str(tmp_path / "env"))
+    monkeypatch.setenv("SCA_SKIP_INTRO", "1")       # test_introduction_pages shows it
     import streamlit as st
     st.cache_resource.clear()
     st.cache_data.clear()
@@ -22,6 +23,32 @@ def home(tmp_path, monkeypatch):
 
 def button(app: AppTest, label: str):
     return next(b for b in app.button if b.label == label)
+
+
+def test_splash_and_introduction_pages(monkeypatch):
+    monkeypatch.delenv("SCA_SKIP_INTRO")
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
+    app.run()
+    assert not app.exception
+    shown = " ".join(m.value for m in app.markdown)
+    assert "sca-splash" in shown and "Welcome to Secure Code Analyzer" in shown
+    assert not any("Scan a project to begin" in h.value for h in app.header)   # not yet
+    for title in ("How a scan works", "22 programming languages", "How a finding is decided",
+                  "Start scanning"):
+        button(app, "Next →").click().run()
+        assert not app.exception
+        assert any(title in h.value for h in app.header), title
+    assert "sca-splash" not in " ".join(m.value for m in app.markdown)   # once per session
+
+    next(b for b in app.button if b.key == "intro_ar").click().run()      # language switch
+    assert any("ابدأ الفحص" in h.value for h in app.header)
+    next(b for b in app.button if b.key == "intro_sample").click().run()  # try the sample
+    assert not app.exception
+    assert app.session_state["target"].endswith("vulnerable_app")
+    assert any("افحص مشروعاً للبدء" in h.value for h in app.header)        # the dashboard
+
+    next(b for b in app.button if b.label == "اعرض المقدمة").click().run()  # open it again
+    assert any("مرحباً بك" in m.value for m in app.markdown)
 
 
 def test_dashboard_scan_flow():
@@ -43,6 +70,10 @@ def test_dashboard_scan_flow():
     assert "Security score (grade F)" in labels and "Critical" in labels
     assert "Learned rules" in labels and "Waiting for approval" in labels
     assert any("weaknesses without a rule in" in c.value for c in app.caption)
+    assert not any("\u2066" in c.value for c in app.caption)   # isolates are for Arabic only
+    # what the scan did, step by step, stays on the Dashboard tab
+    assert any(e.label == "What the scan did, step by step" for e in app.expander)
+    assert any("**\u25b8** Pattern rules: checking every line" in m.value for m in app.markdown)
     assert len(app.expander) >= 50                  # one per finding in the Findings tab
 
     # review the first finding as a false positive, then take it back
@@ -61,6 +92,14 @@ def test_dashboard_scan_flow():
     assert not app.exception
     assert "درجة الأمان (التقدير F)" in [m.label for m in app.metric]   # the whole UI switches
     assert any(b.label == "ابدأ الفحص" for b in app.button)
+    # right to left, but "0 / 100" must not read "100 / 0", and the scanned path must not
+    # carry the file count away from its word
+    css = next(m.value for m in app.markdown if "<style>" in m.value)
+    assert "direction: ltr" in css.split('[data-testid="stMetricValue"]', 1)[1]
+    assert any(c.value.startswith("\u2066") and "vulnerable_app\u2069 - " in c.value
+               for c in app.caption)
+    assert any(e.label == "\u0645\u0627\u0630\u0627 \u0641\u0639\u0644 \u0627\u0644\u0641\u062d\u0635\u060c \u062e\u0637\u0648\u0629 \u0628\u062e\u0637\u0648\u0629" for e in app.expander)
+    assert any("\u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0623\u0646\u0645\u0627\u0637: \u0645\u0637\u0627\u0628\u0642\u0629 \u0643\u0644 \u0633\u0637\u0631" in m.value for m in app.markdown)
 
     button(app, "حمّل هذا الفحص").click().run()                          # "Load this scan"
     assert not app.exception
@@ -124,6 +163,8 @@ def test_dashboard_learning_flow():
         review = next(c for c in app.checkbox if c.label == "AI review of findings")
         assert review.value and not review.disabled
         next(c for c in app.checkbox if c.label.startswith("Deep scan")).check().run()
+        # the C/C++ memory checks find the memcpy themselves; off, so the AI can teach it
+        next(c for c in app.checkbox if c.label == "C/C++ memory checks").uncheck().run()
         button(app, "Use sample").click().run()
         button(app, "Run scan").click().run()
         assert not app.exception

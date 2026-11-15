@@ -99,6 +99,8 @@ class ScanResult:
     grade: str = "A"
     ai: Dict[str, Any] = field(default_factory=dict)
     scan_id: Optional[int] = None
+    # what the scan did, step by step (pipeline.Message objects; plain text in the report)
+    steps: List[str] = field(default_factory=list)
 
     @property
     def open_findings(self) -> List[Finding]:
@@ -131,5 +133,6 @@ class ScanResult:
             "likely_false_positives": self.status_count("likely_false_positive"),
             "dismissed": self.status_count("dismissed"),
             "ai": self.ai,
+            "steps": [str(step) for step in self.steps],
             "findings": [f.to_dict() for f in self.findings],
         }

@@ -24,7 +24,7 @@ from . import merge, scoring
 from .ai import llm as llm_module
 from .ai.classifier import get_classifier
 from .ai.providers import LLMConfig, make_client
-from .engines import external, python_ast, rules_engine, secrets, taint_lite
+from .engines import c_memory, external, python_ast, rules_engine, secrets, taint_lite
 from .learn import feedback as feedback_module
 from .models import Finding, ScanResult, SEVERITY_RANK
 from .storage import Storage
@@ -32,6 +32,38 @@ from .walker import SourceFile, is_test_path, walk_project
 
 ProgressFn = Callable[[str, float], None]
 TEST_CODE_FACTOR = 0.6
+BANDIT_PASSWORD_TESTS = {"BANDIT-B105", "BANDIT-B106", "BANDIT-B107"}
+
+
+class Message(str):
+    """One progress message of a scan. It reads as English text (what the command line
+    prints) and keeps its template and values, so that the dashboard can translate it.
+
+    kind: "step"    a stage starts              (kept in ScanResult.steps)
+          "result"  what the stage found        (kept in ScanResult.steps)
+          "file"    the file being read now     (shown while it happens, not kept)
+    """
+    kind: str
+    template: str
+    args: Tuple[Any, ...]
+
+    def __new__(cls, kind: str, template: str, *args: Any) -> "Message":
+        obj = super().__new__(cls, template % args if args else template)
+        obj.kind, obj.template, obj.args = kind, template, args
+        return obj
+
+
+# What each static engine does, as shown while it runs: (name, what it is doing)
+ENGINE_TEXT = {
+    "secrets": ("Secrets", "looking for keys, passwords and tokens"),
+    "rules": ("Pattern rules", "checking every line against the active rules"),
+    "ast": ("Python AST", "following user input through the Python code"),
+    "c-memory": ("C memory checks", "following pointers and outside data through each C "
+                                    "function"),
+    "bandit": ("Bandit", "running the Bandit analyzer on the Python files"),
+    "semgrep": ("Opengrep/Semgrep", "running the external rule engine"),
+    "gitleaks": ("Gitleaks", "searching the files for leaked credentials"),
+}
 
 
 @dataclass
@@ -44,6 +76,7 @@ class ScanOptions:
     use_semgrep: bool = True          # runs only if opengrep/semgrep is installed
     use_gitleaks: bool = True         # runs only if gitleaks is installed
     use_taint_lite: bool = True
+    use_c_memory: bool = True         # C/C++ memory-safety checks (c_memory engine)
     semgrep_config: str = "auto"
     exclude_dirs: List[str] = field(default_factory=list)
     # learning
@@ -106,62 +139,123 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
     result = ScanResult(target=str(root),
                         started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
+    def say(kind: str, fraction: float, template: str, *args: Any) -> None:
+        """Tell the caller what the scan is doing now, and keep steps and results."""
+        message = Message(kind, template, *args)
+        if kind != "file":
+            result.steps.append(message)
+        progress(message, fraction)
+
     # 1. walk -------------------------------------------------------------------
-    progress("Collecting source files", 0.03)
+    say("step", 0.02, "Collecting the source files of %s", str(root))
     files: List[SourceFile] = list(walk_project(str(root), options.exclude_dirs))
     test_files = {sf.rel for sf in files if is_test_path(sf.rel)}
     if not options.include_tests and test_files:
         files = [sf for sf in files if sf.rel not in test_files]
         result.engine_notes["test code"] = "skipped %d test files" % len(test_files)
+        say("result", 0.03, "Left out %d test files", len(test_files))
         test_files = set()
     result.files_scanned = len(files)
     result.lines_scanned = sum(len(f.lines) for f in files)
     for sf in files:
         result.languages[sf.language] = result.languages.get(sf.language, 0) + 1
     by_rel: Dict[str, SourceFile] = {sf.rel: sf for sf in files}
+    say("result", 0.04, "%d files, %d lines: %s", result.files_scanned, result.lines_scanned,
+        ", ".join("%s %d" % item for item in sorted(result.languages.items(),
+                                                    key=lambda kv: -kv[1])) or "-")
 
     # 2. detect -----------------------------------------------------------------
     raw: List[Finding] = []
 
-    def run_engine(name: str, enabled: bool, fraction: float, fn) -> None:
+    def each_file(name: str, scan_one: Callable[[SourceFile], List[Finding]],
+                  targets: List[SourceFile], start: float, end: float) -> List[Finding]:
+        """Run a per-file engine and say which file it is reading (at most 10 times a
+        second, so that a large project is not slowed down by the messages)."""
+        label = ENGINE_TEXT[name][0]
+        out: List[Finding] = []
+        shown = 0.0
+        for index, sf in enumerate(targets):
+            now = time.time()
+            if now - shown >= 0.1:
+                shown = now
+                say("file", start + (end - start) * index / max(1, len(targets)),
+                    "%s: file %d of %d - %s", label, index + 1, len(targets), sf.rel)
+            out.extend(scan_one(sf))
+        return out
+
+    def run_engine(name: str, enabled: bool, fraction: float, fn,
+                   skipped: str = "switched off") -> None:
+        label, doing = ENGINE_TEXT[name]
         if not enabled:
+            say("result", fraction, "%s: skipped - %s", label, skipped)
             return
-        progress("Running engine: %s" % name, fraction)
+        say("step", fraction, "%s: %s", label, doing)
+        began = time.time()
         try:
             output = fn()
         except Exception as exc:  # one broken engine must not stop the whole scan
             result.engine_notes[name] = "failed: %s" % str(exc)[:200]
+            say("result", fraction, "%s: failed - %s", label, str(exc)[:200])
             return
         if isinstance(output, tuple):
             found, note = output
             result.engine_notes[name] = note
             if not note.startswith("ok"):
+                say("result", fraction, "%s: %s", label, note)
                 return
         else:
             found = output
             result.engine_notes[name] = "ok (%d results)" % len(found)
         result.engines_used.append(name)
         raw.extend(found)
+        say("result", fraction, "%s: %d found in %.1f s", label, len(found),
+            time.time() - began)
 
     # The secrets engine always runs first: even when its findings are switched off, the
     # values it finds are masked in every snippet, report and LLM prompt.
-    secret_findings = secrets.scan(files)
-    run_engine("secrets", options.use_secrets, 0.08, lambda: secret_findings)
-    run_engine("rules", options.use_rules, 0.14, lambda: rules_engine.scan(files))
+    secret_rules = rules_engine.secret_rules()
+    if options.use_secrets:
+        run_engine("secrets", True, 0.06, lambda: each_file(
+            "secrets", lambda sf: secrets.scan_file(sf, secret_rules), files, 0.06, 0.12))
+    else:
+        secrets.scan(files)
+        run_engine("secrets", False, 0.06, None)
+
+    def scan_rules() -> List[Finding]:
+        rule_set = rules_engine.load_rules()
+        return each_file("rules", lambda sf: rules_engine.scan_file(sf, None, rule_set),
+                         files, 0.12, 0.30)
+
+    run_engine("rules", options.use_rules, 0.12, scan_rules)
     learned = sum(1 for f in raw if f.engines == ["learned"])
     if learned:
         result.engine_notes["rules"] += " including %d from learned rules" % learned
-    run_engine("ast", options.use_ast, 0.24, lambda: python_ast.scan(files))
-    has_python = any(sf.language == "python" for sf in files)
-    run_engine("bandit", options.use_bandit and has_python, 0.34,
-               lambda: external.run_bandit(root))
-    run_engine("semgrep", options.use_semgrep and external.semgrep_binary() is not None, 0.42,
-               lambda: external.run_semgrep(root, options.semgrep_config))
-    run_engine("gitleaks", options.use_gitleaks and external.gitleaks_binary() is not None,
-               0.50, lambda: external.run_gitleaks(root))
+    python_files = [sf for sf in files if sf.language == "python"]
+    run_engine("ast", options.use_ast, 0.30, lambda: each_file(
+        "ast", python_ast.scan_file, python_files, 0.30, 0.38))
+    c_files = [sf for sf in files if sf.language in c_memory.LANGUAGES]
+    run_engine("c-memory", options.use_c_memory and bool(c_files), 0.38, lambda: each_file(
+        "c-memory", c_memory.scan_file, c_files, 0.38, 0.40),
+        skipped="switched off" if not options.use_c_memory else "no C or C++ files")
+    run_engine("bandit", options.use_bandit and bool(python_files), 0.40,
+               lambda: external.run_bandit(root),
+               skipped="switched off" if not options.use_bandit else "no Python files")
+    semgrep_found = external.semgrep_binary() is not None
+    gitleaks_found = external.gitleaks_binary() is not None
+    run_engine("semgrep", options.use_semgrep and semgrep_found, 0.48,
+               lambda: external.run_semgrep(root, options.semgrep_config),
+               skipped="switched off" if semgrep_found else "not installed")
+    run_engine("gitleaks", options.use_gitleaks and gitleaks_found, 0.52,
+               lambda: external.run_gitleaks(root),
+               skipped="switched off" if gitleaks_found else "not installed")
 
     # external tools may report files we deliberately skip; keep only scanned files
     raw = [f for f in raw if f.file in by_rel]
+    # Bandit reports any literal given to a password-like name, placeholders included
+    # ('your-secret-key-here'); the secrets engine already filters those, so do the same.
+    raw = [f for f in raw
+           if not (f.rule_id in BANDIT_PASSWORD_TESTS and 1 <= f.line <= len(by_rel[f.file].lines)
+                   and secrets.placeholder_line(by_rel[f.file].lines[f.line - 1]))]
     for finding in raw:
         sf = by_rel[finding.file]
         if not finding.language:
@@ -185,16 +279,21 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
                 result.engine_notes["quarantine"] = (
                     "rules switched off after repeated false positives: %s"
                     % ", ".join(quarantined))
+                say("result", 0.54, "Rules switched off after repeated false positives: %s",
+                    ", ".join(quarantined))
         except Exception as exc:
             result.engine_notes["feedback"] = "failed: %s" % str(exc)[:200]
     if options.use_taint_lite:
+        say("step", 0.55, "Input tracing: checking whether user input reaches each finding")
         traced = taint_lite.apply(raw, by_rel)
         if traced:
             result.engine_notes["taint-lite"] = "ok (user input traced to %d findings)" % traced
+        say("result", 0.55, "Input tracing: user input reaches %d findings", traced)
 
     # 4. merge ------------------------------------------------------------------
-    progress("Merging results", 0.55)
+    say("step", 0.57, "Merging: removing duplicates and combining the evidence of the engines")
     findings = merge.merge_findings(raw, options.lang)
+    say("result", 0.58, "%d raw results merged into %d findings", len(raw), len(findings))
     in_tests = 0
     for finding in findings:
         if finding.file in test_files:
@@ -206,17 +305,21 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
     if in_tests:
         result.engine_notes["test code"] = (
             "ok (%d findings are in test code: lower confidence, not auto-confirmed)" % in_tests)
+        say("result", 0.58, "%d findings are in test code: lower confidence, "
+                            "never confirmed automatically", in_tests)
     if verdicts:
         dismissed, confirmed = feedback_module.apply_verdicts(findings, verdicts)
         if dismissed or confirmed:
             result.engine_notes["feedback"] = (
                 "ok (%d dismissed and %d confirmed from earlier reviews)"
                 % (dismissed, confirmed))
+            say("result", 0.58, "Your earlier reviews: %d dismissed, %d confirmed",
+                dismissed, confirmed)
 
     # 5. ML second opinion ------------------------------------------------------
     result.ai = {"ml": "disabled", "llm": "disabled"}
     if options.use_ml:
-        progress("Scoring with the ML classifier", 0.60)
+        say("step", 0.60, "ML classifier: a second opinion on each finding")
         try:
             classifier = get_classifier(options.ml_model_path, reviewed)
             if classifier is None:
@@ -227,15 +330,24 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
                                           classifier.score_many([f.snippet for f in scored])):
                     finding.ml_score = round(value, 3)
                 result.ai["ml"] = "ok - %s" % classifier.source
+                say("result", 0.61, "ML classifier: scored %d findings", len(scored))
         except Exception as exc:
             result.ai["ml"] = "failed: %s" % str(exc)[:200]
+        if not result.ai["ml"].startswith("ok"):
+            say("result", 0.61, "%s: %s", "ML classifier", result.ai["ml"])
+    else:
+        say("result", 0.61, "%s: skipped - %s", "ML classifier", "switched off")
 
     # 6. LLM review -------------------------------------------------------------
     if options.use_llm:
+        say("step", 0.62, "AI review: asking the model about the most severe findings")
         _run_llm(findings, by_rel, options, result, progress, storage)
+        say("result", 0.93, "%s: %s", "AI review", result.ai["llm"])
+    else:
+        say("result", 0.62, "%s: skipped - %s", "AI review", "switched off")
 
     # 7. assess -----------------------------------------------------------------
-    progress("Calculating the security score", 0.95)
+    say("step", 0.95, "Scoring: the risk of each finding and the score of the project")
     result.findings = findings
     result.score, result.grade = scoring.score_all(findings, result.lines_scanned,
                                                    options.strict)
@@ -245,15 +357,20 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
             % result.status_count("needs_review"))
     result.findings.sort(key=lambda f: (f.status != "open", -SEVERITY_RANK[f.severity],
                                         -f.risk_score, f.file, f.line))
+    say("result", 0.96, "Score %d/100, grade %s: %d open findings, %d confirmed",
+        result.score, result.grade, len(result.open_findings),
+        sum(1 for f in result.open_findings if f.tier == "confirmed"))
     result.duration_seconds = time.time() - started
+    say("result", 0.97, "Scan finished in %.1f s", result.duration_seconds)
 
     # 8. store ------------------------------------------------------------------
     if options.save and storage is not None:
         try:
             storage.save_scan(result)
+            say("result", 1.0, "Saved in the history")
         except Exception as exc:
             result.engine_notes["storage"] = "failed: %s" % str(exc)[:200]
-    progress("Done", 1.0)
+            say("result", 1.0, "%s: failed - %s", "History", str(exc)[:200])
     return result, files
 
 
@@ -308,7 +425,8 @@ def _run_llm(findings: List[Finding], by_rel: Dict[str, SourceFile], options: Sc
 
     todo = [f for f in findings if f.status == "open"][: max(0, options.llm_max_findings)]
     for index, finding in enumerate(todo):
-        progress("AI review %d/%d: %s" % (index + 1, len(todo), finding.title[:50]),
+        progress(Message("file", "AI review %d of %d: %s", index + 1, len(todo),
+                         finding.title[:50]),
                  0.62 + 0.22 * index / max(1, len(todo)))
         review(finding)
         if errors >= 3:
@@ -320,7 +438,8 @@ def _run_llm(findings: List[Finding], by_rel: Dict[str, SourceFile], options: Sc
         code_files.sort(key=lambda sf: -len(sf.lines))
         targets = code_files[: options.llm_deep_max_files]
         for index, sf in enumerate(targets):
-            progress("AI deep scan %d/%d: %s" % (index + 1, len(targets), sf.rel),
+            progress(Message("file", "AI deep scan %d of %d: %s", index + 1, len(targets),
+                             sf.rel),
                      0.84 + 0.07 * index / max(1, len(targets)))
             known = [f for f in findings if f.file == sf.rel]
             try:
@@ -335,7 +454,8 @@ def _run_llm(findings: List[Finding], by_rel: Dict[str, SourceFile], options: Sc
             # Second pass: a finding that only the model reported is checked again in a
             # separate request. Without that confirmation it stays "probable".
             for index, finding in enumerate(new_findings):
-                progress("AI verification %d/%d" % (index + 1, len(new_findings)), 0.92)
+                progress(Message("file", "AI verification %d of %d", index + 1,
+                                 len(new_findings)), 0.92)
                 if errors >= 3 or not review(finding):
                     continue
             findings.extend(new_findings)

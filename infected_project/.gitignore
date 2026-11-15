@@ -1,0 +1,4 @@
+# The downloaded labs stay on this computer (fetch_labs.py brings them back).
+/*/
+# Full per-lab reports written by scan_labs.py --reports
+/reports/

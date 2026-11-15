@@ -38,12 +38,34 @@ The first run creates a virtual environment and installs the requirements (a few
 The dashboard then opens at <http://localhost:8501>. Press **Use sample**, then **Run scan**
 to see a full example on the deliberately vulnerable app in `samples/vulnerable_app`.
 
+While a scan runs, the dashboard shows what it is doing as it does it: each step as it
+starts (collecting files, each engine, input tracing, merging, ML, AI, scoring), what the
+step found and how long it took, and the file being read right now. The same steps stay
+on the Dashboard tab under *What the scan did, step by step*, are printed by the command
+line, and are saved in the JSON report (`steps`).
+
 ## The dashboard
+
+Opening the dashboard shows a short splash screen and then five introduction pages, in
+English or Arabic: what the tool does (with live numbers: 22 languages, 66 file types, the
+active rules), how a scan works step by step, a card for every language with its file
+types, its rule count and how deep the analysis goes, how a finding is decided (source,
+sink, confirmed or probable), and how to start, with a button that scans the sample or one
+of the training labs. **Skip** goes straight to the dashboard, and **Show the
+introduction** in the sidebar opens the pages again (`SCA_SKIP_INTRO=1` turns them off).
 
 Everything is controlled from the dashboard, in English or Arabic (switch at the top of the
 sidebar). Every option has a (?) tooltip that says what it does, and the **Guide** tab holds
 the instructions, the meaning of every setting, the rule-writing guide, all diagrams with
 their explanation, the command reference and the references.
+
+**Training labs.** The folder [infected_project](infected_project/README.md) lists 16
+deliberately vulnerable open-source applications from different sources (OWASP, security
+companies, independent authors) in more than 10 languages, with their links and licences.
+`python infected_project/fetch_labs.py` downloads them at pinned commits, the sidebar's
+**Training lab** selector scans any of them, and `python infected_project/scan_labs.py`
+scans all of them ([RESULTS.md](infected_project/RESULTS.md),
+[REVIEW.md](infected_project/REVIEW.md)).
 
 | | |
 |---|---|
@@ -104,8 +126,8 @@ Click the image to enlarge it. Source: [docs/diagrams/pipeline.mmd](docs/diagram
 | Stage | Code | Tools and techniques |
 |---|---|---|
 | 0. Input | `app.py`, `sca/__main__.py` | Streamlit dashboard, argparse command line, tkinter folder dialog |
-| 1. Collect | `sca/walker.py` | `os.walk`, extension-to-language map (54 extensions, 22 languages), binary/minified/size filters |
-| 2. Detect | `sca/engines/`, `sca/rules/` | Secrets: regex key formats (8 built in + 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 107 built-in YAML rules + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules. Python: `ast` module, taint analysis with function summaries. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
+| 1. Collect | `sca/walker.py` | `os.walk`, extension-to-language map (66 extensions, 22 languages, including JSP, EJS and ASP.NET pages; a backup copy such as `config.php.dist` is read as the original), binary/minified/size filters |
+| 2. Detect | `sca/engines/`, `sca/rules/` | Secrets: regex key formats (8 built in + 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 163 built-in YAML rules + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules; pages and templates also get the JavaScript rules inside their `<script>` code. Python: `ast` module, taint analysis with function summaries. C/C++: per-function memory checks (`c_memory`): double free, use after free, leaks, allocation sizes that overflow, division by zero, out-of-bounds indexes, copies larger than the buffer. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
 | 3. Refine | `sca/learn/feedback.py`, `sca/engines/taint_lite.py` | Beta-posterior rule confidence and quarantine from your reviews; heuristic input tracing for 9 more languages |
 | 4. Merge | `sca/merge.py`, `sca/cwe.py` | Deduplication, noisy-OR confidence, CWE normalization, OWASP Top 10 (2021) mapping, English/Arabic knowledge base, SHA-256 fingerprints |
 | 5. ML | `sca/ai/classifier.py` | scikit-learn: code tokenizer, TF-IDF 1-3-grams, logistic regression; retrained with reviewed lines |
@@ -156,11 +178,11 @@ AI service.)
 
 ### The rule set: built in, imported, learned, your own
 
-The tool ships **407 rules, 360 of them active**. Full guide: [docs/RULES.md](docs/RULES.md).
+The tool ships **463 rules, 416 of them active**. Full guide: [docs/RULES.md](docs/RULES.md).
 
 | Origin | Rules | Active | File |
 |---|---:|---:|---|
-| Built in, written with the tool | 107 | 107 | `sca/rules/*.yaml` |
+| Built in, written with the tool | 163 | 163 | `sca/rules/*.yaml` |
 | Imported from [Microsoft DevSkim](https://github.com/microsoft/DevSkim) (MIT) | 95 | 49 | `sca/rules/imported/devskim.yaml` |
 | Imported from [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT), credential formats | 205 | 204 | `sca/rules/imported/gitleaks.yaml` |
 | Learned from the AI, approved by you | grows with use | | `learned/rules.yaml` |
@@ -226,10 +248,10 @@ second folder with no vulnerabilities at all).
 
 | Configuration | TP | FP | FN | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|---:|---:|
-| Bandit only (Python baseline) | 15 | 4 | 56 | 0.789 | 0.211 | 0.333 |
+| Bandit only (Python baseline) | 15 | 3 | 56 | 0.833 | 0.211 | 0.337 |
 | Pattern rules + secrets | 48 | 3 | 23 | 0.941 | 0.676 | 0.787 |
 | + Python AST taint engine | 66 | 3 | 5 | 0.957 | 0.930 | 0.943 |
-| All static engines | 66 | 7 | 5 | 0.904 | 0.930 | 0.917 |
+| All static engines | 68 | 6 | 3 | 0.919 | 0.958 | 0.938 |
 | All static, strict mode (confirmed only) | 43 | 0 | 28 | 1.000 | 0.606 | 0.754 |
 
 Read these numbers with care:
@@ -239,9 +261,13 @@ Read these numbers with care:
 - Strict mode reached zero false positives **on these samples** by giving up a third of the
   recall: the 23 real findings it set aside are in *Needs review*, not lost. An AI review is
   what moves them back; that experiment needs your API key and is described in the guide.
-- The five misses of the normal mode are a missing access check, an unchecked `memcpy`
-  length, an integer overflow, prototype pollution and a password passed as a positional
-  argument. The first four are exactly what the AI deep scan and the learning loop are for.
+- The three misses of the normal mode are a missing access check, prototype pollution and
+  a password passed as a positional argument. The first two are what the AI deep scan and
+  the learning loop are for. (The unchecked `memcpy` length and the integer overflow in an
+  allocation size, missed by earlier versions, are now found by the C/C++ memory checks.)
+- Bandit's hard-coded password test reports placeholders such as 'Enter your password';
+  the tool now drops those as its own secrets engine does, which also changes the Bandit
+  baseline row.
 
 ### On the OWASP Benchmark (test cases not written with the tool)
 
@@ -276,6 +302,43 @@ How to read it:
   tracing cannot follow. A real data-flow engine for Java is the main missing piece.
 - A false-alarm rate of 37-40% on this benchmark is high. The benchmark is built to
   provoke exactly that; on mature real code the tool is much quieter (next table).
+
+### On deliberately vulnerable projects written by others
+
+Eight public training applications, one per language family, were scanned with the static
+engines and then audited by hand: every intended vulnerability of each project was looked
+up in its own documentation and code, and marked found or missed. The misses were used to
+improve the tool (version 1.4): JSP, EJS and ASP.NET pages are now scanned, the JavaScript
+rules also run inside the `<script>` code of pages, 26 rules were added (Go, Ruby, PHP,
+JavaScript, Java/JSP, C#, Web.config, Jinja templates), new sink rules fire when input
+reaches a redirect, file, URL or page through a variable, and C/C++ code gets the new
+memory checks.
+
+| Project (language) | Intended vulnerabilities found, 1.3 | 1.4 |
+|---|---:|---:|
+| Damn Vulnerable C Program (C) | 0 / 11 | **11 / 11** |
+| govwa (Go) | 4 / 9 | **6 / 9** |
+| railsgoat (Ruby on Rails) | 9 / 31 | **19 / 31** |
+| DVWA (PHP) | 5 / 19 | **9 / 19** |
+| dvna (Node.js) | 4 / 19 | **9 / 19** |
+| JavaVulnerableLab (Java, JSP) | 4 / 51 | **18 / 51** |
+| pygoat (Python, Django) | 20 / 48 | **22 / 48** |
+| WebGoat.NET (C#, ASP.NET) | 2 / 39 | **8 / 39** |
+| **All** | **48 / 227 (21%)** | **102 / 227 (45%)** |
+
+Read these numbers with care:
+
+- The improvements were made while looking at these projects, so they are not an unseen
+  test any more. They show what the tool can now recognise, not how it performs on code
+  it has never seen.
+- About half of the remaining misses cannot be found by static rules at all: missing
+  access checks (IDOR), CSRF, brute force, business logic, trusting values that a client
+  can change, and outdated libraries (log4j, mathjs versions). They need the AI deep scan,
+  a dependency scanner or a person.
+- Most of the rest are flows across functions or files, for example WebForms code-behind
+  that passes a text box value through a data-access class.
+- The C/C++ memory checks reported nothing on 42,627 lines of mature C (cJSON, sds, kilo,
+  libyaml); the sample programs' memcpy and allocation-size weaknesses are now found.
 
 ### Noise check on real code
 
@@ -312,7 +375,7 @@ scan about 40% slower. On the labelled samples the precision and recall above di
 ## What was and was not tested
 
 - Tested (Linux and Windows through GitHub Actions, Python 3.10 and 3.12; locally 3.13):
-  306 automated tests covering every engine, the pipeline, reports, the dashboard
+  374 automated tests covering every engine, the pipeline, reports, the dashboard
   (including the learn-and-approve flow, the Rules tab and the Guide tab in both
   languages), the provider clients, the configuration command, the learning loop, feedback,
   quarantine, strict mode, the imported rules, rule management and the evaluation script.
@@ -331,14 +394,21 @@ scan about 40% slower. On the labelled samples the precision and recall above di
   tested. The built-in engines do not depend on them.
 - "Download and run" was checked from a fresh clone of the repository in a new virtual
   environment on Linux: installation, a scan with all four report formats, the command
-  line and the dashboard in a browser.
+  line and the dashboard in a browser. Version 1.4 was checked the same way on Windows 11
+  (Python 3.12), including the live scan log in both languages.
+- Version 1.4 was measured on eight vulnerable projects written by others (table above,
+  audited by hand) and, for noise, on four mature C libraries (cJSON, sds, kilo, libyaml:
+  42,627 lines) where the new C/C++ memory checks reported nothing.
 - `experiments/train_codebert.py` is an optional script that was not executed.
 
 ## Limits
 
 - Static analysis cannot prove that code is secure, and it cannot be free of false alarms.
 - Python data flow is followed across functions one call deep and within one file. Other
-  languages are checked line by line, with a heuristic tracer for user input.
+  languages are checked line by line, with a heuristic tracer for user input. The C/C++
+  memory checks read one function at a time, top to bottom, without following paths.
+- Access control (IDOR), CSRF, business logic and outdated dependencies are not found by
+  the static engines; they need the AI deep scan, a dependency scanner or a person.
 - A learned rule is a single-line regular expression. It cannot express multi-line or
   data-flow conditions; such weaknesses remain the job of the AI deep scan.
 - AI answers can be wrong in both directions. The design assumes this: nothing an AI says is
@@ -357,11 +427,11 @@ sca/
   __main__.py          command line: scan, config, learn, rules, feedback, coverage, ...
   pipeline.py          runs every stage in order
   walker.py            file discovery, language detection, secret masking
-  engines/             rules_engine, python_ast, taint_lite, secrets, external
+  engines/             rules_engine, python_ast, taint_lite, c_memory, secrets, external
   rules/               built-in YAML rules: javascript, php, java, c_cpp, ruby, shell, other
   rules/imported/      rules converted from DevSkim and Gitleaks, with source and licence
   rulebook.py          rule management: list, check, create, edit, enable, reset, export
-  ui/                  Rules tab, Guide tab, texts (English and Arabic)
+  ui/                  splash and introduction pages, Rules tab, Guide tab, texts (EN + AR)
   merge.py             deduplication and noisy-OR confidence
   cwe.py               CWE + OWASP knowledge base (English and Arabic)
   ai/                  providers (API clients), llm (prompts), classifier (ML), seed_corpus
@@ -372,8 +442,10 @@ sca/
 learned/               learned rules, your own rules, your edits and exclusions (YAML)
 tools/                 import_rules.py (import and vet open-source rules), build_docs.py
 samples/               vulnerable_app, safe_app, ground_truth.json
+infected_project/      16 training labs: sources and licences, fetch_labs.py, scan_labs.py,
+                       RESULTS.md, REVIEW.md (the labs themselves are downloaded, not stored)
 evaluation/            evaluate.py, results.md, owasp_benchmark.py and .md, import_report.json
-tests/                 306 tests
+tests/                 374 tests
 docs/                  supervisor document, Arabic guide, rules guide, illustrated walk-through,
                        thesis outline, architecture,
                        diagrams/ (Mermaid sources) and images/

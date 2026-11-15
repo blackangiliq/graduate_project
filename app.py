@@ -8,6 +8,7 @@ from __future__ import annotations
 import inspect
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -32,7 +33,7 @@ from sca.report.html_report import render_html
 from sca.report.pdf_report import render_pdf
 from sca.report.sarif import to_sarif
 from sca.storage import Storage
-from sca.ui import guide_tab, rules_tab, texts
+from sca.ui import guide_tab, intro, rules_tab, texts
 from sca.ui.i18n import AR
 from sca.walker import CODE_LANGUAGES
 
@@ -60,9 +61,57 @@ def ui_lang() -> str:
     return "ar" if st.session_state.get("ui_lang") == "العربية" else "en"
 
 
+def ltr(text: str) -> str:
+    """In Arabic, wrap a path in a Unicode left-to-right isolate (U+2066 ... U+2069) so that
+    it does not pull the numbers after it into its own left-to-right run."""
+    return "\u2066%s\u2069" % text if ui_lang() == "ar" else text
+
+
 def t(text: str) -> str:
     """The text in the language of the dashboard (English is the source language)."""
     return AR.get(text, text) if ui_lang() == "ar" else text
+
+
+MARKDOWN_SPECIAL = re.compile(r"([\\`*_\[\]<>#|~$])")
+
+
+def plain(text: str) -> str:
+    """Escape Markdown, so that a path such as C:\\my_app\\*.py is shown as it is."""
+    return MARKDOWN_SPECIAL.sub(r"\\\1", text)
+
+
+def scan_text(message: str) -> str:
+    """A progress message of the scan (sca.pipeline.Message) in the dashboard language.
+    The values are translated too when they are known words; paths are kept left to right."""
+    template = getattr(message, "template", None)
+    if template is None:
+        return t(str(message))
+    values = tuple((t(v) if v in AR else ltr(v)) if isinstance(v, str) else v
+                   for v in message.args)
+    return t(template) % values
+
+
+def step_line(message: str) -> str:
+    """One line of the scan log in Markdown: a stage that starts (bold arrow), or what the
+    stage found (grey, with a mark: found, skipped or failed)."""
+    text = plain(scan_text(message))
+    if getattr(message, "kind", "step") != "result":
+        return "**▸** " + text
+    template = getattr(message, "template", "")
+    mark = "–" if "skipped" in template else "✗" if "failed" in template else "✓"
+    return ":gray[%s %s]" % (mark, text)
+
+
+def show_steps(messages) -> None:
+    """The scan log: each stage with what it found, one block per stage."""
+    block: list = []
+    for message in messages:
+        if getattr(message, "kind", "step") != "result" and block:
+            st.markdown("  \n".join(block))
+            block = []
+        block.append(step_line(message))
+    if block:
+        st.markdown("  \n".join(block))
 
 
 def tframe(*args, **kwargs) -> pd.DataFrame:
@@ -83,6 +132,11 @@ RTL_CSS = """<style>
     direction: rtl; text-align: right; }
 [data-testid="stMarkdownContainer"] pre, [data-testid="stMarkdownContainer"] code,
 [data-testid="stCode"] { direction: ltr; text-align: left; unicode-bidi: plaintext; }
+/* A metric value is a number or "a / b". Right to left, "0 / 100" would read "100 / 0",
+   so lay the value out left to right, still aligned on the right like its label. */
+[data-testid="stMetricValue"],
+[data-testid="stMetricValue"] [data-testid="stMarkdownContainer"] {
+    direction: ltr; text-align: right; }
 </style>"""
 
 
@@ -111,6 +165,12 @@ def browse_clicked() -> None:
 
 def use_sample() -> None:
     st.session_state["target"] = str(SAMPLE)
+
+
+def lab_chosen() -> None:
+    name = st.session_state.get("lab_choice")
+    if name:
+        st.session_state["target"] = str(intro.LABS / name)
 
 
 @st.cache_data(ttl=30, show_spinner=False)
@@ -195,6 +255,10 @@ with st.sidebar:
     col_a, col_b = st.columns(2)
     col_a.button(on_click=browse_clicked, **opt("browse"), **WIDE)
     col_b.button(on_click=use_sample, **opt("sample"), **WIDE)
+    training_labs = intro.labs()
+    if training_labs:
+        st.selectbox(options=[""] + training_labs, key="lab_choice", on_change=lab_chosen,
+                     format_func=lambda name: name or "-", **opt("lab"))
     if st.session_state.get("browse_note"):
         st.caption(st.session_state.pop("browse_note"))
 
@@ -218,6 +282,7 @@ with st.sidebar:
                                help=opt("use_gitleaks")["help"])
     with st.expander(t("More engine options")):
         use_taint_lite = st.checkbox(value=True, **opt("use_taint_lite"))
+        use_c_memory = st.checkbox(value=True, **opt("use_c_memory"))
         exclude_dirs = st.text_input(placeholder="docs, third_party", **opt("exclude_dirs"))
 
     st.subheader(t("3. Artificial intelligence"))
@@ -278,6 +343,13 @@ with st.sidebar:
     st.subheader(t("5. Output"))
     save_scan = st.checkbox(value=True, **opt("save_scan"))
     run = st.button(type="primary", **opt("run"), **WIDE)
+    st.button(on_click=intro.reopen, **opt("intro"), **WIDE)
+
+# ------------------------------------------------------------------ splash and introduction
+# Shown when the dashboard is opened: a splash, then the pages that explain the tool.
+if intro.active():
+    intro.render(lang)
+    st.stop()
 
 llm_config = LLMConfig(preset=preset, base_url=base_url, api_key=api_key, model=llm_model)
 
@@ -300,19 +372,29 @@ if run:
                 llm_api_key=api_key, llm_model=llm_model, llm_max_findings=llm_max,
                 llm_deep_scan=deep and use_llm, lang=lang, strict=strict,
                 include_tests=not skip_tests, use_taint_lite=use_taint_lite,
+                use_c_memory=use_c_memory,
                 use_feedback=use_feedback, save=save_scan, llm_deep_max_files=deep_max_files,
                 llm_timeout=llm_timeout,
                 exclude_dirs=[d.strip() for d in exclude_dirs.split(",") if d.strip()])
-            bar = st.progress(0.0, text="Starting")
+            # What the scan is doing, while it does it: each step is added to this box as
+            # it starts and when it ends, and the bar names the file being read.
+            live = st.empty()
+            box = live.status(t("Scanning %s") % plain(ltr(target)), expanded=True)
+            bar = box.progress(0.0, text=t("Starting"))
 
             def on_progress(message: str, fraction: float) -> None:
-                bar.progress(min(1.0, max(0.0, fraction)), text=message)
+                bar.progress(min(1.0, max(0.0, fraction)), text=plain(scan_text(message)))
+                if getattr(message, "kind", "step") != "file":
+                    box.markdown(step_line(message))
 
             try:
                 st.session_state["result"] = run_scan(target, options, on_progress, get_storage())
+                live.empty()     # the same steps stay on the Dashboard tab, see "scan_log"
+                st.session_state["scan_log_open"] = True
             except Exception as exc:  # show the problem instead of a stack trace
+                bar.empty()
+                box.update(label=t("The scan failed: %s") % plain(str(exc)), state="error")
                 st.error(t("The scan failed: %s") % exc)
-            bar.empty()
 
 result: ScanResult = st.session_state.get("result")
 
@@ -337,8 +419,12 @@ with tab_dash:
     else:
         counts = result.counts()
         st.caption(t("%s - %s - %d files, %d lines, %.1f s") % (
-            result.target, result.started_at, result.files_scanned, result.lines_scanned,
+            ltr(result.target), result.started_at, result.files_scanned, result.lines_scanned,
             result.duration_seconds))
+        if result.steps:   # open right after a scan; a scan loaded from history has no steps
+            with st.expander(t("What the scan did, step by step"),
+                             expanded=st.session_state.pop("scan_log_open", False)):
+                show_steps(result.steps)
         cols = st.columns(6)
         cols[0].metric(t("Security score (grade %s)") % result.grade, "%d / 100" % result.score)
         for col, sev in zip(cols[1:], SEVERITIES[:4]):

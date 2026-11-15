@@ -23,6 +23,7 @@ from __future__ import annotations
 import ast
 import operator
 import re
+import warnings
 from dataclasses import replace
 from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set
 
@@ -662,7 +663,9 @@ def scan_file(sf: SourceFile) -> List[Finding]:
     if sf.language != "python":
         return []
     try:
-        tree = ast.parse(sf.text)
+        with warnings.catch_warnings():        # the scanned code's own warnings are not ours
+            warnings.simplefilter("ignore")
+            tree = ast.parse(sf.text)
     except (SyntaxError, ValueError, RecursionError):
         return []  # not valid Python 3 (or too deeply nested); other engines still cover it
     try:

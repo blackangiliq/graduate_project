@@ -13,6 +13,7 @@ from ..engines import rules_engine
 from ..learn import feedback as feedback_module
 from ..models import SEVERITIES
 from ..storage import Storage
+from ..walker import rule_extensions
 
 ORIGIN_LABEL = {"builtin": "Built in", "imported": "Imported", "learned": "Learned",
                 "custom": "Your own"}
@@ -226,8 +227,9 @@ def _browse(storage: Storage, t: Callable[[str], str], wide: Dict[str, Any]) -> 
         t("Rule"): r.id, t("State"): (t("on") if r.enabled else t("off"))
         + (" *" if r.edited else ""),
         t("Origin"): t(ORIGIN_LABEL[r.origin]), t("Languages"): ", ".join(r.languages),
-        "CWE": r.cwe, t("Severity"): r.severity, t("Confidence"): r.confidence,
-        t("Title"): r.title, t("Source"): r.source} for r in shown]),
+        t("File types"): _file_types(r), "CWE": r.cwe, t("Severity"): r.severity,
+        t("Confidence"): r.confidence, t("Title"): r.title, t("File"): rule_path(r),
+        t("Source"): r.source} for r in shown]),
         hide_index=True, height=min(300, 40 + 35 * len(shown)), **wide)
     st.download_button(t("Download these rules (YAML)"),
                        rulebook.export_yaml([r.id for r in shown]), "sca-rules.yaml",
@@ -252,6 +254,18 @@ def _browse(storage: Storage, t: Callable[[str], str], wide: Dict[str, Any]) -> 
     _details(rule, storage, t, wide)
 
 
+def rule_path(rule: rules_engine.Rule) -> str:
+    """Where the rule is defined, relative to the project folder."""
+    if not rule.file or "/" in rule.file:
+        return rule.file                      # learned/rules.yaml, learned/custom.yaml
+    return ("sca/rules/imported/" if rule.origin == "imported" else "sca/rules/") + rule.file
+
+
+def _file_types(rule: rules_engine.Rule) -> str:
+    files, pages = rule_extensions(rule.languages)
+    return " ".join(files) + (" + <script>" if pages else "")
+
+
 def _details(rule: rules_engine.Rule, storage: Storage, t: Callable[[str], str],
              wide: Dict[str, Any]) -> None:
     shipped = rule.origin in ("builtin", "imported")
@@ -261,6 +275,14 @@ def _details(rule: rules_engine.Rule, storage: Storage, t: Callable[[str], str],
     if rule.kind == "secret":
         badges.append(t("credential format"))
     st.markdown("**%s** &nbsp; `%s`" % (rule.id, "` `".join(badges)))
+    files, pages = rule_extensions(rule.languages)
+    st.markdown(t("**Applies to:** %s") % (t("every file") if files == ["*"] else
+                                           " ".join("`%s`" % ext for ext in files))
+                + ((t(" and the `<script>` code of %s pages")
+                    % " ".join("`%s`" % ext for ext in pages)) if pages else ""))
+    st.caption(t("Defined in %s") % rule_path(rule)
+               + (t(" - your changes are saved in learned/edits.yaml, the file itself stays "
+                    "as shipped") if shipped else ""))
     if rule.source:
         st.caption(t("Source: %s") % rule.source + (
             " - %s, %s" % (rule.license, rule.url) if rule.license else ""))

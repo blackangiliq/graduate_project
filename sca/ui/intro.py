@@ -103,6 +103,15 @@ def _finish(target: str = "") -> None:
         st.session_state["target"] = target
 
 
+MAIN_TABS_KEY = "main_tabs_"        # + language: the state of the dashboard's tabs
+
+
+def open_rules(lang: str) -> None:
+    """Close the introduction and open the Rules tab (view, edit and write rules)."""
+    st.session_state["intro_page"] = None
+    st.session_state[MAIN_TABS_KEY + lang] = "القواعد" if lang == "ar" else "Rules"
+
+
 def _go(page: int) -> None:
     st.session_state["intro_page"] = page
 
@@ -288,6 +297,9 @@ def _languages(lang: str) -> None:
              "memory": ("Memory checks + input tracing", "فحوص الذاكرة + تتبّع المدخلات"),
              "traced": ("Rules + input tracing", "قواعد + تتبّع المدخلات"),
              "rules": ("Rules + secrets", "قواعد + أسرار")}
+    st.button(_(lang, "View and edit the rules of each language",
+                "اعرض قواعد كل لغة وعدّلها"), key="intro_rules", on_click=open_rules,
+              args=(lang,), type="primary")
     cols = st.columns(4)
     for index, (name, extensions, count, level) in enumerate(language_table()):
         chips = "".join('<span class="sca-chip">%s</span>' % ext for ext in extensions.split())

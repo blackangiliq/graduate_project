@@ -86,6 +86,14 @@ AR = {
         "الدرجة %d/100، التقدير %s: %d نتيجة مفتوحة، %d مؤكَّدة",
     "Scan finished in %.1f s": "انتهى الفحص في %.1f ثانية",
     "Saved in the history": "حُفظ في السجل",
+    # ---- Rules tab: file types and where a rule is defined
+    "File types": "أنواع الملفات",
+    "**Applies to:** %s": "**تُطبَّق على:** %s",
+    "every file": "كل الملفات",
+    " and the `<script>` code of %s pages": " وعلى كود `<script>` داخل صفحات %s",
+    "Defined in %s": "معرّفة في %s",
+    " - your changes are saved in learned/edits.yaml, the file itself stays as shipped":
+        " - تعديلاتك تُحفظ في learned/edits.yaml ويبقى الملف الأصلي كما هو",
     # ---- dashboard tab
     "Scan a project to begin": "افحص مشروعاً للبدء",
     "Choose a folder in the sidebar and press **Run scan**. To see a full example, press "

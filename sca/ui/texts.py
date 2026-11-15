@@ -263,6 +263,15 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
                  "(python infected_project/fetch_labs.py). مصادرها ورخصها مذكورة في "
                  "infected_project/README.md."),
     },
+    "open_rules": {
+        "group": ("2. Static engines", "2. المحركات الستاتيكية"),
+        "label": ("Open the rules", "افتح القواعد"),
+        "help": ("Opens the Rules tab: every rule with its languages, file types and the file "
+                 "it is defined in; switch rules on or off, edit any field, write your own and "
+                 "try an expression on code.",
+                 "يفتح تبويب القواعد: كل قاعدة مع لغاتها وأنواع ملفاتها والملف المعرّفة فيه؛ "
+                 "شغّل القواعد أو أوقفها، وعدّل أي حقل، واكتب قاعدتك، وجرّب تعبيراً على كود."),
+    },
     "intro": {
         "group": ("5. Output", "5. المخرجات"),
         "label": ("Show the introduction", "اعرض المقدمة"),

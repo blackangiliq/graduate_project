@@ -148,6 +148,17 @@ class SourceFile:
         return stripped.startswith(COMMENT_PREFIXES.get(self.language, ()))
 
 
+def rule_extensions(languages: List[str]) -> Tuple[List[str], List[str]]:
+    """The file types a rule for these languages is applied to, and the pages whose <script>
+    code it also checks (JavaScript rules). "any" means every file: (["*"], [])."""
+    if "any" in languages:
+        return ["*"], []
+    files = sorted(ext for ext, language in LANG_BY_EXT.items()
+                   if RULE_LANGUAGE.get(language, language) in languages)
+    pages = sorted(ext for ext in PAGE_EXTS if "javascript" in languages and ext not in files)
+    return files, pages
+
+
 def detect_language(path: Path) -> Optional[str]:
     name = path.name.lower()
     if name in LANG_BY_NAME:

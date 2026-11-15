@@ -269,6 +269,7 @@ with st.sidebar:
     use_rules = st.checkbox(value=True, **opt("use_rules"))
     st.caption(t("%d active rules of %d - manage them in the Rules tab")
                % (counts["enabled"], counts["total"]))
+    st.button(on_click=intro.open_rules, args=(lang,), **opt("open_rules"), **WIDE)
     use_ast = st.checkbox(value=True, **opt("use_ast"))
     use_secrets = st.checkbox(value=True, **opt("use_secrets"))
     use_bandit = st.checkbox("Bandit" + ("" if tools["bandit"] else missing),
@@ -399,9 +400,12 @@ if run:
 result: ScanResult = st.session_state.get("result")
 
 # ------------------------------------------------------------------ main area
+# With a key, the open tab is remembered, and a button can open one (e.g. Open the rules).
+TAB_STATE = ({"key": intro.MAIN_TABS_KEY + lang, "on_change": "rerun"}
+             if "on_change" in inspect.signature(st.tabs).parameters else {})
 tab_dash, tab_findings, tab_rules, tab_learn, tab_reports, tab_history, tab_guide = st.tabs(
     [t(name) for name in ("Dashboard", "Findings", "Rules", "Learning", "Reports", "History",
-                          "Guide")])
+                          "Guide")], **TAB_STATE)
 
 with tab_rules:
     rules_tab.render(get_storage(), t, WIDE)

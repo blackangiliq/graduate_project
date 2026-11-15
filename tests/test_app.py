@@ -195,6 +195,22 @@ def test_dashboard_learning_flow():
         server.shutdown()
 
 
+def test_rules_are_easy_to_find_with_their_file_types_and_file():
+    from sca.walker import rule_extensions
+    assert rule_extensions(["java"])[0] == sorted(
+        [".java", ".jsp", ".jspf", ".jspx", ".kt", ".kts", ".scala", ".groovy"])
+    assert ".php" in rule_extensions(["javascript"])[1]           # <script> inside pages
+    assert rule_extensions(["any"]) == (["*"], [])
+
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
+    app.run()
+    next(b for b in app.button if b.label == "Open the rules").click().run()
+    assert not app.exception
+    assert app.session_state["main_tabs_en"] == "Rules"           # the Rules tab is open
+    assert any(m.value.startswith("**Applies to:** `.") for m in app.markdown)   # file types
+    assert any(c.value.startswith("Defined in sca/rules/") for c in app.caption)
+
+
 def test_rules_tab_controls_the_rule_set(tmp_path, monkeypatch):
     from sca import rulebook
     from sca.engines import rules_engine

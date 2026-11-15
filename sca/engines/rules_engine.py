@@ -366,14 +366,50 @@ def code_lines(sf: SourceFile) -> Iterable[Tuple[int, str]]:
         yield number, line
 
 
+SCRIPT_OPEN = re.compile(r"<script\b", re.IGNORECASE)
+SCRIPT_CLOSE = re.compile(r"</script\s*>", re.IGNORECASE)
+INLINE_SCRIPT = re.compile(r"""\bon[a-z]+\s*=\s*["']|javascript:""", re.IGNORECASE)
+
+
+def script_lines(sf: SourceFile) -> Set[int]:
+    """The lines of a page that hold JavaScript: inside <script> ... </script>, or an inline
+    event handler (onclick="...") or javascript: URL. The rest is markup and text, where a
+    word like eval() in a lesson is not code."""
+    inside = False
+    lines: Set[int] = set()
+    for number, line in enumerate(sf.lines, start=1):
+        opened = bool(SCRIPT_OPEN.search(line))
+        if inside or opened or INLINE_SCRIPT.search(line):
+            lines.add(number)
+        if opened:
+            inside = True
+        if SCRIPT_CLOSE.search(line):
+            inside = bool(SCRIPT_OPEN.search(SCRIPT_CLOSE.split(line)[-1]))
+    return lines
+
+
 def scan_file(sf: SourceFile, disabled: Optional[Set[str]] = None,
               rules: Optional[List[Rule]] = None) -> List[Finding]:
-    active = rules_for(sf.rule_language, rules, disabled)
+    active: List[Rule] = []
+    ids: Set[str] = set()
+    for language in sf.rule_languages:           # a page also gets the JavaScript rules
+        for rule in rules_for(language, rules, disabled):
+            if rule.id not in ids:
+                ids.add(rule.id)
+                active.append(rule)
     if not active:
         return []
+    # On a page, a JavaScript rule (that is not also a rule of the page's own language)
+    # looks only at the lines that hold script.
+    own = sf.rule_language
+    page_only = {r.id for r in active if len(sf.rule_languages) > 1
+                 and own not in r.languages and "any" not in r.languages}
+    scripts = script_lines(sf) if page_only else set()
     findings: List[Finding] = []
     for number, line in code_lines(sf):
         for rule in active:
+            if rule.id in page_only and number not in scripts:
+                continue
             if not rule.matches(line) or not rule.near_ok(sf.lines, number):
                 continue
             traced = False

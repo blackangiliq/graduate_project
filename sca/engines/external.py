@@ -37,7 +37,7 @@ BANDIT_CWE_OVERRIDE = {
     "B324": "CWE-327", "B303": "CWE-327", "B304": "CWE-327", "B305": "CWE-327",
     "B103": "CWE-732", "B202": "CWE-22",
 }
-BANDIT_SKIP = "B101,B404,B403,B603,B607,B110,B112"  # informational checks that add noise
+BANDIT_SKIP = "B101,B404,B403,B405,B603,B607,B110,B112"  # informational checks (imports...)
 _LEVEL = {"LOW": 0.4, "MEDIUM": 0.6, "HIGH": 0.8}
 
 

@@ -17,9 +17,11 @@ from __future__ import annotations
 
 import json
 import re
+import socket
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from ..cwe import canonical
 from ..models import Finding, normalize_severity
@@ -60,6 +62,30 @@ class LLMError(RuntimeError):
     pass
 
 
+def local_server_down(url: str, timeout: float = 0.3) -> bool:
+    """True when the address names this computer and nothing listens on its port.
+
+    Windows retries a refused connection for about 2 s per address, and "localhost" has
+    two (::1 and 127.0.0.1), so asking a model server that is not running held the
+    dashboard up for 4 s before every scan. A socket probe with a short timeout answers at
+    once; a server on this computer accepts a connection in far less than 0.3 s."""
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower()
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    except ValueError:
+        return False
+    if host not in ("localhost", "127.0.0.1", "::1"):
+        return False
+    for address in (("127.0.0.1", "::1") if host == "localhost" else (host,)):
+        try:
+            with socket.create_connection((address, port), timeout=timeout):
+                return False
+        except OSError:
+            continue
+    return True
+
+
 class OllamaClient:
     kind = "ollama"
     name = "ollama"
@@ -94,6 +120,8 @@ class OllamaClient:
     def _request(self, path: str, payload: Optional[Dict[str, Any]] = None,
                  timeout: Optional[int] = None) -> Dict[str, Any]:
         url = self.host + path
+        if local_server_down(url):
+            raise LLMError("Ollama request failed: nothing is listening at %s" % self.host)
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
         request = urllib.request.Request(url, data=data,
                                          headers={"Content-Type": "application/json"})

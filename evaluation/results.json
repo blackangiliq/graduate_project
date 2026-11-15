@@ -1,92 +1,12 @@
 [
   {
     "tp": 15,
-    "fp": 4,
+    "fp": 3,
     "fn": 56,
-    "precision": 0.789,
+    "precision": 0.833,
     "recall": 0.211,
-    "f1": 0.333,
+    "f1": 0.337,
     "missed": [
-      {
-        "tag": "A01",
-        "file": "LoginServlet.java",
-        "line": 20,
-        "cwe": "CWE-798",
-        "hard": false,
-        "note": "hard-coded password"
-      },
-      {
-        "tag": "A02",
-        "file": "LoginServlet.java",
-        "line": 26,
-        "cwe": "CWE-89",
-        "hard": false,
-        "note": "SQL injection"
-      },
-      {
-        "tag": "A04",
-        "file": "LoginServlet.java",
-        "line": 31,
-        "cwe": "CWE-79",
-        "hard": false,
-        "note": "reflected XSS"
-      },
-      {
-        "tag": "A05",
-        "file": "LoginServlet.java",
-        "line": 32,
-        "cwe": "CWE-78",
-        "hard": false,
-        "note": "command injection"
-      },
-      {
-        "tag": "A06",
-        "file": "LoginServlet.java",
-        "line": 33,
-        "cwe": "CWE-22",
-        "hard": false,
-        "note": "path traversal"
-      },
-      {
-        "tag": "A07",
-        "file": "LoginServlet.java",
-        "line": 34,
-        "cwe": "CWE-601",
-        "hard": false,
-        "note": "open redirect"
-      },
-      {
-        "tag": "A08",
-        "file": "LoginServlet.java",
-        "line": 38,
-        "cwe": "CWE-327",
-        "hard": false,
-        "note": "MD5"
-      },
-      {
-        "tag": "A09",
-        "file": "LoginServlet.java",
-        "line": 43,
-        "cwe": "CWE-327",
-        "hard": false,
-        "note": "DES in ECB mode"
-      },
-      {
-        "tag": "A10",
-        "file": "LoginServlet.java",
-        "line": 49,
-        "cwe": "CWE-338",
-        "hard": false,
-        "note": "java.util.Random token"
-      },
-      {
-        "tag": "A11",
-        "file": "LoginServlet.java",
-        "line": 54,
-        "cwe": "CWE-502",
-        "hard": false,
-        "note": "Java deserialization"
-      },
       {
         "tag": "K11",
         "file": "app.py",
@@ -288,6 +208,86 @@
         "note": "unrestricted upload"
       },
       {
+        "tag": "A01",
+        "file": "LoginServlet.java",
+        "line": 20,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded password"
+      },
+      {
+        "tag": "A02",
+        "file": "LoginServlet.java",
+        "line": 26,
+        "cwe": "CWE-89",
+        "hard": false,
+        "note": "SQL injection"
+      },
+      {
+        "tag": "A04",
+        "file": "LoginServlet.java",
+        "line": 31,
+        "cwe": "CWE-79",
+        "hard": false,
+        "note": "reflected XSS"
+      },
+      {
+        "tag": "A05",
+        "file": "LoginServlet.java",
+        "line": 32,
+        "cwe": "CWE-78",
+        "hard": false,
+        "note": "command injection"
+      },
+      {
+        "tag": "A06",
+        "file": "LoginServlet.java",
+        "line": 33,
+        "cwe": "CWE-22",
+        "hard": false,
+        "note": "path traversal"
+      },
+      {
+        "tag": "A07",
+        "file": "LoginServlet.java",
+        "line": 34,
+        "cwe": "CWE-601",
+        "hard": false,
+        "note": "open redirect"
+      },
+      {
+        "tag": "A08",
+        "file": "LoginServlet.java",
+        "line": 38,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5"
+      },
+      {
+        "tag": "A09",
+        "file": "LoginServlet.java",
+        "line": 43,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "DES in ECB mode"
+      },
+      {
+        "tag": "A10",
+        "file": "LoginServlet.java",
+        "line": 49,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "java.util.Random token"
+      },
+      {
+        "tag": "A11",
+        "file": "LoginServlet.java",
+        "line": 54,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "Java deserialization"
+      },
+      {
         "tag": "C01",
         "file": "parser.c",
         "line": 8,
@@ -466,16 +466,6 @@
           "bandit"
         ],
         "confidence": 0.8
-      },
-      {
-        "file": "safe_app/app.py",
-        "line": 25,
-        "cwe": "CWE-798",
-        "title": "Possible hardcoded password: 'Enter your password'",
-        "engines": [
-          "bandit"
-        ],
-        "confidence": 0.6
       },
       {
         "file": "safe_app/app.py",
@@ -823,12 +813,12 @@
     }
   },
   {
-    "tp": 66,
-    "fp": 7,
-    "fn": 5,
-    "precision": 0.904,
-    "recall": 0.93,
-    "f1": 0.917,
+    "tp": 68,
+    "fp": 6,
+    "fn": 3,
+    "precision": 0.919,
+    "recall": 0.958,
+    "f1": 0.938,
     "missed": [
       {
         "tag": "K24",
@@ -845,22 +835,6 @@
         "cwe": "CWE-798",
         "hard": true,
         "note": "password passed as a positional argument: no variable name to recognize"
-      },
-      {
-        "tag": "C10",
-        "file": "parser.c",
-        "line": 36,
-        "cwe": "CWE-120",
-        "hard": true,
-        "note": "memcpy with an unchecked length"
-      },
-      {
-        "tag": "C11",
-        "file": "parser.c",
-        "line": 40,
-        "cwe": "CWE-190",
-        "hard": true,
-        "note": "integer overflow in the allocation size"
       },
       {
         "tag": "J16",
@@ -891,16 +865,6 @@
           "bandit"
         ],
         "confidence": 0.8
-      },
-      {
-        "file": "safe_app/app.py",
-        "line": 25,
-        "cwe": "CWE-798",
-        "title": "Possible hardcoded password: 'Enter your password'",
-        "engines": [
-          "bandit"
-        ],
-        "confidence": 0.6
       },
       {
         "file": "safe_app/app.py",
@@ -957,46 +921,6 @@
     "recall": 0.606,
     "f1": 0.754,
     "missed": [
-      {
-        "tag": "A01",
-        "file": "LoginServlet.java",
-        "line": 20,
-        "cwe": "CWE-798",
-        "hard": false,
-        "note": "hard-coded password"
-      },
-      {
-        "tag": "A08",
-        "file": "LoginServlet.java",
-        "line": 38,
-        "cwe": "CWE-327",
-        "hard": false,
-        "note": "MD5"
-      },
-      {
-        "tag": "A09",
-        "file": "LoginServlet.java",
-        "line": 43,
-        "cwe": "CWE-327",
-        "hard": false,
-        "note": "DES in ECB mode"
-      },
-      {
-        "tag": "A10",
-        "file": "LoginServlet.java",
-        "line": 49,
-        "cwe": "CWE-338",
-        "hard": false,
-        "note": "java.util.Random token"
-      },
-      {
-        "tag": "A11",
-        "file": "LoginServlet.java",
-        "line": 54,
-        "cwe": "CWE-502",
-        "hard": false,
-        "note": "Java deserialization"
-      },
       {
         "tag": "K24",
         "file": "app.py",
@@ -1076,6 +1000,46 @@
         "cwe": "CWE-338",
         "hard": false,
         "note": "predictable token"
+      },
+      {
+        "tag": "A01",
+        "file": "LoginServlet.java",
+        "line": 20,
+        "cwe": "CWE-798",
+        "hard": false,
+        "note": "hard-coded password"
+      },
+      {
+        "tag": "A08",
+        "file": "LoginServlet.java",
+        "line": 38,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "MD5"
+      },
+      {
+        "tag": "A09",
+        "file": "LoginServlet.java",
+        "line": 43,
+        "cwe": "CWE-327",
+        "hard": false,
+        "note": "DES in ECB mode"
+      },
+      {
+        "tag": "A10",
+        "file": "LoginServlet.java",
+        "line": 49,
+        "cwe": "CWE-338",
+        "hard": false,
+        "note": "java.util.Random token"
+      },
+      {
+        "tag": "A11",
+        "file": "LoginServlet.java",
+        "line": 54,
+        "cwe": "CWE-502",
+        "hard": false,
+        "note": "Java deserialization"
       },
       {
         "tag": "C03",

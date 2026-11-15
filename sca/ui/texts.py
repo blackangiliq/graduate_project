@@ -104,6 +104,18 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
                  "السطر المبلَّغ عنه أُخذ من مدخلات المستخدم قبل بضعة أسطر. إن كان كذلك "
                  "تُعلَّم النتيجة بأنها متتبَّعة ويمكن تأكيدها."),
     },
+    "use_c_memory": {
+        "group": ("2. Static engines", "2. المحركات الستاتيكية"),
+        "label": ("C/C++ memory checks", "فحوص الذاكرة في C/C++"),
+        "help": ("Reads each C and C++ function from top to bottom and follows pointers and "
+                 "values read from outside (files, sockets, argv): double free, use after "
+                 "free, memory leaks, allocation sizes that can overflow, division by zero "
+                 "and out-of-bounds indexes.",
+                 "يقرأ كل دالة C و C++ من أعلاها إلى أسفلها ويتتبّع المؤشرات والقيم المقروءة "
+                 "من الخارج (الملفات والشبكة و argv): التحرير المزدوج، والاستخدام بعد "
+                 "التحرير، وتسرّب الذاكرة، وأحجام الحجز التي قد تتجاوز الحد، والقسمة على "
+                 "صفر، والفهارس خارج الحدود."),
+    },
     "exclude_dirs": {
         "group": ("2. Static engines", "2. المحركات الستاتيكية"),
         "label": ("Folders to skip", "مجلدات تُتجاوز"),
@@ -240,6 +252,23 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "label": ("Run scan", "ابدأ الفحص"),
         "help": ("Scans the folder with the settings above.",
                  "يفحص المجلد بالإعدادات أعلاه."),
+    },
+    "lab": {
+        "group": ("1. Project", "1. المشروع"),
+        "label": ("Training lab", "مختبر تدريبي"),
+        "help": ("Picks one of the deliberately vulnerable training labs downloaded into the "
+                 "infected_project folder (python infected_project/fetch_labs.py). Their "
+                 "sources and licences are listed in infected_project/README.md.",
+                 "يختار أحد مختبرات التدريب الضعيفة عمداً التي نُزّلت في مجلد infected_project "
+                 "(python infected_project/fetch_labs.py). مصادرها ورخصها مذكورة في "
+                 "infected_project/README.md."),
+    },
+    "intro": {
+        "group": ("5. Output", "5. المخرجات"),
+        "label": ("Show the introduction", "اعرض المقدمة"),
+        "help": ("Opens again the pages that explain how a scan works, the languages and the "
+                 "mechanism.",
+                 "يفتح من جديد الصفحات التي تشرح كيف يعمل الفحص واللغات والآلية."),
     },
 }
 

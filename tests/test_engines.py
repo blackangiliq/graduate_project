@@ -421,3 +421,248 @@ def test_walker_knows_many_languages():
     for name, language in expected.items():
         assert detect_language(Path(name)) == language
     assert make("x", "a.kt").rule_language == "java"       # Kotlin shares the JVM API rules
+
+
+@pytest.mark.parametrize("name,language", [
+    ("view.jsp", "java"), ("part.jspf", "java"), ("list.ejs", "javascript"),
+    ("Default.aspx", "csharp"), ("Site.master", "csharp"), ("Page.cshtml", "csharp"),
+    ("Web.config", "config"), ("config/config.inc.php.dist", "php"),
+    ("backup/config.properties.bak", "config"), ("notes.bak", None)])
+def test_server_pages_templates_and_backup_copies_are_scanned(name, language):
+    assert detect_language(Path(name)) == language
+
+
+def test_django_tests_py_is_test_code():
+    from sca.walker import is_test_path
+    assert is_test_path("challenge/tests.py") and is_test_path("app/test.py")
+    assert not is_test_path("app/contest.py")
+    assert is_test_path("src/test/java/FooTest.java") and is_test_path("src/it/java/Reg.java")
+    assert not is_test_path("src/main/java/Contest.java")
+
+
+@pytest.mark.parametrize("name,scanned", [
+    ("jquery-3.6.0.js", False), ("chart.js", False), ("wysihtml5-0.3.0.js", False),
+    ("chartUtils.js", True), ("requireAuth.js", True), ("app.js", True)])
+def test_vendored_javascript_libraries_are_skipped(name, scanned):
+    assert (detect_language(Path(name)) is not None) == scanned
+
+
+def test_spring_request_parameters_are_user_input():
+    code = ('public Result f(@RequestParam String query) {\n'
+            '  ResultSet r = statement.executeQuery(query);\n')
+    assert taint_lite.is_traced(make(code, "Lesson.java"), 2)
+
+
+def test_a_page_gets_the_javascript_rules_only_inside_its_scripts():
+    page = ('<p>This lesson explains the Python <code>eval()</code> function.</p>\n'
+            '<script>\n'
+            '  out.innerHTML = location.hash;\n'
+            '  toggle.innerHTML = dark ? "sun" : "moon";\n'
+            '  document.write("<option value=\'English\'>English</option>");\n'
+            '</script>\n'
+            '<button onclick="eval(code)">run</button>\n')
+    found = {(f.line, f.cwe) for f in rules_engine.scan_file(make(page, "lesson.html"))}
+    assert found == {(3, "CWE-79"), (7, "CWE-95")}         # not the text of line 1
+    assert make(page, "lesson.php").rule_languages == ("php", "javascript")
+    assert make("x", "app.js").rule_languages == ("javascript",)
+
+
+# ------------------------------------------------------------------ rules added after testing real projects
+@pytest.mark.parametrize("cwe,code,name", [
+    ("CWE-89", 'q := fmt.Sprintf(`SELECT * FROM users\n\twhere id=%s`, uid)\n', "a.go"),
+    ("CWE-1004", 'c := http.Cookie{Name: "s", HttpOnly: false}\n', "a.go"),
+    ("CWE-942", 'w.Header().Set("Access-Control-Allow-Origin", "*")\n', "a.go"),
+    ("CWE-915", "user.update(params.require(:user).permit!)\n", "a.rb"),
+    ("CWE-470", "model = params[:class].classify.constantize\n", "a.rb"),
+    ("CWE-79", "<style>body { font-size:<%= raw cookies[:font] %> }</style>\n", "a.html.erb"),
+    ("CWE-1004", "config.session_store :cookie_store, key: '_s', httponly: false\n", "a.rb"),
+    ("CWE-79", "$html .= '<pre>Hello ' . $_GET['name'] . '</pre>';\n", "a.php"),
+    ("CWE-434", "$p .= basename($_FILES['f']['name']);\nmove_uploaded_file($_FILES['f']['tmp_name'], $p);\n", "a.php"),
+    ("CWE-611", "libxmljs.parseXmlString(xml, {noent: true})\n", "a.js"),
+    ("CWE-95", "var out = mathjs.eval(req.body.eqn)\n", "a.js"),
+    ("CWE-79", "<p><%- output.searchTerm %></p>\n", "a.ejs"),
+    ("CWE-79", '<p><%= request.getParameter("q") %></p>\n', "a.jsp"),
+    ("CWE-79", '<h1><%= Request["productNumber"] %></h1>\n', "a.aspx"),
+    ("CWE-89", 'var a = new SQLiteDataAdapter("SELECT * FROM t WHERE id = " + id, conn);\n', "a.cs"),
+    ("CWE-489", '<compilation debug="true" targetFramework="4.0">\n', "Web.config"),
+    ("CWE-1004", '<httpCookies httpOnlyCookies="false" />\n', "Web.config"),
+    ("CWE-79", "<p>{{ query|safe }}</p>\n", "a.html"),
+    ("CWE-943", "return db.find({ $where: `this.orderId === '${id}'` })\n", "a.js"),
+    ("CWE-611", "libxml2.ParseOption.XML_PARSE_NOENT | libxml2.ParseOption.XML_PARSE_DTDLOAD\n",
+     "a.ts"),
+    ("CWE-79", "swig.setDefaults({ autoescape: false })\n", "a.js"),
+    ("CWE-79", "this.v = this.sanitizer.bypassSecurityTrustHtml(queryParam)\n", "a.ts"),
+    ("CWE-95", "vm.runInContext('safeEval(orderLinesData)', sandbox)\n", "a.ts"),
+    ("CWE-1333", "const regexPattern = /([0-9]+)+\\#/;\n", "a.js"),
+])
+def test_new_rules_find_what_the_real_projects_showed(cwe, code, name):
+    assert cwe in cwes(rules_engine.scan_file(make(code, name)))
+
+
+@pytest.mark.parametrize("code", [
+    "return this.http.get(`${this.hostServer}/rest/products`)",   # a URL, not SQL
+    "Address.findOne({ where: { UserId: req.body.UserId } })",      # Sequelize binds values
+    "if (element.innerHTML === value) {",                           # a comparison
+])
+def test_javascript_rules_ignore_what_the_review_found_harmless(code):
+    assert rules_engine.scan_file(make(code + "\n", "a.ts")) == []
+
+
+def test_typescript_type_annotations_do_not_hide_the_input():
+    code = ("let criteria: any = req.query.q\n"
+            "models.sequelize.query(`SELECT * FROM Products WHERE name LIKE '%${criteria}%'`)\n")
+    assert taint_lite.is_traced(make(code, "search.ts"), 2)
+
+
+def test_a_node_env_folder_and_key_files_are_scanned(tmp_path):
+    (tmp_path / "config" / "env").mkdir(parents=True)
+    (tmp_path / "config" / "env" / "all.js").write_text("module.exports = {}\n", encoding="utf-8")
+    (tmp_path / "venv_like" / "env").mkdir(parents=True)                # a real virtualenv
+    (tmp_path / "venv_like" / "env" / "pyvenv.cfg").write_text("home = x\n", encoding="utf-8")
+    (tmp_path / "venv_like" / "env" / "lib.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "server.key").write_text("-----BEGIN RSA PRIVATE KEY-----\n", encoding="utf-8")
+    scanned = sorted(f.rel for f in walk_project(str(tmp_path)))
+    assert scanned == ["config/env/all.js", "server.key"]
+
+
+def test_eval_rule_does_not_match_the_word_evaluations():
+    assert rules_engine.scan_file(make('<p class="lead">Performance evaluations</p>\n',
+                                       "a.html.erb")) == []
+
+
+@pytest.mark.parametrize("name,traced,fixed", [
+    ("a.rb", "path = params[:url]\nredirect_to path\n", "path = root_path\nredirect_to path\n"),
+    ("a.rb", "path = params[:name]\nsend_file path\n", "path = 'report.pdf'\nsend_file path\n"),
+    ("A.java", 'String url = request.getParameter("u");\nresponse.sendRedirect(url);\n',
+     'String url = "/home";\nresponse.sendRedirect(url);\n'),
+    ("a.jsp", '<% String q = request.getParameter("q"); %>\n<p><%= q %></p>\n',
+     '<% String q = "fixed"; %>\n<p><%= q %></p>\n'),
+    ("p.ts", "const url = req.body.imageUrl\nconst r = await fetch(url)\n",
+     "const url = '/health'\nconst r = await fetch(url)\n"),
+])
+def test_sink_rules_fire_only_when_request_input_reaches_them(name, traced, fixed):
+    assert rules_engine.scan_file(make(traced, name))
+    assert rules_engine.scan_file(make(fixed, name)) == []
+
+
+# ------------------------------------------------------------------ input tracing details
+def test_words_in_a_string_literal_are_not_variables():
+    java = 'String url = request.getParameter("url");\nout.print("Missing url parameter");\n'
+    assert not taint_lite.is_traced(make(java, "A.java"), 2)
+    php = "$name = $_GET['name'];\n$sql = \"SELECT * FROM t WHERE n = '$name'\";\n"
+    assert taint_lite.is_traced(make(php, "a.php"), 2)          # interpolation still counts
+    js = "const id = req.query.id;\nconst q = `SELECT * FROM t WHERE id = ${id}`;\n"
+    assert taint_lite.is_traced(make(js, "a.js"), 2)
+
+
+def test_sql_escaping_counts_as_a_sanitizer():
+    php = ("$u = mysqli_real_escape_string($db, $_POST['u']);\n"
+           "$q = \"SELECT * FROM users WHERE user = '$u'\";\n")
+    assert not taint_lite.is_traced(make(php, "a.php"), 2)
+
+
+# ------------------------------------------------------------------ secrets details
+@pytest.mark.parametrize("name,line", [
+    ("a.php", "$q = \"UPDATE users SET password = '$pass_new' WHERE user = '\" . $u . \"';\""),
+    ("routes.rb", 'get "forgot_password" => "password_resets#forgot_password"'),
+    ("frontend/src/assets/i18n/tr.json", '"INITIAL_TOKEN_TOOLTIP": "Kimlik tokeninizi giriniz.",'),
+    ("app/strings.json", '"LABEL_PASSWORD": "Kennwort",'),
+    ("static/js/libs/mode-java.js", 'token: "keyword.operator",'),
+])
+def test_variables_and_route_targets_are_not_secrets(name, line):
+    assert secrets.scan_file(make(line + "\n", name)) == []
+
+
+def test_placeholder_line_recognizes_values_that_are_not_secrets():
+    assert secrets.placeholder_line("app.config['SECRET_KEY'] = 'your-secret-key-here'")
+    assert secrets.placeholder_line('return jsonify({"secret": None})')
+    assert not secrets.placeholder_line('db_password = "Pr0d-DB-pass!2024"')
+
+
+# ------------------------------------------------------------------ C/C++ memory checks
+C_VULNERABLE = """\
+struct Image { int width; int height; char data[10]; };
+void spin(void) {
+    char buf[64];
+    spin();
+}
+int process(FILE *fp) {
+    struct Image img;
+    fread(&img, sizeof(img), 1, fp);
+    int size = img.width * img.height;
+    char *p = (char *)malloc(size);
+    memcpy(p, img.data, sizeof(img.data));
+    free(p);
+    free(p);
+    p[0] = 'a';
+    int ratio = img.width / img.height;
+    char small[10];
+    small[ratio] = 'c';
+    char c = small[ratio];
+    char *q = malloc(16);
+    q = NULL;
+    return 0;
+}
+void copy_packet(const char *data, size_t len) {
+    char packet[256];
+    memcpy(packet, data, len);
+}
+int *make_table(int count) {
+    return malloc(count * sizeof(int));
+}
+"""
+
+C_SAFE = """\
+int process(FILE *fp) {
+    struct Image img;
+    if (fread(&img, sizeof(img), 1, fp) != 1) return -1;
+    if (img.height == 0 || img.width > 1000 || img.height > 1000) return -1;
+    int ratio = img.width / img.height;
+    char *p = malloc(64);
+    if (p == NULL) return -1;
+    free(p);
+    p = NULL;
+    free(p);
+    char small[10];
+    if (ratio < 10) small[ratio] = 'c';
+    return 0;
+}
+int error_path(int fail) {
+    char *p = malloc(10);
+    if (fail) {
+        free(p);
+        return -1;
+    }
+    p[0] = 'x';
+    free(p);
+    return 0;
+}
+void copy_checked(const char *data, size_t len) {
+    char packet[256];
+    if (len > sizeof(packet)) return;
+    memcpy(packet, data, len);
+}
+char *dup_line(const char *s, size_t len) {
+    char *out = malloc(len + 1);
+    memcpy(out, s, len);
+    out[len] = 0;
+    return out;
+}
+#define RUN(group) \\
+    { void RUN_##group(void); RUN_##group(); }
+"""
+
+
+def test_c_memory_checks_find_each_weakness():
+    from sca.engines import c_memory
+    found = {(f.line, f.rule_id) for f in c_memory.scan_file(make(C_VULNERABLE, "img.c"))}
+    assert found == {
+        (4, "C-MEM-RECURSION"), (10, "C-MEM-ALLOC-OVERFLOW"), (11, "C-MEM-COPY-SOURCE-SIZE"),
+        (13, "C-MEM-DOUBLE-FREE"), (14, "C-MEM-UAF"), (15, "C-MEM-DIV-ZERO"),
+        (17, "C-MEM-OOB-WRITE"), (18, "C-MEM-OOB-READ"), (20, "C-MEM-LEAK"),
+        (25, "C-MEM-COPY-LENGTH"), (28, "C-MEM-ALLOC-PARAM")}
+
+
+def test_c_memory_checks_stay_quiet_on_correct_code():
+    from sca.engines import c_memory
+    assert c_memory.scan_file(make(C_SAFE, "ok.c")) == []

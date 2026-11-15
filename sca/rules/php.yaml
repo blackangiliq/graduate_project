@@ -155,3 +155,76 @@
   confidence: 0.85
   pattern: 'CURLOPT_SSL_VERIFY(PEER|HOST)\s*,\s*(false|0)\b'
   ignore_case: true
+
+- id: PHP-XSS-002
+  title: HTML built with request data
+  languages: [php]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.7
+  pattern: '("[^"]*<[a-zA-Z/][^"]*"|''[^'']*<[a-zA-Z/][^'']*'')\s*\.\s*\$_(GET|POST|REQUEST|COOKIE)\[|\$_(GET|POST|REQUEST|COOKIE)\[[^\]]+\]\s*\.\s*("[^"]*<|''[^'']*<)'
+  exclude: 'htmlspecialchars\(|htmlentities\(|intval\(|strip_tags\(|urlencode\(|json_encode\('
+  message: Request data is joined into HTML without encoding; when the HTML is printed, the input runs as script.
+  fix: Encode the value with htmlspecialchars($value, ENT_QUOTES, 'UTF-8') before joining it into HTML.
+  examples_vulnerable: ["$html .= '<pre>Hello ' . $_GET[ 'name' ] . '</pre>';", "$headers = \"<script src='\" . $_POST['include'] . \"'></script>\";"]
+  examples_safe: ["$html .= '<pre>Hello ' . htmlspecialchars( $_GET[ 'name' ] ) . '</pre>';"]
+
+- id: PHP-UPLOAD-002
+  title: Uploaded file stored under the name chosen by the client
+  languages: [php]
+  cwe: CWE-434
+  severity: high
+  confidence: 0.6
+  pattern: '\bmove_uploaded_file\s*\('
+  near: '\$_FILES\s*\[[^\]]+\]\s*\[\s*["'']name["'']\s*\]'
+  within: 8
+  message: The file keeps the name and extension the client sent, so a .php file can be uploaded and then run.
+  fix: Check the extension and content type against an allow-list and store the file under a generated name outside the web root.
+  examples_vulnerable: ["move_uploaded_file( $_FILES[ 'uploaded' ][ 'tmp_name' ], $target_path )"]
+  examples_safe: ["copy( $source, $target_path )"]
+
+# ---- Added after reviewing xvwa and the code snippets (sink rules need traced input)
+- id: PHP-REDIRECT-002
+  title: Redirect to a location taken from the request
+  languages: [php]
+  cwe: CWE-601
+  severity: medium
+  confidence: 0.6
+  requires_taint: true
+  pattern: 'header\s*\(\s*["'']Location:\s*["'']?\s*\.\s*\$\w+|header\s*\(\s*"Location:\s*\$\w+'
+  message: A location that comes from the request decides where the user is sent.
+  fix: Redirect only to relative paths or to a fixed list of allowed locations.
+
+- id: PHP-LFI-003
+  title: File included from a path built with request data
+  languages: [php]
+  cwe: CWE-98
+  severity: critical
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\b(include|require)(_once)?\b\s*\(?\s*["''][^"'']*\$\w+'
+  message: The included path contains user input, so another file (or a remote one) can be run.
+  fix: Map the request value to a fixed list of pages instead of building a path.
+
+- id: PHP-XPATH-001
+  title: XPath query built with request data
+  languages: [php]
+  cwe: CWE-643
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '->(query|evaluate)\s*\(\s*\$\w+'
+  near: 'DOMXPath|\$xpath'
+  within: 8
+  message: User input becomes part of the XPath expression and can read other nodes of the document.
+  fix: Validate the value strictly, or select nodes with fixed expressions and compare values in PHP.
+
+- id: PHP-SSTI-001
+  title: Template compiled from a string (server-side template injection)
+  languages: [php]
+  cwe: CWE-1336
+  severity: high
+  confidence: 0.7
+  pattern: '\bTwig_Loader_String\b|->createTemplate\s*\(\s*\$'
+  message: A template built from user text can run code on the server.
+  fix: Load templates from files only and pass user values as variables.

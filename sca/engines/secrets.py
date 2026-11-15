@@ -57,8 +57,34 @@ NOT_A_SECRET_NAME = re.compile(
     r"|(password|passwd|pwd)_?(field|input|label|hint|reset|policy|min|max|length|regex|pattern|url"
     r"|hash_?alg|placeholder|text|title|prompt|message|error|help|rule)"
     r"|secret_?(name|id|arn|path|ref)|key_?(name|id|path|file|size|length)"
-    r"|(public|pub)[_-]?key|_(file|path|url|uri|label|message|msg|error|prompt|placeholder)$)")
-LOOKS_LIKE_CODE = re.compile(r"(os\.environ|getenv|process\.env|config\[|settings\.|\bself\.|\$_ENV)")
+    r"|(public|pub)[_-]?key|_(file|path|url|uri|label|message|msg|error|prompt|placeholder)$"
+    # interface text: "INITIAL_TOKEN_TOOLTIP", "LABEL_PASSWORD" hold words shown to a user
+    r"|[_.-](tooltip|label|placeholder|title|hint|text|msg|message|error|header|heading"
+    r"|description|desc|info|button|btn|link|prompt|help|caption|note|warning|success)['\"]?$"
+    r"|^['\"]?(label|title|hint|btn|button|msg|message|error|tooltip|placeholder|text"
+    r"|header|heading|link|nav|menu|tab|desc|description)[_.-]"
+    r"|^['\"]?[\[(#*])")                          # an Angular binding: [passwordComponent]=
+# Translation files hold words for every language, not configuration values.
+TRANSLATION_DIRS = re.compile(r"(^|/)(i18n|l10n|locales?|langs?|translations?)/", re.IGNORECASE)
+DOTTED_NAME = re.compile(r"^[a-z_]+(\.[a-z_-]+)+$")     # "keyword.operator", a style name
+LOOKS_LIKE_CODE = re.compile(
+    r"(os\.environ|getenv|process\.env|config\[|settings\.|\bself\.|\$_ENV)"
+    r"|^\{?\$[A-Za-z_]\w*\}?$|#\{|^\$\{"           # a variable: '$pass_new', "{$x}", "#{x}"
+    r"|^\$2[aby]?\$\d\d\$"                         # a bcrypt hash, not a password
+    r"|^[A-Za-z_/]+#[A-Za-z_]+$")                  # a Rails route target: "users#reset"
+QUOTED = re.compile(r"""["'`]([^"'`\n]*)["'`]""")
+
+
+def placeholder_line(text: str) -> bool:
+    """True when the value assigned on the line is a placeholder, a label or no literal at
+    all: SECRET_KEY = 'your-secret-key-here', {"secret": None}. Used to drop the hard-coded
+    password findings of Bandit, which has no placeholder list of its own."""
+    values = QUOTED.findall(text)
+    if not values:
+        return True
+    value = values[-1].strip()
+    return bool(not value or PLACEHOLDER.match(value) or _natural_language(value)
+                or LOOKS_LIKE_CODE.search(value))
 
 
 def shannon_entropy(text: str) -> float:
@@ -77,8 +103,8 @@ def mask(secret: str) -> str:
 
 
 def _natural_language(value: str) -> bool:
-    """'Enter your password' is a label, not a password."""
-    words = value.split()
+    """'Enter your password' is a label, not a password ("This is a secret!\\n" too)."""
+    words = re.sub(r"(\\[nrt])+$", "", value).split()
     return len(words) >= 2 and all(w.strip(".,:!?").isalpha() for w in words)
 
 
@@ -111,6 +137,7 @@ def scan_file(sf: SourceFile, rules: Optional[List["rules_engine.Rule"]] = None)
         lowered_file = sf.text.lower()
         rules = [r for r in rules
                  if not r.keywords or any(k in lowered_file for k in r.keywords)]
+    translations = bool(TRANSLATION_DIRS.search("/" + sf.rel.replace("\\", "/")))
     for number, line in enumerate(sf.lines, start=1):
         if len(line) > 1000:
             continue
@@ -131,11 +158,12 @@ def scan_file(sf: SourceFile, rules: Optional[List["rules_engine.Rule"]] = None)
                 hit_spans.append(span)
                 hits.append((number, secret, rule.id, rule.title, rule.severity,
                              rule.confidence))
-        for m in ASSIGNMENT.finditer(line):
+        for m in (() if translations else ASSIGNMENT.finditer(line)):
             name, value = m.group("name"), m.group("value").strip()
             if any(s[0] <= m.start("value") < s[1] for s in hit_spans):
                 continue  # already reported by a known-format rule
-            if PLACEHOLDER.match(value) or NOT_A_SECRET_NAME.search(name):
+            if PLACEHOLDER.match(value) or NOT_A_SECRET_NAME.search(name) \
+                    or DOTTED_NAME.match(value):
                 continue
             if LOOKS_LIKE_CODE.search(value) or _natural_language(value):
                 continue

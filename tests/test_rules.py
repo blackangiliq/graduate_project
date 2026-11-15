@@ -61,6 +61,19 @@ def test_imported_pattern_rules_pass_their_own_examples():
     assert checked > 150
 
 
+def test_builtin_rules_pass_their_own_examples():
+    checked = 0
+    for rule in rules_engine.all_rules(include_user=False):
+        if rule.origin != "builtin" or rule.kind != "pattern":
+            continue
+        for sample in rule.examples_vulnerable:
+            assert any(rule.matches(line) for line in sample.splitlines()), (rule.id, sample)
+            checked += 1
+        for sample in rule.examples_safe:
+            assert not any(rule.matches(line) for line in sample.splitlines()), (rule.id, sample)
+    assert checked >= 25
+
+
 def test_imported_secret_rules_match_a_string_built_from_their_expression():
     exrex = pytest.importorskip("exrex")
     import random
@@ -225,8 +238,8 @@ def test_custom_rule_edit_disable_delete():
 
 def test_list_filters_and_summary():
     counts = rulebook.summary()
-    assert counts["by_origin"]["builtin"]["total"] == 107
-    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 107
+    assert counts["by_origin"]["builtin"]["total"] == 163
+    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 163
     assert counts["enabled"] < counts["total"] and counts["secret"] > 150
     php = rulebook.list_rules(language="php", origin="builtin")
     assert php and all("php" in r.languages for r in php)

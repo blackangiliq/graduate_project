@@ -261,6 +261,41 @@ def test_scan_single_file_and_missing_path():
         run_scan(str(ROOT / "does-not-exist"), ScanOptions(save=False))
 
 
+def test_scan_says_what_it_is_doing_while_it_does_it():
+    seen = []
+    result = run_scan(str(VULN), ScanOptions(save=False, use_bandit=False),
+                      progress=lambda message, fraction: seen.append((message, fraction)))
+    text = [str(message) for message, _ in seen]
+    assert [message.kind for message, _ in seen][0] == "step"
+    assert all(0 <= fraction <= 1 for _, fraction in seen)
+    assert text[0] == "Collecting the source files of %s" % VULN
+    assert any(t.startswith("7 files, ") for t in text)
+    assert any(t.startswith("Pattern rules: file 1 of 7 - ") for t in text)   # the file now
+    assert any(t.startswith("Pattern rules: ") and " found in " in t for t in text)
+    assert "Bandit: skipped - switched off" in text
+    assert "AI review: skipped - switched off" in text
+    assert text[-1].startswith("Scan finished in ")
+    # the log keeps each step and what it found, not the file-by-file messages
+    assert result.steps == [message for message, _ in seen if message.kind != "file"]
+    assert result.to_dict()["steps"][0] == text[0]
+    # template and values are kept, so that the dashboard can show the message in Arabic
+    found = next(message for message, _ in seen if message.template == "%s: %d found in %.1f s")
+    assert found.args[0] == "Secrets" and str(found).startswith("Secrets: ")
+
+
+def test_a_local_model_server_that_is_not_running_is_reported_at_once():
+    import socket
+    import time
+    started = time.time()
+    assert llm.local_server_down("http://127.0.0.1:9/api/tags")
+    assert time.time() - started < 2         # Windows alone retries for 2 s per address
+    assert not llm.local_server_down("https://api.openai.com/v1")      # never probed
+    with socket.socket() as server:
+        server.bind(("127.0.0.1", 0))
+        server.listen(8)
+        assert not llm.local_server_down("http://127.0.0.1:%d/" % server.getsockname()[1])
+
+
 def test_arabic_explanations():
     result = run_scan(str(VULN / "parser.c"), ScanOptions(save=False, lang="ar"))
     assert any("؀" <= ch <= "ۿ" for ch in result.findings[0].description)

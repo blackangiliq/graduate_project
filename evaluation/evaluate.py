@@ -112,8 +112,8 @@ def run_config(name: str, options: ScanOptions, truth: List[Dict]) -> Dict:
 def static_options(**overrides) -> ScanOptions:
     # use_feedback=False: the measurement must not depend on reviews stored on this machine
     base = dict(use_rules=False, use_ast=False, use_secrets=False, use_bandit=False,
-                use_semgrep=False, use_gitleaks=False, use_ml=False, use_llm=False,
-                use_feedback=False)
+                use_semgrep=False, use_gitleaks=False, use_c_memory=False, use_ml=False,
+                use_llm=False, use_feedback=False)
     base.update(overrides)
     return ScanOptions(**base)
 
@@ -157,10 +157,10 @@ def main() -> int:
                                                      use_ast=True)),
         ("All static engines", static_options(use_rules=True, use_secrets=True, use_ast=True,
                                               use_bandit=True, use_semgrep=True,
-                                              use_gitleaks=True)),
+                                              use_gitleaks=True, use_c_memory=True)),
     ]
     everything = dict(use_rules=True, use_secrets=True, use_ast=True, use_bandit=True,
-                      use_semgrep=True, use_gitleaks=True)
+                      use_semgrep=True, use_gitleaks=True, use_c_memory=True)
     configs.append(("All static, strict mode (confirmed only)",
                     static_options(strict=True, **everything)))
     if args.llm or args.deep:

@@ -38,7 +38,8 @@
   cwe: CWE-89
   severity: high
   confidence: 0.75
-  pattern: 'new\s+(Sql|MySql|Npgsql|OleDb|Sqlite)Command\s*\([^;]*("\s*\+|\$")|\.CommandText\s*=[^;]*("\s*\+|\$")'
+  pattern: 'new\s+(Sql|MySql|Npgsql|OleDb|Odbc|Sqlite)(Command|DataAdapter)\s*\([^;]*("\s*\+|\$")|\.CommandText\s*=[^;]*("\s*\+|\$")|\bMySqlHelper\.Execute\w*\s*\([^;]*"\s*\+'
+  ignore_case: true
 
 - id: CS-CMDI-001
   title: Process started with a dynamic command line
@@ -155,3 +156,229 @@
   severity: high
   confidence: 0.75
   pattern: '(query|execute|query_as|sql_query)\s*\(\s*&?format!\s*\('
+
+# ---------------------------------------------------------------------------- Go (more)
+- id: GO-SQLI-002
+  title: SQL statement built with fmt.Sprintf
+  languages: [go]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.65
+  ignore_case: true
+  pattern: 'fmt\.Sprintf\s*\(\s*[`"]\s*(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO)\b'
+  near: '%[sdv]'
+  within: 4
+  message: Values are formatted into the SQL text, so a value can change the statement.
+  fix: Use placeholders, for example db.Query("SELECT ... WHERE id = ?", id), instead of fmt.Sprintf.
+  examples_vulnerable: ['q := fmt.Sprintf("SELECT * FROM users WHERE id=%s", id)']
+  examples_safe: ['msg := fmt.Sprintf("user %s logged in", name)']
+
+- id: GO-COOKIE-001
+  title: Cookie readable from JavaScript (HttpOnly disabled)
+  languages: [go]
+  cwe: CWE-1004
+  severity: medium
+  confidence: 0.75
+  pattern: '\bHttpOnly\s*:\s*false\b'
+  message: Without HttpOnly, a script injected into the page can read the session cookie.
+  fix: Set HttpOnly true (and Secure true) on session cookies.
+  examples_vulnerable: ['HttpOnly: false,']
+  examples_safe: ['HttpOnly: true,']
+
+- id: GO-CORS-001
+  title: CORS allows every origin
+  languages: [go]
+  cwe: CWE-942
+  severity: low
+  confidence: 0.7
+  pattern: 'Access-Control-Allow-Origin["`]\s*,\s*["`]\*["`]'
+  message: Any web site may read the responses of this server from a visitor's browser.
+  fix: Return the origin only when it is on a list of trusted origins.
+  examples_vulnerable: ['w.Header().Set("Access-Control-Allow-Origin", "*")']
+  examples_safe: ['w.Header().Set("Access-Control-Allow-Origin", "https://app.example.com")']
+
+# ---------------------------------------------------------------------------- C# and ASP.NET (more)
+- id: CS-XSS-002
+  title: Request data written into an ASP.NET page with <%= %>
+  languages: [csharp]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.85
+  pattern: '<%=[^%]*Request(\.(QueryString|Form|Params|Cookies)|\s*\[)'
+  exclude: 'HtmlEncode|AntiXss|Encoder\.'
+  message: The value from the request is written into the page without HTML encoding.
+  fix: 'Use <%: %> or HttpUtility.HtmlEncode() for every value written into the page.'
+  examples_vulnerable: ['<h1><%= Request["productNumber"] %></h1>']
+  examples_safe: ['<h1><%: Request["productNumber"] %></h1>']
+
+- id: CS-XSS-003
+  title: Request data placed into a WebForms control or the response
+  languages: [csharp]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  pattern: '\.(Text|InnerHtml)\s*=[^=]|\bResponse\.Write\s*\('
+  exclude: 'HtmlEncode|AntiXss|Encoder\.'
+  message: A value from the request is written into the page without HTML encoding.
+  fix: Encode the value with HttpUtility.HtmlEncode() before writing it.
+
+- id: CS-SQLI-002
+  title: SQL command receives a string built from the request
+  languages: [csharp]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.6
+  requires_taint: true
+  ignore_case: true
+  pattern: 'new\s+\w*(Command|DataAdapter)\s*\(\s*[a-z_]\w*\s*,|\.CommandText\s*=\s*[a-z_]\w*\s*;'
+  message: The SQL text was built from request data before it reaches the command.
+  fix: Use parameters (command.Parameters.AddWithValue) instead of building the SQL text.
+
+- id: CFG-ASPNET-001
+  title: ASP.NET compiled in debug mode
+  languages: [config]
+  cwe: CWE-489
+  severity: medium
+  confidence: 0.8
+  ignore_case: true
+  pattern: '<compilation\b[^>]*\bdebug\s*=\s*"true"'
+  message: Debug builds are slower and show detailed errors and source information to visitors.
+  fix: Set debug="false" in the compilation element of Web.config for production.
+  examples_vulnerable: ['<compilation debug="true" targetFramework="4.0">']
+  examples_safe: ['<compilation debug="false" targetFramework="4.0">']
+
+- id: CFG-ASPNET-002
+  title: Cookies readable from JavaScript (httpOnlyCookies off)
+  languages: [config]
+  cwe: CWE-1004
+  severity: medium
+  confidence: 0.8
+  ignore_case: true
+  pattern: '\bhttpOnlyCookies\s*=\s*"false"'
+  message: A script injected into the page can read the session cookie.
+  fix: Set httpOnlyCookies="true" in the httpCookies element of Web.config.
+  examples_vulnerable: ['<httpCookies httpOnlyCookies="false" requireSSL="false" />']
+  examples_safe: ['<httpCookies httpOnlyCookies="true" requireSSL="true" />']
+
+- id: CFG-ASPNET-003
+  title: Authentication cookie allowed over plain HTTP (requireSSL off)
+  languages: [config]
+  cwe: CWE-614
+  severity: medium
+  confidence: 0.75
+  ignore_case: true
+  pattern: '\brequireSSL\s*=\s*"false"'
+  message: The authentication cookie is also sent over unencrypted connections.
+  fix: Set requireSSL="true" and serve the site over HTTPS only.
+  examples_vulnerable: ['<forms loginUrl="Login.aspx" requireSSL="false" />']
+  examples_safe: ['<forms loginUrl="Login.aspx" requireSSL="true" />']
+
+- id: CFG-ASPNET-004
+  title: Detailed error pages shown to visitors (customErrors Off)
+  languages: [config]
+  cwe: CWE-209
+  severity: low
+  confidence: 0.8
+  ignore_case: true
+  pattern: '<customErrors\b[^>]*\bmode\s*=\s*"Off"'
+  message: Errors show stack traces, file paths and versions to every visitor.
+  fix: Use mode="RemoteOnly" or "On" with a generic error page.
+  examples_vulnerable: ['<customErrors mode="Off" />']
+  examples_safe: ['<customErrors mode="RemoteOnly" defaultRedirect="Error.aspx" />']
+
+# ---------------------------------------------------------------------------- HTML templates
+- id: HTML-XSS-001
+  title: Template output marked safe (|safe, autoescape off)
+  languages: [html]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.5
+  pattern: '\{\{[^}]*\|\s*safe\s*\}\}|\{%\s*autoescape\s+(off|false)\s*%\}'
+  message: The value is inserted as raw HTML. If a user can influence it, it runs as script in the page.
+  fix: Remove |safe (Jinja and Django escape by default), or clean the value with a sanitizer first.
+  examples_vulnerable: ['<p>You searched for {{ query|safe }}</p>', '{% autoescape off %}']
+  examples_safe: ['<p>You searched for {{ query }}</p>']
+
+# ---------------------------------------------------------------------------- added after reviewing the labs
+- id: CS-CMDI-002
+  title: Process started with a program name from a variable
+  languages: [csharp]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.55
+  pattern: '\.StartInfo\.(FileName|Arguments)\s*=\s*[A-Za-z_]'
+  message: The program or its arguments come from a variable; if a user controls it, any command can run.
+  fix: Use a fixed program and validate each argument against an allow-list.
+
+- id: CS-LDAP-001
+  title: LDAP filter built with concatenation
+  languages: [csharp]
+  cwe: CWE-90
+  severity: high
+  confidence: 0.65
+  pattern: '\.Filter\s*=\s*"[^"]*\(\w+=[^"]*"\s*\+'
+  message: User input inside the LDAP filter can change which entries it matches.
+  fix: Escape the value for LDAP filters before joining it.
+
+- id: CS-XPATH-001
+  title: XPath query built with concatenation
+  languages: [csharp]
+  cwe: CWE-643
+  severity: high
+  confidence: 0.65
+  pattern: '=''"\s*\+\s*\w+\s*\+\s*"''\]'
+  message: User input inside the XPath expression can read other nodes of the document.
+  fix: Use XPath variables (XsltArgumentList) or validate the value strictly.
+
+- id: CS-XSS-004
+  title: HTML written with WriteAsync and concatenation
+  languages: [csharp]
+  cwe: CWE-79
+  severity: high
+  confidence: 0.6
+  pattern: 'Response\.WriteAsync\s*\([^;]*"\s*\+\s*\w'
+  message: A value joined into the response is not HTML-encoded.
+  fix: Encode the value with HtmlEncoder.Default.Encode() first.
+
+- id: CS-PATH-002
+  title: Zip entry extracted to a path built from its name (Zip Slip)
+  languages: [csharp]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.65
+  pattern: '\.ExtractToFile\s*\(\s*Path\.Combine\s*\([^)]*\.FullName'
+  message: An entry named ../../x is written outside the target folder.
+  fix: Check that the combined full path starts with the target folder before extracting.
+
+- id: GO-SSTI-001
+  title: Go template parsed from a variable
+  languages: [go]
+  cwe: CWE-1336
+  severity: high
+  confidence: 0.6
+  pattern: 'template\.New\([^)]*\)\.Parse\s*\(\s*[a-z_]\w*\s*\)'
+  message: A template parsed from user text can call functions and read data it should not.
+  fix: Parse templates from fixed files and pass user values as data.
+
+- id: PY-SQLI-TEXT-001
+  title: SQLAlchemy text() built with string formatting
+  languages: [python]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.7
+  pattern: '\btext\s*\(\s*f?["''][^"'']*["'']\s*(%|\.format\s*\()|\btext\s*\(\s*f["''][^"'']*\{'
+  message: Values formatted into the SQL text can change the statement.
+  fix: Use bound parameters, for example text("... WHERE id = :id") with params.
+  examples_vulnerable: ['result = query.filter(text("title = ''%s''" % (title)))']
+  examples_safe: ['result = query.filter(text("title = :t")).params(t=title)']
+
+- id: PY-INFO-001
+  title: Stack trace placed in a response
+  languages: [python]
+  cwe: CWE-209
+  severity: low
+  confidence: 0.6
+  pattern: '\[\s*["''](stack|debug|trace(back)?|exception)["'']\s*\]\s*=\s*traceback\.format_(exc|stack)'
+  message: The stack trace reveals file paths, code and versions to the caller.
+  fix: Log the trace on the server and return a generic error message.

@@ -382,7 +382,9 @@ def teacher():
 
 
 def test_learning_loop_end_to_end(teacher, home):
-    static = ScanOptions(save=False)
+    # The C/C++ memory checks find this memcpy on their own; switched off here, so that
+    # the scripted AI has something to teach.
+    static = ScanOptions(save=False, use_c_memory=False)
     c10 = lambda result: [f for f in result.findings                      # noqa: E731
                           if f.file == "parser.c" and "memcpy" in f.snippet]
 
@@ -391,7 +393,8 @@ def test_learning_loop_end_to_end(teacher, home):
 
     # 2. the AI deep scan finds it, and its second pass confirms it
     options = ScanOptions(use_llm=True, llm_deep_scan=True, llm_host=teacher,
-                          llm_model="teacher:1", llm_max_findings=0, save=False)
+                          llm_model="teacher:1", llm_max_findings=0, save=False,
+                          use_c_memory=False)
     result, files = scan_project(str(VULN), options, storage=home)
     found = c10(result)
     assert len(found) == 1 and found[0].engines == ["llm"]
@@ -624,7 +627,7 @@ def test_cli_review_and_rule_commands(home, capsys, tmp_path):
 
 def test_cli_learn_and_approve(teacher, home, capsys):
     assert cli(["learn", str(VULN), "--quiet", "--llm-host", teacher, "--model", "teacher:1",
-                "--llm-max", "0"]) == 0
+                "--llm-max", "0", "--no-c-memory"]) == 0
     out = capsys.readouterr().out
     assert "1 passed validation" in out
     candidate_id = re.search(r"(LRN-C-120-[0-9a-f]{6})", out).group(1)
@@ -718,8 +721,9 @@ def test_evaluation_script_with_an_ai_provider(teacher, home, tmp_path):
     assert names[-2:] == ["All static + AI review", "All static + AI review, strict mode"]
     static = next(r for r in rows if r["name"] == "All static engines")
     with_ai, with_ai_strict = rows[-2], rows[-1]
-    # the scripted model finds the unchecked memcpy that no rule reports ...
-    assert with_ai["tp"] == static["tp"] + 1
+    # the scripted model finds the unchecked memcpy, which the C/C++ memory checks now
+    # report as well, so the AI review adds no new true positive here and loses none ...
+    assert with_ai["tp"] >= static["tp"]
     # ... and its review confirms the findings strict mode had set aside
     assert with_ai_strict["tp"] == with_ai["tp"]
     assert "deep scan added" in with_ai["ai"]["llm"]
@@ -729,19 +733,19 @@ def test_evaluation_script_with_an_ai_provider(teacher, home, tmp_path):
 def test_learning_repeats_until_nothing_new_is_found(teacher, home, capsys):
     # round 1 learns and activates the memcpy rule; round 2 finds nothing new and stops
     assert cli(["learn", str(VULN), "--quiet", "--llm-host", teacher, "--model", "teacher:1",
-                "--llm-max", "0", "--rounds", "5", "--auto-approve"]) == 0
+                "--llm-max", "0", "--rounds", "5", "--auto-approve", "--no-c-memory"]) == 0
     out = capsys.readouterr().out
     assert "Round 1: 1 candidate(s), 1 passed validation, 1 activated" in out
     assert "Round 2: 0 candidate(s)" in out and "Round 3" not in out
     assert "Nothing new to learn from this project" in out
     assert len(store.read_learned()) == 1 and home.list_candidates("pending") == []
-    static = run_scan(str(VULN), ScanOptions(save=False), storage=home)
+    static = run_scan(str(VULN), ScanOptions(save=False, use_c_memory=False), storage=home)
     assert any(f.engines == ["learned"] for f in static.findings)
 
 
 def test_learning_without_auto_approve_stops_and_waits(teacher, home, capsys):
     assert cli(["learn", str(VULN), "--quiet", "--llm-host", teacher, "--model", "teacher:1",
-                "--llm-max", "0", "--rounds", "5"]) == 0
+                "--llm-max", "0", "--rounds", "5", "--no-c-memory"]) == 0
     out = capsys.readouterr().out
     assert "Round 1: 1 candidate(s), 1 passed validation, 0 activated" in out
     assert "Round 2" not in out and "Stopped after round 1" in out
@@ -752,7 +756,7 @@ def test_learning_without_auto_approve_stops_and_waits(teacher, home, capsys):
 def test_bootstrap_all_fills_every_language_with_a_gap(teacher, home, capsys):
     gaps = loop.all_gaps(cwes=["CWE-89"])
     assert "dart" in gaps and "lua" in gaps and "swift" in gaps
-    assert "python" in gaps and "php" not in gaps         # PHP already has SQL injection rules
+    assert "php" not in gaps and "python" not in gaps     # both have SQL injection rules
     client = llm.OllamaClient(teacher, "teacher:1")
     created = loop.bootstrap_all(client, home, languages=["dart", "lua", "php"],
                                  cwes=["CWE-89"])

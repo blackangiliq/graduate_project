@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-from .llm import DEFAULT_MODEL, LLMError, OllamaClient, parse_json_object
+from .llm import DEFAULT_MODEL, LLMError, OllamaClient, local_server_down, parse_json_object
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -62,6 +62,10 @@ def is_local_url(url: str) -> bool:
 
 def http_json(method: str, url: str, headers: Optional[Dict[str, str]] = None,
               payload: Optional[Dict[str, Any]] = None, timeout: int = 60) -> Dict[str, Any]:
+    if local_server_down(url):     # fail at once instead of after Windows' connect retries
+        failure = LLMError("request failed: nothing is listening at %s" % url)
+        failure.status = 0
+        raise failure
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
     try:

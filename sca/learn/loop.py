@@ -18,11 +18,14 @@ labelled as bootstrap candidates.
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from ..ai import llm as llm_module
 from ..cwe import canonical
 from ..engines import rules_engine, secrets
+from ..flutter import APP_SUFFIXES, load_app
+from ..flutter.context import ORIGIN_DECODED, ORIGIN_DECOMPILED, ORIGIN_RECOVERED, RULES_ORIGINS
 from ..models import Finding, ScanResult
 from ..storage import Storage
 from ..walker import CODE_LANGUAGES, RULE_LANGUAGE, SourceFile, walk_project
@@ -38,11 +41,21 @@ NATIVE_CWES = ["CWE-120", "CWE-134", "CWE-78", "CWE-338", "CWE-377"]
 SCRIPT_CWES = ["CWE-78", "CWE-95", "CWE-295", "CWE-732", "CWE-494"]
 BOOTSTRAP_CWES = {"c": NATIVE_CWES, "cpp": NATIVE_CWES, "shell": SCRIPT_CWES,
                   "powershell": SCRIPT_CWES, "sql": ["CWE-89"]}
+# the files of an app package that rules can be learned from and checked against: decoded
+# text, recovered Dart source and decompiled Java (not strings dumps or summaries)
+APP_ORIGINS = (ORIGIN_DECODED, ORIGIN_RECOVERED, ORIGIN_DECOMPILED)
 
 
-def load_files(target: str) -> List[SourceFile]:
-    """Read the project again and mask its secrets (needed to learn after a scan)."""
-    files = list(walk_project(target))
+def load_files(target: str, apk_tools: bool = False) -> List[SourceFile]:
+    """Read the project again and mask its secrets (needed to learn after a scan). For an
+    app package: its decoded, recovered and decompiled files (apk_tools as in the scan, so
+    that jadx's earlier output is found again)."""
+    path = Path(target).expanduser()
+    if path.is_file() and path.suffix.lower() in APP_SUFFIXES:
+        files = [sf for sf in load_app(path, use_tools=apk_tools).files
+                 if sf.origin in APP_ORIGINS]
+    else:
+        files = list(walk_project(target))
     secrets.scan(files)
     return files
 
@@ -84,6 +97,9 @@ def learn_from_scan(result: ScanResult, files: List[SourceFile], client: Any, st
                     ) -> List[Dict[str, Any]]:
     """Turn what the LLM taught us in this scan into rule candidates."""
     progress = progress or (lambda message, fraction: None)
+    # rules never read strings dumps, summaries or placeholders of an app, so a candidate is
+    # neither learned from nor checked against them
+    files = [sf for sf in files if sf.origin in RULES_ORIGINS]
     by_rel = {sf.rel: sf for sf in files}
     regex_rules = {r.id: r for r in rules_engine.load_rules()}
     done = {(c.get("evidence") or {}).get("fingerprint") for c in storage.list_candidates()
@@ -164,9 +180,13 @@ def learn_from_feedback(client: Any, storage: Storage, max_candidates: int = 20
 
 
 def coverage_matrix() -> Dict[str, Dict[str, int]]:
-    """language -> {CWE: number of active rules}. Python also has the AST engine."""
+    """language -> {CWE: number of active rules}. Python also has the AST engine. A rule
+    that names its files (CI scripts, firestore.rules ...) covers those files, not the
+    language, so it is not counted."""
     matrix: Dict[str, Dict[str, int]] = {language: {} for language in CODE_LANGUAGES}
     for rule in rules_engine.load_rules():
+        if rule.files:
+            continue
         for language in CODE_LANGUAGES:
             if RULE_LANGUAGE.get(language, language) in rule.languages:
                 cwe = canonical(rule.cwe)

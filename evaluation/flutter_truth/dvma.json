@@ -1,0 +1,27 @@
+{
+  "_about": "How visible each DVMA category is to static analysis, for evaluation/flutter_eval.py. DVMA's own registry (infected_project/DVMA/config/registry/categories) gives the modules and their CWEs; this file only adds a judgement per category, made after reading the registry's descriptions and module summaries. code: the weakness is a property of code or configuration lines (cleartext URLs, weak crypto calls, plain storage, build settings). design: authorization, IPC, trust and supply-chain decisions; the code looks ordinary and the flaw is a missing or wrong check, so a finder needs the intended behaviour. runtime: AI/LLM behaviour, user consent and missing or bypassable runtime defences; these are behaviours of the running app, not patterns in its source.",
+  "lab": "DVMA",
+  "unit": "module",
+  "kinds": {
+    "code": "property of code or configuration lines",
+    "design": "authorization, IPC and trust decisions (needs the intended behaviour)",
+    "runtime": "AI behaviour, consent and runtime defences (not visible in the source)"
+  },
+  "categories": {
+    "network": {"kind": "code", "why": "cleartext URLs, TLS settings and certificate callbacks are written in the code and the manifest"},
+    "crypto": {"kind": "code", "why": "weak algorithms, fixed keys and IVs, insecure random calls"},
+    "storage": {"kind": "code", "why": "plain key-value storage, logs, clipboard and external files are calls in the code (some modules, such as data kept in memory, are behaviour)"},
+    "code_quality": {"kind": "code", "why": "build settings, error handling and native code"},
+    "input_validation": {"kind": "code", "why": "deserialization, decoders and regular expressions applied to untrusted input"},
+    "platform": {"kind": "design", "why": "exported components, intents, deep links and providers: most modules are chains of IPC trust decisions"},
+    "native_bridge": {"kind": "design", "why": "WebView to native bridges whose flaw is a missing origin or permission check"},
+    "auth": {"kind": "design", "why": "session, passkey, biometric and authorization logic"},
+    "system_provider": {"kind": "design", "why": "privileged system roles (accessibility, IME, VPN, device policy) and who may drive them"},
+    "supply_chain": {"kind": "design", "why": "trust in SDKs, package names and update artifacts; static rules see versions and sources, not what an SDK does"},
+    "privacy": {"kind": "runtime", "why": "consent screens, tracking and what data reaches analytics at run time"},
+    "resilience": {"kind": "runtime", "why": "root, debugger, emulator and tamper checks that are missing or bypassable at run time"},
+    "agentic": {"kind": "runtime", "why": "behaviour of an AI agent: memory and tool poisoning, confused deputy"},
+    "ai_ml": {"kind": "runtime", "why": "behaviour of an LLM assistant: prompt injection, output handling, model supply chain"},
+    "ai_mobile": {"kind": "runtime", "why": "untrusted mobile input flowing into an LLM prompt and model output flowing back into the app"}
+  }
+}

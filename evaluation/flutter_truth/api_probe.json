@@ -1,0 +1,30 @@
+{
+  "about": "What the API and key inventory (sca/flutter/inventory.py) should list for samples/flutter_api_probe and the packages built from it (python tools/build_flutter_apks.py --app flutter_api_probe --modes release,obfuscated,debug). Each item names how it is matched in facts['apis'] and the scans that should list it (all four when 'modes' is missing). The Stripe and Firebase keys are written in parts in the Dart source and joined by the compiler, so only the compiled code (release, obfuscated) holds them whole; the Maps key is joined by Gradle into the built manifest.",
+  "items": [
+    {"id": "I01", "what": "Stripe secret key (joined by the compiler)", "match": {"key_advice": "stripe"}, "modes": ["release", "obfuscated"]},
+    {"id": "I02", "what": "AWS access key ID", "match": {"key_advice": "aws"}},
+    {"id": "I03", "what": "Google Maps key of the manifest (joined by Gradle)", "match": {"key_used_by": "geo.API_KEY"}, "modes": ["debug", "release", "obfuscated"]},
+    {"id": "I04", "what": "Firebase API key, public by design (joined by the compiler)", "match": {"key_advice": "firebase"}, "modes": ["release", "obfuscated"]},
+    {"id": "I05", "what": "Supabase anon key (JWT, role anon)", "match": {"key_role": "anon"}},
+    {"id": "I06", "what": "Key in assets/config.json", "match": {"key_file": "config.json"}},
+    {"id": "I07", "what": "Secret of the bundled .env file", "match": {"env_secret": "PAYMENT_HMAC_SECRET"}},
+    {"id": "I08", "what": "User name and password in an address", "match": {"alert": "password_in_url"}},
+    {"id": "I09", "what": "Slack webhook address", "match": {"alert": "webhook"}},
+    {"id": "I10", "what": "Telegram bot token in an address (joined by the compiler)", "match": {"alert": "telegram"}, "modes": ["release", "obfuscated"]},
+    {"id": "I11", "what": "ngrok tunnel", "match": {"alert": "tunnel"}},
+    {"id": "I12", "what": "Private IP address over http://", "match": {"alert": "private_ip"}},
+    {"id": "I13", "what": "Staging server", "match": {"alert": "dev_host"}},
+    {"id": "I14", "what": "Key in the query of an address (?api_key=)", "match": {"endpoint_alert": "secret_in_url"}},
+    {"id": "I15", "what": "Token in the query of an API path (?access_token=)", "match": {"path_alert": "secret_in_url"}},
+    {"id": "I16", "what": "Cleartext analytics address in config.json", "match": {"endpoint": "http://collect.shop-probe.example/v1/events"}},
+    {"id": "I17", "what": "GraphQL server", "match": {"host": "graph.shop-probe.example"}},
+    {"id": "I18", "what": "WebSocket server", "match": {"endpoint": "wss://realtime.shop-probe.example/socket"}},
+    {"id": "I19", "what": "Supabase project", "match": {"alert": "supabase"}},
+    {"id": "I20", "what": "Firebase project ID, database and storage bucket", "match": {"firebase": ["project_id", "database_urls", "storage_buckets"]}},
+    {"id": "I21", "what": "AdMob app ID", "match": {"config": "AdMob app ID"}},
+    {"id": "I22", "what": "Google OAuth client ID", "match": {"config": "Google OAuth client ID"}},
+    {"id": "I23", "what": "Sentry DSN", "match": {"config": "Sentry DSN"}},
+    {"id": "I24", "what": "API paths of compiled code (/v2/orders, /api/v2/cart/items/)", "match": {"paths": ["/v2/orders", "/api/v2/cart/items/"]}},
+    {"id": "I25", "what": "HTTP, WebSocket and GraphQL calls with their targets (10 or more)", "match": {"calls": 10}, "modes": ["source", "debug"]}
+  ]
+}

@@ -1,0 +1,17 @@
+name: flutter_apk_probe
+description: Deliberately insecure Flutter app that is built into APKs to test the analyzer.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+# Only the Flutter SDK, so that the app builds from the local caches without downloads.
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/.env

@@ -6,7 +6,7 @@
   "languages": "PHP, JavaScript",
   "files": 197,
   "lines": 14682,
-  "seconds": 1.9,
+  "seconds": 6.2,
   "score": 39,
   "grade": "F",
   "open": 94,
@@ -59,7 +59,7 @@
   "languages": "Python (Django, Flask), HTML",
   "files": 337,
   "lines": 25934,
-  "seconds": 2.8,
+  "seconds": 6.1,
   "score": 51,
   "grade": "D",
   "open": 169,
@@ -112,7 +112,7 @@
   "languages": "JavaScript (Node.js, Express), EJS",
   "files": 73,
   "lines": 2294,
-  "seconds": 0.3,
+  "seconds": 0.9,
   "score": 43,
   "grade": "D",
   "open": 17,
@@ -164,7 +164,7 @@
   "languages": "Java, JSP",
   "files": 96,
   "lines": 5395,
-  "seconds": 0.7,
+  "seconds": 2.5,
   "score": 8,
   "grade": "F",
   "open": 93,
@@ -216,7 +216,7 @@
   "languages": "Go, HTML",
   "files": 41,
   "lines": 2408,
-  "seconds": 0.2,
+  "seconds": 0.7,
   "score": 67,
   "grade": "C",
   "open": 15,
@@ -268,7 +268,7 @@
   "languages": "Ruby on Rails, ERB",
   "files": 169,
   "lines": 17365,
-  "seconds": 1.1,
+  "seconds": 2.9,
   "score": 73,
   "grade": "C",
   "open": 52,
@@ -320,7 +320,7 @@
   "languages": "C# (ASP.NET WebForms), Web.config",
   "files": 228,
   "lines": 45368,
-  "seconds": 2.8,
+  "seconds": 4.9,
   "score": 78,
   "grade": "B",
   "open": 75,
@@ -372,7 +372,7 @@
   "languages": "C",
   "files": 16,
   "lines": 1163,
-  "seconds": 0.2,
+  "seconds": 0.4,
   "score": 0,
   "grade": "F",
   "open": 83,
@@ -425,7 +425,7 @@
   "languages": "JavaScript (Node.js, Express), HTML",
   "files": 81,
   "lines": 6207,
-  "seconds": 0.4,
+  "seconds": 1.4,
   "score": 68,
   "grade": "C",
   "open": 17,
@@ -477,7 +477,7 @@
   "languages": "TypeScript (Node.js, Angular)",
   "files": 991,
   "lines": 170513,
-  "seconds": 12.5,
+  "seconds": 23.4,
   "score": 85,
   "grade": "B",
   "open": 276,
@@ -530,7 +530,7 @@
   "languages": "Java (Spring Boot), JavaScript",
   "files": 837,
   "lines": 52992,
-  "seconds": 4.1,
+  "seconds": 13.2,
   "score": 80,
   "grade": "B",
   "open": 104,
@@ -582,7 +582,7 @@
   "languages": "PHP, Java, C#, JavaScript, Python, Go, C, Ruby and more",
   "files": 123,
   "lines": 3347,
-  "seconds": 0.9,
+  "seconds": 2.2,
   "score": 0,
   "grade": "F",
   "open": 142,
@@ -689,7 +689,7 @@
   "languages": "Python (Flask REST API)",
   "files": 17,
   "lines": 2222,
-  "seconds": 0.7,
+  "seconds": 0.8,
   "score": 80,
   "grade": "B",
   "open": 7,
@@ -742,7 +742,7 @@
   "languages": "PHP",
   "files": 59,
   "lines": 3479,
-  "seconds": 0.4,
+  "seconds": 1.0,
   "score": 31,
   "grade": "F",
   "open": 31,
@@ -794,7 +794,7 @@
   "languages": "Python (GraphQL), JavaScript",
   "files": 75,
   "lines": 4357,
-  "seconds": 1.0,
+  "seconds": 1.7,
   "score": 59,
   "grade": "D",
   "open": 40,
@@ -837,6 +837,170 @@
     "CWE-78",
     "OS Command Injection",
     2
+   ]
+  ]
+ },
+ {
+  "name": "DVMA",
+  "repo": "cpeoples/dvma",
+  "commit": "eadf986191b2ad9e71b6e711915e59ce79e8f335",
+  "languages": "Dart (Flutter), Kotlin, Swift",
+  "files": 658,
+  "lines": 102911,
+  "seconds": 7.8,
+  "score": 85,
+  "grade": "B",
+  "open": 229,
+  "confirmed": 19,
+  "severity": {
+   "critical": 0,
+   "high": 94,
+   "medium": 82,
+   "low": 37,
+   "info": 16
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "c-memory",
+   "flutter",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    77
+   ],
+   [
+    "CWE-79",
+    "Cross-Site Scripting (XSS)",
+    24
+   ],
+   [
+    "CWE-926",
+    "Improper Export of Android Application Components",
+    18
+   ],
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    17
+   ],
+   [
+    "CWE-250",
+    "Execution with Unnecessary Privileges",
+    15
+   ]
+  ]
+ },
+ {
+  "name": "DVFA",
+  "repo": "Schmiemandev/dvfa",
+  "commit": "bd291ed010cd362abe80204aae59a04335cfc756",
+  "languages": "Dart (Flutter), Python",
+  "files": 35,
+  "lines": 2086,
+  "seconds": 0.7,
+  "score": 72,
+  "grade": "C",
+  "open": 11,
+  "confirmed": 2,
+  "severity": {
+   "critical": 0,
+   "high": 2,
+   "medium": 7,
+   "low": 2,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "c-memory",
+   "flutter",
+   "bandit"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    1
+   ],
+   [
+    "CWE-489",
+    "Active Debug Code",
+    1
+   ],
+   [
+    "CWE-1188",
+    "Initialization of a Resource with an Insecure Default",
+    1
+   ],
+   [
+    "CWE-605",
+    "Service Bound to All Interfaces",
+    1
+   ],
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    1
+   ]
+  ]
+ },
+ {
+  "name": "Ostorlab-Insecure-Flutter",
+  "repo": "Ostorlab/ostorlab_insecure_ios_app",
+  "commit": "649e05c79bace88451cf9ab761c7510ba37e4e25",
+  "languages": "Dart (Flutter)",
+  "files": 72,
+  "lines": 3507,
+  "seconds": 0.4,
+  "score": 49,
+  "grade": "D",
+  "open": 37,
+  "confirmed": 1,
+  "severity": {
+   "critical": 0,
+   "high": 12,
+   "medium": 17,
+   "low": 8,
+   "info": 0
+  },
+  "engines": [
+   "secrets",
+   "rules",
+   "ast",
+   "c-memory",
+   "flutter"
+  ],
+  "top_weaknesses": [
+   [
+    "CWE-798",
+    "Hard-coded Credentials",
+    5
+   ],
+   [
+    "CWE-327",
+    "Broken or Weak Cryptography",
+    5
+   ],
+   [
+    "CWE-200",
+    "Exposure of Sensitive Information",
+    4
+   ],
+   [
+    "CWE-732",
+    "Incorrect Permission Assignment",
+    3
+   ],
+   [
+    "CWE-1357",
+    "Reliance on Insufficiently Trustworthy Component",
+    3
    ]
   ]
  }

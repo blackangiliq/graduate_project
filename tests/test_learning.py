@@ -438,7 +438,7 @@ def test_learning_loop_end_to_end(teacher, home):
 
 def test_unvalidated_candidates_cannot_be_approved(teacher, home):
     client = llm.OllamaClient(teacher, "teacher:1")
-    created = loop.bootstrap(client, home, "dart", ["CWE-89", "CWE-78"])
+    created = loop.bootstrap(client, home, "lua", ["CWE-89", "CWE-78"])
     by_cwe = {c["cwe"]: c for c in created}
     assert by_cwe["CWE-89"]["status"] == "pending" and by_cwe["CWE-89"]["origin"] == "bootstrap"
     assert by_cwe["CWE-78"]["status"] == "rejected_auto"                 # the ".*" rule
@@ -448,10 +448,10 @@ def test_unvalidated_candidates_cannot_be_approved(teacher, home):
         store.approve(home, "no-such-id")
     # bootstrap rules have no real evidence, so they are never approved automatically
     assert loop.auto_approve(home, created) == []
-    assert "CWE-89" in loop.coverage_gaps("dart", ["CWE-89"])
+    assert "CWE-89" in loop.coverage_gaps("lua", ["CWE-89"])
     store.approve(home, by_cwe["CWE-89"]["id"])
-    assert loop.coverage_gaps("dart", ["CWE-89"]) == []
-    assert loop.coverage_matrix()["dart"] == {"CWE-89": 1}
+    assert loop.coverage_gaps("lua", ["CWE-89"]) == []
+    assert loop.coverage_matrix()["lua"] == {"CWE-89": 1}
 
 
 def test_a_broken_learned_rule_file_never_stops_a_scan(home):
@@ -755,12 +755,13 @@ def test_learning_without_auto_approve_stops_and_waits(teacher, home, capsys):
 
 def test_bootstrap_all_fills_every_language_with_a_gap(teacher, home, capsys):
     gaps = loop.all_gaps(cwes=["CWE-89"])
-    assert "dart" in gaps and "lua" in gaps and "swift" in gaps
+    assert "elixir" in gaps and "lua" in gaps and "swift" in gaps
+    assert "dart" not in gaps                             # the Dart rules cover CWE-89
     assert "php" not in gaps and "python" not in gaps     # both have SQL injection rules
     client = llm.OllamaClient(teacher, "teacher:1")
-    created = loop.bootstrap_all(client, home, languages=["dart", "lua", "php"],
+    created = loop.bootstrap_all(client, home, languages=["elixir", "lua", "php"],
                                  cwes=["CWE-89"])
-    assert sorted(c["languages"][0] for c in created) == ["dart", "lua"]
+    assert sorted(c["languages"][0] for c in created) == ["elixir", "lua"]
     assert all(c["status"] == "pending" and c["origin"] == "bootstrap" for c in created)
     assert cli(["learn", "--bootstrap", "klingon", "--quiet", "--llm-host", teacher,
                 "--model", "teacher:1"]) == 2

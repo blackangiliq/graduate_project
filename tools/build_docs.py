@@ -102,7 +102,9 @@ def rules_md() -> str:
     numbers = {
         "total": counts["total"], "enabled": counts["enabled"],
         "builtin": origins["builtin"]["total"], "imported": origins["imported"]["total"],
-        "imported_on": origins["imported"]["enabled"], "secret": counts["secret"],
+        "imported_on": origins["imported"]["enabled"],
+        "secret": sum(1 for r in rules_engine.all_rules(False)
+                      if r.kind == "secret" and r.origin == "imported"),
         "lines": format(total_lines, ","), "projects": projects,
         "noise": REPORT["max_noise_per_10k"], "date": REPORT["date"],
     }
@@ -146,7 +148,7 @@ Lines of real code the rules were measured on:
 """ + corpus_table("en") + """
 
 Active pattern rules per language after the import (Python's main engine is the AST taint
-analysis, so it has no built-in pattern rules):
+analysis, so it has few built-in pattern rules):
 
 """ + coverage_table("en") + """
 
@@ -218,8 +220,8 @@ Rules tab → **Try an expression**: paste code and see which lines an expressio
 
 """ + corpus_table("ar") + """
 
-قواعد الأنماط لكل لغة بعد الاستيراد (المحرك الأساسي لبايثون هو تحليل AST، ولهذا ليس لها قواعد
-أنماط مدمجة):
+قواعد الأنماط لكل لغة بعد الاستيراد (المحرك الأساسي لبايثون هو تحليل AST، ولهذا قواعد الأنماط
+المدمجة لها قليلة):
 
 """ + coverage_table("ar") + """
 

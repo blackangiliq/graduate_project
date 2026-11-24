@@ -1,0 +1,33 @@
+name: pocket_shop
+description: Pocket Shop - orders, wallet and help center of the Pocket Shop store.
+publish_to: 'none'
+version: 3.0.0+52
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  app_links: ^7.2.1
+  archive: ^4.0.7
+  crypto: ^3.0.6
+  cupertino_icons: ^1.0.8
+  dio: ^5.11.0
+  firebase_auth: ^6.5.1
+  firebase_core: ^4.9.0
+  flutter_secure_storage: ^11.0.0
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  pointycastle: ^4.0.0
+  shared_preferences: ^2.5.3
+  sqflite: ^2.4.2
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

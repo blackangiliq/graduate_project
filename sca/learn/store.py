@@ -18,8 +18,8 @@ from ..engines.rules_engine import learned_dir
 from ..storage import Storage
 
 PROBATION_CONFIDENCE = 0.55   # a new learned rule starts here; reviews move it up or down
-RULE_KEYS = ("id", "title", "languages", "cwe", "severity", "confidence", "pattern", "exclude",
-             "ignore_case", "message", "fix")
+RULE_KEYS = ("id", "title", "languages", "files", "cwe", "severity", "confidence", "pattern",
+             "exclude", "ignore_case", "message", "fix")
 
 
 def _path(name: str):

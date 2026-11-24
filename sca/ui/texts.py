@@ -19,21 +19,25 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
                  "وأرقام CWE تبقى بالإنجليزية."),
     },
     "target": {
-        "group": ("1. Project", "1. المشروع"),
-        "label": ("Folder path", "مسار المجلد"),
-        "help": ("The project folder to scan. Every source file inside it is read; folders "
-                 "such as node_modules, .git and venv are skipped.",
-                 "مجلد المشروع المراد فحصه. تُقرأ كل ملفات الكود داخله، وتُتجاوز مجلدات مثل "
-                 "node_modules و .git و venv."),
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
+        "label": ("Folder or app file", "المجلد أو ملف التطبيق"),
+        "help": ("The project folder to scan, or an Android app file (.apk, .aab, .apks, "
+                 ".xapk, .apkm). Every source file of a folder is read; folders such as "
+                 "node_modules, .git and venv are skipped. An app file is decoded and read, "
+                 "never installed or run.",
+                 "مجلد المشروع المراد فحصه، أو ملف تطبيق Android (‎.apk أو ‎.aab أو ‎.apks أو "
+                 "‎.xapk أو ‎.apkm). تُقرأ كل ملفات الكود داخل المجلد، وتُتجاوز مجلدات مثل "
+                 "node_modules و .git و venv. أما ملف التطبيق فيُفكّ ويُقرأ، ولا يُثبَّت ولا "
+                 "يُشغَّل أبداً."),
     },
     "browse": {
-        "group": ("1. Project", "1. المشروع"),
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
         "label": ("Browse...", "استعراض..."),
         "help": ("Opens the folder dialog of your operating system.",
                  "يفتح نافذة اختيار المجلد في نظام التشغيل."),
     },
     "sample": {
-        "group": ("1. Project", "1. المشروع"),
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
         "label": ("Use sample", "استخدم العيّنة"),
         "help": ("Scan the deliberately vulnerable demo app that ships with the tool "
                  "(71 known vulnerabilities).",
@@ -97,11 +101,11 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "use_taint_lite": {
         "group": ("2. Static engines", "2. المحركات الستاتيكية"),
         "label": ("Input tracing for other languages", "تتبّع المدخلات للغات الأخرى"),
-        "help": ("For JavaScript, PHP, Java, Go, C#, Ruby and C: checks whether a variable "
-                 "on the flagged line was filled from user input a few lines earlier. If "
-                 "yes, the finding is marked as traced and can be confirmed.",
-                 "في JavaScript و PHP و Java و Go و C# و Ruby و C: يتحقق هل المتغيّر في "
-                 "السطر المبلَّغ عنه أُخذ من مدخلات المستخدم قبل بضعة أسطر. إن كان كذلك "
+        "help": ("For JavaScript, PHP, Java, Go, C#, Ruby, C and Dart: checks whether a "
+                 "variable on the flagged line was filled from user input a few lines "
+                 "earlier. If yes, the finding is marked as traced and can be confirmed.",
+                 "في JavaScript و PHP و Java و Go و C# و Ruby و C و Dart: يتحقق هل المتغيّر "
+                 "في السطر المبلَّغ عنه أُخذ من مدخلات المستخدم قبل بضعة أسطر. إن كان كذلك "
                  "تُعلَّم النتيجة بأنها متتبَّعة ويمكن تأكيدها."),
     },
     "use_c_memory": {
@@ -250,11 +254,11 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "run": {
         "group": ("5. Output", "5. المخرجات"),
         "label": ("Run scan", "ابدأ الفحص"),
-        "help": ("Scans the folder with the settings above.",
-                 "يفحص المجلد بالإعدادات أعلاه."),
+        "help": ("Scans the folder or the app file with the settings above.",
+                 "يفحص المجلد أو ملف التطبيق بالإعدادات أعلاه."),
     },
     "lab": {
-        "group": ("1. Project", "1. المشروع"),
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
         "label": ("Training lab", "مختبر تدريبي"),
         "help": ("Picks one of the deliberately vulnerable training labs downloaded into the "
                  "infected_project folder (python infected_project/fetch_labs.py). Their "
@@ -279,14 +283,76 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
                  "mechanism.",
                  "يفتح من جديد الصفحات التي تشرح كيف يعمل الفحص واللغات والآلية."),
     },
+    "browse_app": {
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
+        "label": ("Browse app...", "استعراض تطبيق..."),
+        "help": ("Opens the file dialog of your operating system to choose an app file "
+                 "(.apk, .aab, .apks, .xapk, .apkm).",
+                 "يفتح نافذة اختيار الملفات في نظام التشغيل لاختيار ملف تطبيق (‎.apk أو ‎.aab "
+                 "أو ‎.apks أو ‎.xapk أو ‎.apkm)."),
+    },
+    "flutter_sample": {
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
+        "label": ("Flutter sample", "عيّنة Flutter"),
+        "help": ("Scan the deliberately vulnerable Flutter demo app that ships with the tool: "
+                 "Dart code, Android manifest, network security config, Gradle, Info.plist "
+                 "and pubspec files.",
+                 "يفحص تطبيق Flutter التجريبي المليء بالثغرات عمداً والمرفق مع الأداة: كود "
+                 "Dart وملف AndroidManifest.xml وإعدادات أمان الشبكة وملفات Gradle و "
+                 "Info.plist و pubspec."),
+    },
+    "app_upload": {
+        "group": ("1. Project or app", "1. المشروع أو التطبيق"),
+        "label": ("App file (.apk, .aab, .apks, .xapk, .apkm)",
+                  "ملف التطبيق (‎.apk أو ‎.aab أو ‎.apks أو ‎.xapk أو ‎.apkm)"),
+        "help": ("Upload an app file from this computer instead of typing its path (up to "
+                 "200 MB; for a larger file type its path). It is kept in the data folder of "
+                 "the tool under a name made from its content, so the History tab groups the "
+                 "scans of the same app.",
+                 "ارفع ملف تطبيق من هذا الحاسوب بدلاً من كتابة مساره (حتى 200 ميغابايت؛ "
+                 "وللملف الأكبر اكتب مساره). يُحفظ في مجلد بيانات الأداة باسم مشتق من "
+                 "محتواه، فيجمع تبويب السجل فحوص التطبيق نفسه معاً."),
+    },
+    "use_flutter": {
+        "group": ("2. Static engines", "2. المحركات الستاتيكية"),
+        "label": ("Flutter / Android checks", "فحوص Flutter و Android"),
+        "help": ("For Flutter and Android projects and app files: checks the Android "
+                 "manifest, the network security config, the Gradle release settings, the "
+                 "app signature, the iOS Info.plist, the Flutter build (debug build, "
+                 "obfuscation, debug symbols) and the pub dependencies against known "
+                 "advisories. Off: a source project also loses its app panel and its APIs and "
+                 "keys inventory; an app file keeps them.",
+                 "لمشاريع Flutter و Android ولملفات التطبيقات: يفحص ملف AndroidManifest.xml "
+                 "وإعدادات أمان الشبكة وإعدادات نسخة الإصدار في Gradle وتوقيع التطبيق وملف "
+                 "Info.plist في iOS وبناء Flutter (نسخة التصحيح والتمويه ورموز التصحيح) "
+                 "واعتماديات pub مقابل الثغرات المعروفة. عند إيقافه يفقد المشروع المصدري أيضاً "
+                 "قسم التطبيق وجرد واجهات API والمفاتيح، أما ملف التطبيق فيبقيان له."),
+    },
+    "apk_tools": {
+        "group": ("2. Static engines", "2. المحركات الستاتيكية"),
+        "label": ("Decompile and verify app files (jadx, apksigner)",
+                  "فك ترجمة ملفات التطبيق والتحقق منها (jadx و apksigner)"),
+        "help": ("Optional, for app files only. jadx turns the app's own Java and Kotlin "
+                 "classes back into Java so that the rules can read them, and apksigner "
+                 "checks the signature cryptographically. Each tool runs only if it is "
+                 "installed; jadx can take a minute on a large app.",
+                 "اختياري، لملفات التطبيقات فقط. تعيد أداة jadx أصناف Java و Kotlin الخاصة "
+                 "بالتطبيق إلى كود Java لتقرأها القواعد، وتتحقق أداة apksigner من التوقيع "
+                 "تشفيرياً. لا تعمل كل أداة إلا إن كانت منصَّبة، وقد تستغرق jadx دقيقة مع "
+                 "تطبيق كبير."),
+    },
 }
 
 TABS: List[Tuple[str, str, str, str]] = [
     ("Dashboard", "اللوحة",
      "The summary of the last scan: security score and grade, findings per severity and per "
-     "OWASP Top 10 category, the most affected files, and which engines ran.",
+     "OWASP Top 10 category, the most affected files, and which engines ran. For a Flutter "
+     "or Android app also the app panel (package, build, permissions, components, signing, "
+     "packages) and the OWASP Mobile Top 10 categories.",
      "ملخص آخر فحص: درجة الأمان وتقديرها، عدد النتائج حسب الخطورة وحسب فئات OWASP Top 10، "
-     "أكثر الملفات إصابة، والمحركات التي عملت."),
+     "أكثر الملفات إصابة، والمحركات التي عملت. ولتطبيقات Flutter و Android أيضاً لوحة "
+     "التطبيق (الحزمة والبناء والصلاحيات والمكوّنات والتوقيع والاعتماديات) وفئات OWASP "
+     "Mobile Top 10."),
     ("Findings", "النتائج",
      "Every finding with its code, why it was (or was not) confirmed, the explanation, the "
      "fix and the AI review. Two buttons teach the tool: Real vulnerability / False positive.",
@@ -318,9 +384,11 @@ TABS: List[Tuple[str, str, str, str]] = [
 
 QUICK_START: List[Tuple[str, str]] = [
     ("**Choose the project.** Type the folder path in the sidebar, press *Browse...*, or "
-     "press *Use sample* to try the demo application.",
+     "press *Use sample* to try the demo application. For an Android app, type the path of "
+     "its .apk or .aab file, press *Browse app...* or upload the file.",
      "**اختر المشروع.** اكتب مسار المجلد في الشريط الجانبي أو اضغط *استعراض...* أو اضغط "
-     "*استخدم العيّنة* لتجربة التطبيق التجريبي."),
+     "*استخدم العيّنة* لتجربة التطبيق التجريبي. ولتطبيق Android اكتب مسار ملف ‎.apk أو "
+     "‎.aab الخاص به، أو اضغط *استعراض تطبيق...*، أو ارفع الملف."),
     ("**Choose the engines.** The defaults are right for a first scan. Each option has a "
      "small (?) that explains it.",
      "**اختر المحركات.** الإعدادات الافتراضية مناسبة لأول فحص. بجانب كل خيار علامة (?) "
@@ -521,6 +589,33 @@ REFERENCES: List[Tuple[str, str, str, str]] = [
     ("Feng et al., CodeBERT (2020)", "https://arxiv.org/abs/2002.08155",
      "Background for the optional experiment in experiments/train_codebert.py.",
      "خلفية للتجربة الاختيارية في experiments/train_codebert.py."),
+    ("OWASP Mobile Top 10 (2024)", "https://owasp.org/www-project-mobile-top-10/",
+     "The risk categories (M1 to M10) shown with the findings of a mobile app.",
+     "فئات المخاطر (من M1 إلى M10) المعروضة مع نتائج تطبيقات الجوال."),
+    ("OWASP MASVS", "https://mas.owasp.org/MASVS/",
+     "The groups of the mobile security verification standard (MASVS-STORAGE, "
+     "MASVS-NETWORK, ...).",
+     "مجموعات معيار التحقق من أمان تطبيقات الجوال (MASVS-STORAGE و MASVS-NETWORK ...)."),
+    ("Android network security configuration",
+     "https://developer.android.com/privacy-and-security/security-config",
+     "Cleartext traffic, trusted certificate authorities and certificate pinning of an app.",
+     "حركة HTTP غير المشفّرة وجهات الشهادات الموثوقة وتثبيت الشهادات في التطبيق."),
+    ("Android App Links verification",
+     "https://developer.android.com/training/app-links/verify-android-applinks",
+     "Why a web link that opens the app needs android:autoVerify.",
+     "لماذا يحتاج رابط الويب الذي يفتح التطبيق إلى android:autoVerify."),
+    ("Flutter: obfuscating Dart code", "https://docs.flutter.dev/deployment/obfuscate",
+     "The --obfuscate and --split-debug-info build options.",
+     "خيارا البناء ‎--obfuscate و ‎--split-debug-info."),
+    ("OSV (Open Source Vulnerabilities)", "https://osv.dev/",
+     "The format and source of the known vulnerabilities of pub packages.",
+     "صيغة ومصدر الثغرات المعروفة في حزم pub."),
+    ("jadx (Apache-2.0)", "https://github.com/skylot/jadx",
+     "Optional decompiler of the Java and Kotlin classes of an app.",
+     "أداة اختيارية لفك ترجمة أصناف Java و Kotlin في التطبيق."),
+    ("apksigner", "https://developer.android.com/tools/apksigner",
+     "Optional check of the APK signature (Android SDK build-tools).",
+     "تحقق اختياري من توقيع ملف APK (من أدوات build-tools في Android SDK)."),
 ]
 
 LIMITS: List[Tuple[str, str]] = [
@@ -554,6 +649,19 @@ LIMITS: List[Tuple[str, str]] = [
      "اكتشفتها الأداة فقط."),
     ("The security score is a heuristic of this tool and not an official CVSS score.",
      "درجة الأمان مقياس تقريبي خاص بهذه الأداة وليست درجة CVSS رسمية."),
+    ("An app file is decoded and read, never installed or run, so what the app does at run "
+     "time (code it downloads, answers of its servers) is not seen. A Flutter release build "
+     "holds the Dart code as machine code (libapp.so): its strings and build facts are read, "
+     "but it cannot be turned back into Dart source, so the Dart rules run only on source "
+     "projects and debug builds.",
+     "ملف التطبيق يُفكّ ويُقرأ ولا يُثبَّت ولا يُشغَّل أبداً، فلا يُرى ما يفعله التطبيق أثناء "
+     "التشغيل (كود يُنزّله أو أجوبة خوادمه). ونسخة الإصدار من Flutter تحمل كود Dart بلغة "
+     "الآلة (libapp.so): تُقرأ نصوصها ومعلومات بنائها، لكن لا يمكن إعادتها إلى كود Dart "
+     "مصدري، لذلك تعمل قواعد Dart على المشاريع المصدرية ونسخ التصحيح فقط."),
+    ("In a release build the versions of the Dart packages are usually not stored, so a "
+     "known vulnerability of a package is reported with low confidence there.",
+     "نسخة الإصدار لا تحفظ عادةً إصدارات حزم Dart، لذلك يُبلَّغ عن الثغرة المعروفة في حزمة "
+     "بثقة منخفضة في هذه الحالة."),
 ]
 
 CLI: List[Tuple[str, str, str]] = [
@@ -562,6 +670,26 @@ CLI: List[Tuple[str, str, str]] = [
      "فحص مجلد بالمحركات الستاتيكية."),
     ("python -m sca scan PATH --llm --deep --strict", "Add AI review, deep scan, strict mode.",
      "مع مراجعة الذكاء الاصطناعي والفحص العميق والوضع الصارم."),
+    ("python -m sca scan app-release.apk --apk-tools",
+     "Scan an Android app file (.apk, .aab, .apks, .xapk, .apkm); --apk-tools also uses "
+     "jadx and apksigner when they are installed.",
+     "فحص ملف تطبيق Android (‎.apk و ‎.aab و ‎.apks و ‎.xapk و ‎.apkm)، والخيار "
+     "‎--apk-tools يستخدم jadx و apksigner أيضاً إن كانا منصَّبين."),
+    ("python -m sca flutter info PATH",
+     "What the tool reads from an app file or a Flutter project: package, build mode, "
+     "signing, permissions and components.",
+     "ما تقرؤه الأداة من ملف تطبيق أو مشروع Flutter: الحزمة ونوع البناء والتوقيع "
+     "والصلاحيات والمكوّنات."),
+    ("python -m sca flutter deps PATH",
+     "The pub packages of an app or a project, checked against known vulnerabilities.",
+     "حزم pub في تطبيق أو مشروع، مع فحصها مقابل الثغرات المعروفة."),
+    ("python -m sca flutter decode app-release.apk --out decoded",
+     "Write every decoded file of an app (manifest, resources, recovered Dart, strings) "
+     "into an empty folder.",
+     "كتابة كل ملف مفكوك من التطبيق (ملف AndroidManifest.xml والموارد وكود Dart المستعاد "
+     "والنصوص) في مجلد فارغ."),
+    ("python -m sca flutter tools", "Which optional mobile tools (jadx, apksigner) are "
+     "installed.", "أدوات الجوال الاختيارية المنصَّبة (jadx و apksigner)."),
     ("python -m sca config", "Choose the AI provider and store the key in .env.",
      "اختيار مزوّد الذكاء الاصطناعي وحفظ المفتاح في ‎.env."),
     ("python -m sca learn PATH --rounds 5 --auto-approve",
@@ -612,6 +740,7 @@ are skipped) and reports the line if `pattern` matches and `exclude` does not.
 | `id` | Unique name, for example `MY-SQLI-001`. |
 | `title` | Short description shown in the findings list. |
 | `languages` | The languages the rule applies to, or `any`. TypeScript uses the JavaScript rules, C++ the C rules, Kotlin/Scala/Groovy the Java rules. |
+| `files` | Optional file name patterns (`*.gradle`, `**/web/index.html`): the rule then reads only the files of its languages whose path or name matches one of them. Upper and lower case are the same; a leading `**/` also matches the top folder. |
 | `cwe` | The weakness, as a CWE number (`CWE-89` = SQL injection). It decides the explanation, the fix text and the OWASP category. |
 | `severity` | `critical`, `high`, `medium`, `low` or `info`. |
 | `confidence` | 0 to 1: how sure the rule is on its own. Start a new rule around 0.5 to 0.6; your reviews move it. |
@@ -673,6 +802,7 @@ RULE_GUIDE_AR = """
 | `id` | اسم فريد، مثل `MY-SQLI-001`. |
 | `title` | وصف قصير يظهر في قائمة النتائج. |
 | `languages` | اللغات التي تنطبق عليها القاعدة، أو `any` للجميع. TypeScript تستخدم قواعد JavaScript، و C++ قواعد C، و Kotlin و Scala و Groovy قواعد Java. |
+| `files` | أنماط اختيارية لأسماء الملفات (`*.gradle` و `**/web/index.html`): عندها لا تقرأ القاعدة من ملفات لغاتها إلا ما يطابق مساره أو اسمه أحد هذه الأنماط. لا فرق بين الأحرف الكبيرة والصغيرة، و `**/` في البداية يطابق المجلد الأعلى أيضاً. |
 | `cwe` | نوع الثغرة برقم CWE (مثل `CWE-89` لحقن SQL). منه يؤخذ الشرح ونص الإصلاح وفئة OWASP. |
 | `severity` | الخطورة: `critical` أو `high` أو `medium` أو `low` أو `info`. |
 | `confidence` | من 0 إلى 1: مدى ثقة القاعدة بنفسها. ابدأ القاعدة الجديدة بين 0.5 و 0.6، ومراجعاتك تحرّكها. |
@@ -718,6 +848,115 @@ RULE_GUIDE_AR = """
 | قواعدك | `learned/custom.yaml` | تبويب القواعد أو `python -m sca rules new` |
 | تعديلاتك | `learned/edits.yaml` | تبويب القواعد أو `python -m sca rules edit` |
 | الاستثناءات | `learned/overrides.yaml` | الاستثناءات المصادَق عليها في تبويب التعلّم |
+"""
+
+FLUTTER_GUIDE_EN = """
+#### What is analysed
+
+**Flutter and Android projects** are scanned like any folder, with more checks: the Dart
+code (pattern rules and input tracing), `AndroidManifest.xml`, the network security config
+and FileProvider paths under `res/xml`, the Gradle build files, `key.properties` and
+keystore files, the iOS `Info.plist`, and `pubspec.yaml` with `pubspec.lock`.
+
+**App files** (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`) are decoded in Python and never
+installed or run. The tool reads the binary manifest and resources, the strings of the DEX
+files, the signature and its certificate, the bundled assets, and the Flutter build:
+
+| Build | What it holds | What the tool gets from it |
+|---|---|---|
+| debug | `kernel_blob.bin`: the Dart program with its source | the Dart source files of the app, checked by the Dart rules |
+| profile, release | `libapp.so`: the Dart program as machine code | its strings (URLs, SQL, keys), the build mode, obfuscation, package names |
+
+Each decoded part becomes a file of the scan (`AndroidManifest.xml`, `res/xml/...`,
+`dart/lib/...`, `lib/arm64-v8a/libapp.so` as a list of strings, `_sca/build.txt`,
+`_sca/signing.txt`, `_sca/packages.txt`), so every finding points to a file and a line.
+
+#### How to scan an app
+
+1. Type the path of the app file in the sidebar, press **Browse app...**, or upload it
+   under **Upload an app file**.
+2. Keep **Flutter / Android checks** on. **Decompile and verify app files** also runs jadx
+   and apksigner when they are installed.
+3. The Dashboard tab shows the app panel: package, version, build mode, SDK levels,
+   permissions, components, deep links, packages and the signing certificate.
+   The findings of a mobile app carry an OWASP Mobile Top 10 (2024) risk and a MASVS group.
+4. The **APIs and keys** panel below it lists every server address, API call, API path,
+   key and service identifier, each with the file and line of every place it occurs.
+
+#### APIs and keys
+
+The panel starts with the **alerts**, the most serious first: keys and tokens inside the
+app, unencrypted `http://` addresses, test servers and tunnels (staging, ngrok), private
+IP addresses, keys in the query of an address, webhook addresses and bot tokens, a bundled
+`.env` file, and reminders to check the access rules of Firebase, Supabase or S3. Its tabs:
+
+| Tab | What it lists |
+|---|---|
+| Keys | type, service, masked value, severity, places, what to do (a key inside an app is public) |
+| Server addresses, Hosts | every URL and server, its service (Firebase, Supabase, AWS, Stripe ... or the app's own) and alerts |
+| API calls | HTTP, WebSocket and GraphQL calls with method and target (source code and debug builds) |
+| API paths | paths such as `/api/v1/login` that compiled code keeps as texts |
+| Service IDs | Firebase project, app ID, OAuth client ID, AdMob, Sentry ... |
+| .env entries | the values of bundled `.env` files, secrets masked |
+
+A release build keeps no code text, but it keeps every text of the code in `libapp.so`:
+addresses and keys stay readable even with `--obfuscate`. Nothing is contacted: the
+addresses are only read. The same list is in the reports and in
+`python -m sca flutter apis <app or folder>`.
+"""
+
+FLUTTER_GUIDE_AR = """
+#### ما الذي يُحلَّل؟
+
+**مشاريع Flutter و Android** تُفحص كأي مجلد، مع فحوص إضافية: كود Dart (قواعد الأنماط
+وتتبّع المدخلات)، وملف `AndroidManifest.xml`، وإعدادات أمان الشبكة ومسارات FileProvider
+في `res/xml`، وملفات بناء Gradle، وملف `key.properties` وملفات مخازن المفاتيح، وملف
+`Info.plist` في iOS، والملفان `pubspec.yaml` و `pubspec.lock`.
+
+**ملفات التطبيقات** (`.apk` و `.aab` و `.apks` و `.xapk` و `.apkm`) تُفكّ ببايثون ولا
+تُثبَّت ولا تُشغَّل أبداً. تقرأ الأداة ملف manifest الثنائي والموارد، ونصوص ملفات DEX،
+والتوقيع وشهادته، والملفات المضمَّنة (assets)، وبناء Flutter:
+
+| نوع البناء | ماذا يحتوي | ماذا تستخرج منه الأداة |
+|---|---|---|
+| debug (تصحيح) | `kernel_blob.bin`: برنامج Dart مع كوده المصدري | ملفات Dart المصدرية للتطبيق، وتفحصها قواعد Dart |
+| profile و release | `libapp.so`: برنامج Dart بلغة الآلة | نصوصه (العناوين واستعلامات SQL والمفاتيح) ونوع البناء والتمويه وأسماء الحزم |
+
+كل جزء مفكوك يصبح ملفاً في الفحص (`AndroidManifest.xml` و `res/xml/...` و `dart/lib/...`
+و `lib/arm64-v8a/libapp.so` كقائمة نصوص و `_sca/build.txt` و `_sca/signing.txt` و
+`_sca/packages.txt`)، فتشير كل نتيجة إلى ملف وسطر.
+
+#### كيف تفحص تطبيقاً؟
+
+1. اكتب مسار ملف التطبيق في الشريط الجانبي، أو اضغط **استعراض تطبيق...**، أو ارفعه من
+   **ارفع ملف تطبيق**.
+2. أبقِ **فحوص Flutter و Android** مفعّلة. والخيار **فك ترجمة ملفات التطبيق والتحقق منها**
+   يشغّل أيضاً jadx و apksigner إن كانا منصَّبين.
+3. يعرض تبويب اللوحة قسم التطبيق: الحزمة والإصدار ونوع البناء ومستويات SDK والصلاحيات
+   والمكوّنات والروابط العميقة والحزم وشهادة التوقيع. وتحمل نتائج تطبيق الجوال
+   فئة من OWASP Mobile Top 10 (2024) ومجموعة من MASVS.
+4. يليه قسم **واجهات API والمفاتيح**: كل عنوان خادم واستدعاء API ومسار API ومفتاح ومعرّف
+   خدمة، مع الملف والسطر لكل موضع يظهر فيه.
+
+#### واجهات API والمفاتيح
+
+يبدأ القسم **بالتنبيهات** من الأخطر: المفاتيح والرموز داخل التطبيق، والعناوين غير المشفّرة
+`http://`، وخوادم الاختبار والأنفاق (staging و ngrok)، وعناوين IP الخاصة، والمفاتيح داخل
+عنوان الطلب، وعناوين Webhook ورموز البوتات، وملف `.env` المضمَّن، وتذكيرات بفحص قواعد الوصول
+في Firebase و Supabase و S3. وفيه التبويبات:
+
+| التبويب | ماذا يعرض |
+|---|---|
+| المفاتيح | النوع والخدمة والقيمة مخفيّةً جزئياً والخطورة والمواضع وما العمل (المفتاح داخل التطبيق علني) |
+| عناوين الخوادم والخوادم | كل عنوان وخادم، وخدمته (Firebase و Supabase و AWS و Stripe ... أو خادم التطبيق نفسه) وتنبيهاته |
+| استدعاءات API | استدعاءات HTTP و WebSocket و GraphQL مع الطريقة والهدف (الكود المصدري ونسخ debug) |
+| مسارات API | مسارات مثل `/api/v1/login` يحتفظ بها الكود المترجم كنصوص |
+| معرّفات الخدمات | مشروع Firebase ومعرّف التطبيق ومعرّف عميل OAuth و AdMob و Sentry ... |
+| قيم ملفات env. | قيم ملفات `.env` المضمَّنة، والأسرار منها مخفيّة جزئياً |
+
+نسخة release لا تحتفظ بنص الكود، لكنها تحتفظ بكل نصوصه في `libapp.so`: فالعناوين والمفاتيح
+تبقى مقروءة حتى مع `--obfuscate`. ولا يُتصل بأي عنوان: العناوين تُقرأ فقط. والقائمة نفسها
+في التقارير وفي الأمر `python -m sca flutter apis <تطبيق أو مجلد>`.
 """
 
 

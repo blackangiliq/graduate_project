@@ -120,7 +120,7 @@ class Storage:
             engine_notes=data.get("engine_notes", {}),
             findings=[Finding.from_dict(f) for f in data.get("findings", [])],
             score=data.get("score", 100), grade=data.get("grade", "A"),
-            ai=data.get("ai", {}), scan_id=scan_id)
+            ai=data.get("ai", {}), app=data.get("app", {}), scan_id=scan_id)
 
     def delete_scan(self, scan_id: int) -> None:
         with self._connect() as conn:

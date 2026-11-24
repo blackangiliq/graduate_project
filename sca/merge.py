@@ -28,7 +28,10 @@ def _key(finding: Finding) -> Tuple[str, str]:
     return finding.file, canonical(finding.cwe) or finding.rule_id
 
 
-def merge_findings(findings: Iterable[Finding], lang: str = "en") -> List[Finding]:
+def merge_findings(findings: Iterable[Finding], lang: str = "en",
+                   mobile: bool = False) -> List[Finding]:
+    """Merge the findings and fill in the knowledge-base text in `lang`. For a mobile app or
+    project (`mobile`), each finding also gets its OWASP Mobile Top 10 risk and MASVS group."""
     groups: Dict[Tuple[str, str], List[Finding]] = {}
     for finding in findings:
         if is_suppressed(finding):
@@ -53,6 +56,9 @@ def merge_findings(findings: Iterable[Finding], lang: str = "en") -> List[Findin
     for finding in merged:
         kb = info(finding.cwe, lang)
         finding.owasp = kb["owasp"]
+        if mobile:
+            finding.owasp_mobile = kb["owasp_mobile"]
+            finding.masvs = kb["masvs"]
         if not finding.description:
             finding.description = kb["description"]
         if not finding.fix:

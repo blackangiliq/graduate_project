@@ -190,6 +190,23 @@ RULE_VULNERABLE = [
     ("a.kt", "CWE-327", 'val md = MessageDigest.getInstance("MD5")'),
     ("a.scala", "CWE-78", 'Runtime.getRuntime().exec("ping " + host)'),
     ("a.vue", "CWE-79", "el.innerHTML = userText;"),
+    ("a.dart", "CWE-295", "client.badCertificateCallback = (cert, host, port) => true;"),
+    ("a.dart", "CWE-319", "final r = await http.get(Uri.parse('http://api.shop-backend.io/v1/login'));"),
+    ("a.dart", "CWE-89", "final rows = await db.rawQuery(\"SELECT * FROM users WHERE email = '$email'\");"),
+    ("a.dart", "CWE-89", "await db.query('users', where: 'id = $id');"),
+    ("a.dart", "CWE-312", "await prefs.setString('auth_token', token);"),
+    ("a.dart", "CWE-328", "final digest = md5.convert(utf8.encode(password));"),
+    ("a.dart", "CWE-327", "final encrypter = Encrypter(AES(key, mode: AESMode.ecb));"),
+    ("a.dart", "CWE-321", "final key = Key.fromUtf8('my32lengthsupersecretnooneknows1');"),
+    ("a.dart", "CWE-1204", "final iv = IV.fromLength(16);"),
+    ("a.dart", "CWE-532", "debugPrint('User token: $token');"),
+    ("a.dart", "CWE-200", "          allowUniversalAccessFromFileURLs: true,"),
+    ("a.dart", "CWE-489", "AndroidWebViewController.enableDebugging(true);"),
+    ("a.dart", "CWE-78", "final r = await Process.run('sh', ['-c', 'tar -xzf $archive']);"),
+    ("a.dart", "CWE-78", "await Process.run(command, []);"),
+    ("a.dart", "CWE-732", "Context.getSharedPreferences(token, MODE_WORLD_READABLE);"),
+    ("a.dart", "CWE-338", "final gen = Random(12345); final bytes = Uint8List(16);"),
+    ("a.dart", "CWE-470", "final m = reflector.reflect(obj); m.invoke(name, []);"),
 ]
 
 RULE_SAFE = [
@@ -233,6 +250,19 @@ RULE_SAFE = [
     ("a.rs", 'let rows = sqlx::query("SELECT * FROM t WHERE id = ?").bind(id)'),
     ("a.rs", 'let out = Command::new("ls").arg(dir).output()?;'),
     ("a.kt", 'val md = MessageDigest.getInstance("SHA-256")'),
+    ("a.dart", "client.badCertificateCallback = (cert, host, port) => false;"),
+    ("a.dart", "final r = await http.get(Uri.parse('https://api.shop-backend.io/v1/login'));"),
+    ("a.dart", "final rows = await db.rawQuery('SELECT * FROM $table WHERE $columnId = ?', [id]);"),
+    ("a.dart", "await prefs.setString('theme_mode', 'dark');"),
+    ("a.dart", "final digest = sha256.convert(bytes);"),
+    ("a.dart", "final iv = IV.fromSecureRandom(16);"),
+    ("a.dart", "if (kDebugMode) debugPrint('token refreshed: $token');"),
+    ("a.dart", "// client.badCertificateCallback = (cert, host, port) => true;"),
+    ("a.dart", "final rng = Random.secure();"),
+    ("a.dart", "await prefs.setString('fcm_token', fcmToken);"),
+    ("a.dart", "await db.rawQuery('SELECT * FROM \"$tableName\" WHERE id = ?', [id]);"),
+    ("a.dart", "print('Token expired: $isTokenExpired');"),
+    ("a.dart", "final r = await Process.run('git', ['status']);"),
 ]
 
 

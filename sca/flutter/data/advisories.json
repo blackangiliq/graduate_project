@@ -1,0 +1,508 @@
+[
+ {
+  "id": "GHSA-fmj7-7gfw-64pg",
+  "aliases": [
+   "CVE-2024-48915"
+  ],
+  "package": "agent_dart",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "1.0.0-dev.29"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-295",
+   "CWE-347"
+  ],
+  "summary": "Internet Computer certificate verification in lib/agent/certificate.dart didn't check the delegation canister_ranges or the certificate /time timestamp. A subnet could sign responses on behalf of another subnet, and certificates never expired.",
+  "url": "https://github.com/advisories/GHSA-fmj7-7gfw-64pg",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-9v85-q87q-g4vg",
+  "aliases": [
+   "CVE-2023-39139"
+  ],
+  "package": "archive",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "3.3.8"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-22"
+  ],
+  "summary": "Extracting a crafted ZIP file allows path traversal (Zip Slip), which writes files outside the destination directory.",
+  "url": "https://github.com/advisories/GHSA-9v85-q87q-g4vg",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-r285-q736-9v95",
+  "aliases": [
+   "CVE-2023-39137"
+  ],
+  "package": "archive",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "3.3.8"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-20"
+  ],
+  "summary": "Crafted ZIP files can spoof file names, which leads to inconsistent filename parsing.",
+  "url": "https://github.com/advisories/GHSA-r285-q736-9v95",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-3pvf-h66p-qwjp",
+  "aliases": [],
+  "package": "boring",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "0.4.2"
+   }
+  ],
+  "severity": "medium",
+  "cwes": [],
+  "summary": "package:boring before 0.4.2 bundles a BoringSSL revision without commit dd682072 ('Block a handful of intermediate certificates'), so chains verified with X509_verify_cert don't enforce that SPKI blocklist of revoked intermediates.",
+  "url": "https://github.com/dart-lang/tools/security/advisories/GHSA-3pvf-h66p-qwjp",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-9324-jv53-9cc8",
+  "aliases": [
+   "CVE-2021-31402"
+  ],
+  "package": "dio",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "5.0.0"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-93"
+  ],
+  "summary": "CRLF injection into the outgoing HTTP request is possible when an attacker controls the HTTP method string.",
+  "url": "https://github.com/advisories/GHSA-9324-jv53-9cc8",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-cr65-55v9-xhvv",
+  "aliases": [
+   "CVE-2026-103030"
+  ],
+  "package": "dio_http2_adapter",
+  "affected": [
+   {
+    "introduced": "1.0.0",
+    "fixed": "2.8.0"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-200"
+  ],
+  "summary": "Http2Adapter follows redirects by copying every original request header (Authorization, Cookie, Proxy-Authorization) into the redirected HTTP/2 request without comparing origins, so the credentials leak to a cross-origin redirect target.",
+  "url": "https://github.com/advisories/GHSA-cr65-55v9-xhvv",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-r2rg-pm28-j8gw",
+  "aliases": [
+   "CVE-2026-38093"
+  ],
+  "package": "file_picker",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "11.0.2"
+   }
+  ],
+  "severity": "low",
+  "cwes": [
+   "CWE-22"
+  ],
+  "summary": "On Android, openFileStream() builds the cache path from ContentResolver DISPLAY_NAME without sanitization. A malicious app's ContentProvider can therefore create files and directories outside the cache directory inside the victim app's internal storage; existing files are not overwritten.",
+  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-38093",
+  "source": "cve-only"
+ },
+ {
+  "id": "GHSA-r465-vhm9-7r5h",
+  "aliases": [
+   "CVE-2024-54461"
+  ],
+  "package": "file_selector_android",
+  "affected": [
+   {
+    "introduced": "0.5.1",
+    "fixed": "0.5.1+12"
+   }
+  ],
+  "severity": "low",
+  "cwes": [
+   "CWE-23",
+   "CWE-22"
+  ],
+  "summary": "File names built from document-provider metadata were not sanitized, so a user picking a file from a malicious document provider could make the app overwrite internal files in its cache.",
+  "url": "https://github.com/flutter/packages/security/advisories/GHSA-r465-vhm9-7r5h",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-jmj6-wqfw-54vr",
+  "aliases": [
+   "CVE-2023-41387"
+  ],
+  "package": "flutter_downloader",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "1.11.2"
+   }
+  ],
+  "severity": "critical",
+  "cwes": [
+   "CWE-89"
+  ],
+  "summary": "SQL injection in the iOS implementation's internal task database lets remote attackers steal session tokens and overwrite arbitrary files in the app container. Local users can do the same if the app enables UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace.",
+  "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-41387",
+  "source": "cve-only"
+ },
+ {
+  "id": "GHSA-4rgh-jx4f-qfcq",
+  "aliases": [
+   "CVE-2020-35669"
+  ],
+  "package": "http",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "0.13.3"
+   }
+  ],
+  "severity": "medium",
+  "cwes": [
+   "CWE-74"
+  ],
+  "summary": "If an attacker controls the HTTP method and the app uses Request directly, CRLF or HTTP header injection into the request is possible. The fix validates request methods.",
+  "url": "https://github.com/advisories/GHSA-4rgh-jx4f-qfcq",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-3vf7-gh27-gx55",
+  "aliases": [
+   "CVE-2014-125098",
+   "VDB-225356"
+  ],
+  "package": "http_server",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "0.9.6"
+   }
+  ],
+  "severity": "medium",
+  "cwes": [
+   "CWE-79"
+  ],
+  "summary": "The VirtualDirectory directory-listing handler (lib/src/virtual_directory.dart) put request.uri.path into the HTML listing without escaping, causing reflected XSS.",
+  "url": "https://nvd.nist.gov/vuln/detail/CVE-2014-125098",
+  "source": "cve-only"
+ },
+ {
+  "id": "GHSA-98v2-f47x-89xw",
+  "aliases": [
+   "CVE-2024-54462"
+  ],
+  "package": "image_picker_android",
+  "affected": [
+   {
+    "introduced": "0.8.5+6",
+    "fixed": "0.8.12+18"
+   }
+  ],
+  "severity": "low",
+  "cwes": [
+   "CWE-23",
+   "CWE-22"
+  ],
+  "summary": "File names built from document-provider metadata were not sanitized, so a user picking an image from a malicious document provider could make the app overwrite internal files in its cache.",
+  "url": "https://github.com/flutter/packages/security/advisories/GHSA-98v2-f47x-89xw",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-vm9r-h74p-hg97",
+  "aliases": [
+   "CVE-2026-34240"
+  ],
+  "package": "jose",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "0.3.5+1"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-347"
+  ],
+  "summary": "Signature verification could use an attacker-supplied jwk embedded in the untrusted JOSE header as the verification key, even when that key was not in the trusted key store. This let remote attackers forge valid JWS/JWT tokens.",
+  "url": "https://github.com/advisories/GHSA-vm9r-h74p-hg97",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-v2vf-262r-fghf",
+  "aliases": [],
+  "package": "permission_handler_android",
+  "affected": [
+   {
+    "introduced": "14.1.0",
+    "fixed": "14.1.1"
+   }
+  ],
+  "severity": "low",
+  "cwes": [],
+  "summary": "On Android 12+ (API 31+), the status and request for the Bluetooth scan, connect and advertise permissions could report granted, based on ACCESS_FINE_LOCATION, when the Bluetooth permission was missing from the merged manifest.",
+  "url": "https://github.com/Baseflow/flutter-permission-handler/security/advisories/GHSA-v2vf-262r-fghf",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-4xh4-v2pq-jvhm",
+  "aliases": [
+   "CVE-2023-22963"
+  ],
+  "package": "personnummer",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "3.0.3"
+   }
+  ],
+  "severity": "low",
+  "cwes": [
+   "CWE-20"
+  ],
+  "summary": "Validation accepted Swedish personal identity numbers whose last four digits match ^000[0-9]$, even though they are not real personnummer (improper input validation).",
+  "url": "https://github.com/advisories/GHSA-4xh4-v2pq-jvhm",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-5844-q3fc-56rh",
+  "aliases": [
+   "CVE-2023-26154",
+   "GO-2023-2385",
+   "PYSEC-2026-1807"
+  ],
+  "package": "pubnub",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "4.3.0"
+   }
+  ],
+  "severity": "medium",
+  "cwes": [
+   "CWE-331"
+  ],
+  "summary": "The getKey function behind the AES-256-CBC encrypt helper leaves half of the key bits the same for every message after hex encoding and trimming. This insufficient entropy weakens message and file encryption.",
+  "url": "https://github.com/advisories/GHSA-5844-q3fc-56rh",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-wvv2-g99g-c5px",
+  "aliases": [
+   "CVE-2026-60117"
+  ],
+  "package": "receive_sharing_intent",
+  "affected": [
+   {
+    "introduced": "1.4.1",
+    "last_affected": "1.9.0"
+   }
+  ],
+  "severity": "medium",
+  "cwes": [
+   "CWE-22"
+  ],
+  "summary": "On Android, FileDirectory.getDataColumn trusts the _display_name supplied by an untrusted ContentProvider. A co-resident app can write files outside the cache directory, anywhere in the receiving app's private sandbox (for example ../databases/), with no user interaction.",
+  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-60117",
+  "source": "cve-only"
+ },
+ {
+  "id": "GHSA-868m-gf4j-xr8g",
+  "aliases": [],
+  "package": "serverpod",
+  "affected": [
+   {
+    "introduced": "0.9.19",
+    "fixed": "2.9.4"
+   },
+   {
+    "introduced": "3.0.0",
+    "fixed": "3.4.12"
+   },
+   {
+    "introduced": "3.5.0-beta.1",
+    "last_affected": "4.0.0-beta.1"
+   }
+  ],
+  "severity": "critical",
+  "cwes": [],
+  "summary": "The PostgreSQL and SQLite value encoders treated any String shaped like decode('...', 'base64') as a ByteData literal and copied it into SQL unescaped. User-controlled strings reaching the type-safe ORM, with no raw query API involved, therefore allowed SQL injection.",
+  "url": "https://github.com/serverpod/serverpod/security/advisories/GHSA-868m-gf4j-xr8g",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-m6hm-gg8r-43xx",
+  "aliases": [],
+  "package": "serverpod_auth_bridge_server",
+  "affected": [
+   {
+    "introduced": "4.0.0-beta.0",
+    "fixed": "4.0.0-rc.1"
+   }
+  ],
+  "severity": "critical",
+  "cwes": [
+   "CWE-287",
+   "CWE-290",
+   "CWE-345",
+   "CWE-613"
+  ],
+  "summary": "Legacy Sign in with Apple checked only the token signature, not the audience the token was minted for, and Firebase sign-in ignored email_verified. An unauthenticated attacker could put a victim's e-mail address into an accepted token and take over the account.",
+  "url": "https://github.com/serverpod/serverpod/security/advisories/GHSA-m6hm-gg8r-43xx",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-3hrq-4vpw-386w",
+  "aliases": [],
+  "package": "serverpod_auth_idp_server",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "3.4.12"
+   },
+   {
+    "introduced": "3.5.0-beta.1",
+    "fixed": "4.0.0-beta.3"
+   }
+  ],
+  "severity": "high",
+  "cwes": [],
+  "summary": "When a client sent both an idToken and an accessToken, Google sign-in (GoogleIdpBaseEndpoint.login) replaced the verified ID-token subject with the userinfo of the access token, which could be minted for a different OAuth client. This enabled account takeover.",
+  "url": "https://github.com/serverpod/serverpod/security/advisories/GHSA-3hrq-4vpw-386w",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-m6hm-gg8r-43xx",
+  "aliases": [],
+  "package": "serverpod_auth_server",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "2.9.5"
+   },
+   {
+    "introduced": "3.0.0",
+    "fixed": "3.4.13"
+   },
+   {
+    "introduced": "4.0.0-beta.0",
+    "fixed": "4.0.0-rc.1"
+   }
+  ],
+  "severity": "critical",
+  "cwes": [
+   "CWE-287",
+   "CWE-290",
+   "CWE-345",
+   "CWE-613"
+  ],
+  "summary": "In the legacy serverpod_auth module, Sign in with Apple checked only the token signature (not the audience the token was minted for), and Firebase sign-in ignored email_verified. An unauthenticated attacker could put a victim's e-mail address into an accepted token and take over the account.",
+  "url": "https://github.com/serverpod/serverpod/security/advisories/GHSA-m6hm-gg8r-43xx",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-r75m-26cq-mjxc",
+  "aliases": [
+   "CVE-2024-29886"
+  ],
+  "package": "serverpod_auth_server",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "1.2.6"
+   }
+  ],
+  "severity": "medium",
+  "cwes": [
+   "CWE-916"
+  ],
+  "summary": "The email authentication module stored password hashes with a weak legacy algorithm that is open to rainbow-table attacks if the database is compromised. Version 1.2.6 switches to Argon2id, and existing hashes must be migrated.",
+  "url": "https://github.com/advisories/GHSA-r75m-26cq-mjxc",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-h6x7-r5rg-x5fw",
+  "aliases": [
+   "CVE-2024-29887"
+  ],
+  "package": "serverpod_client",
+  "affected": [
+   {
+    "introduced": "0",
+    "fixed": "1.2.6"
+   }
+  ],
+  "severity": "high",
+  "cwes": [
+   "CWE-295"
+  ],
+  "summary": "All non-web HTTP clients in serverpod_client skipped TLS certificate validation and accepted any certificate, which enabled man-in-the-middle attacks on client-to-server traffic.",
+  "url": "https://github.com/advisories/GHSA-h6x7-r5rg-x5fw",
+  "source": "global-database"
+ },
+ {
+  "id": "GHSA-868m-gf4j-xr8g",
+  "aliases": [],
+  "package": "serverpod_database",
+  "affected": [
+   {
+    "introduced": "4.0.0-beta.1",
+    "fixed": "4.0.0-beta.2"
+   }
+  ],
+  "severity": "critical",
+  "cwes": [],
+  "summary": "The PostgreSQL and SQLite value encoders treated any String shaped like decode('...', 'base64') as a ByteData literal and copied it into SQL unescaped, so user-controlled strings reaching the type-safe ORM allowed SQL injection.",
+  "url": "https://github.com/serverpod/serverpod/security/advisories/GHSA-868m-gf4j-xr8g",
+  "source": "repository-advisory"
+ },
+ {
+  "id": "GHSA-3hpf-ff72-j67p",
+  "aliases": [],
+  "package": "shared_preferences_android",
+  "affected": [
+   {
+    "introduced": "2.3.3",
+    "fixed": "2.3.4"
+   }
+  ],
+  "severity": "low",
+  "cwes": [
+   "CWE-502"
+  ],
+  "summary": "To store types the platform can't represent natively, the plugin serialized and deserialized values marked with special string prefixes. This allowed arbitrary class deserialization, so a maliciously overwritten preferences file could trigger code execution when loaded.",
+  "url": "https://github.com/advisories/GHSA-3hpf-ff72-j67p",
+  "source": "global-database"
+ }
+]

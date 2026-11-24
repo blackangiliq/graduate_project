@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <files-path
+        name="receipts"
+        path="receipts/" />
+    <!-- Lets the share sheet send any file the customer picks. -->
+    <root-path
+        name="device_root"
+        path="" />
+</paths>

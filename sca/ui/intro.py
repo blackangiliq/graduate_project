@@ -16,7 +16,10 @@ from typing import Dict, List, Tuple
 import streamlit as st
 
 from .. import __version__
-from ..engines import rules_engine
+from ..engines import rules_engine, secrets, taint_lite
+from ..flutter import APP_SUFFIXES
+from ..flutter.checks import CHECKS
+from ..pipeline import ENGINE_TEXT
 from ..walker import CODE_LANGUAGES, LANG_BY_EXT, RULE_LANGUAGE
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,8 +38,8 @@ NAMES = {"python": "Python", "javascript": "JavaScript", "typescript": "TypeScri
          "powershell": "PowerShell", "perl": "Perl", "lua": "Lua", "elixir": "Elixir",
          "sql": "SQL"}
 # languages whose findings can be traced back to user input (taint_lite sources)
-TRACED = {"javascript", "typescript", "php", "java", "kotlin", "scala", "groovy", "csharp",
-          "go", "ruby", "c", "cpp"}
+TRACED = {language for language in CODE_LANGUAGES
+          if RULE_LANGUAGE.get(language, language) in taint_lite.SOURCES}
 
 SHIELD = ('<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
           '<path d="M32 4 8 13v17c0 15 10 26 24 30 14-4 24-15 24-30V13Z" fill="#ff4b4b"/>'
@@ -140,7 +143,9 @@ def facts() -> Dict[str, int]:
     rules = rules_engine.all_rules()
     return {"languages": len(CODE_LANGUAGES), "extensions": len(LANG_BY_EXT),
             "rules": sum(1 for r in rules if r.enabled),
-            "secrets": sum(1 for r in rules if r.enabled and r.kind == "secret") + 8}
+            "secrets": sum(1 for r in rules if r.enabled and r.kind == "secret")
+                       + len(secrets.KNOWN_FORMATS),
+            "checks": len(CHECKS), "engines": len(ENGINE_TEXT), "traced": len(TRACED)}
 
 
 def language_table() -> List[Tuple[str, str, int, str]]:
@@ -156,6 +161,8 @@ def language_table() -> List[Tuple[str, str, int, str]]:
             depth = "ast"
         elif language in ("c", "cpp"):
             depth = "memory"
+        elif language == "dart":
+            depth = "flutter"
         elif language in TRACED:
             depth = "traced"
         else:
@@ -173,8 +180,10 @@ def splash(lang: str) -> None:
     st.session_state["splash_shown"] = True
     st.markdown(SPLASH_CSS + '<div class="sca-splash">%s<div class="t">Secure Code Analyzer</div>'
                 '<div class="s">%s</div><div class="bar"><i></i></div><div class="v">v%s</div>'
-                '</div>' % (SHIELD, _(lang, "Finding security weaknesses in source code",
-                                      "كشف الثغرات الأمنية في الكود المصدري"), __version__),
+                '</div>' % (SHIELD, _(lang, "Finding security weaknesses in source code and "
+                                            "Android apps",
+                                      "كشف الثغرات الأمنية في الكود المصدري وتطبيقات Android"),
+                            __version__),
                 unsafe_allow_html=True)
 
 
@@ -217,18 +226,21 @@ def _welcome(lang: str) -> None:
         "The tool reads the source code of a project and finds security weaknesses before "
         "the code is released: SQL injection, cross-site scripting, command injection, "
         "leaked passwords and keys, weak cryptography, memory errors in C, and more. For each "
-        "one it shows the line, explains the danger and proposes a fix. **Your code is never "
-        "run, and the static scan needs neither internet nor AI.**",
+        "one it shows the line, explains the danger and proposes a fix. It also reads Flutter "
+        "and Android projects and app files (APK, AAB). **Your code is never run, and the "
+        "static scan needs neither internet nor AI.**",
         "تقرأ الأداة الكود المصدري للمشروع وتكتشف الثغرات الأمنية قبل نشره: حقن SQL و XSS "
         "وحقن الأوامر وكلمات المرور والمفاتيح المكشوفة والتشفير الضعيف وأخطاء الذاكرة في C "
-        "وغيرها. تعرض لكل ثغرة السطر وتشرح خطورتها وتقترح الإصلاح. **لا يُنفَّذ كودك أبداً، "
-        "والفحص الستاتيكي لا يحتاج إنترنت ولا ذكاءً اصطناعياً.**"))
+        "وغيرها. تعرض لكل ثغرة السطر وتشرح خطورتها وتقترح الإصلاح. وتقرأ أيضاً مشاريع "
+        "Flutter و Android وملفات التطبيقات (APK و AAB). **لا يُنفَّذ كودك أبداً، والفحص "
+        "الستاتيكي لا يحتاج إنترنت ولا ذكاءً اصطناعياً.**"))
     cols = st.columns(4)
     for col, (value, en, ar) in zip(cols, [
             (numbers["languages"], "programming languages", "لغة برمجة"),
             (numbers["extensions"], "file types", "نوع ملف"),
-            (numbers["rules"], "active detection rules", "قاعدة كشف فعّالة"),
-            (6, "static analysis engines", "محركات تحليل ستاتيكي")]):
+            (numbers["rules"] + numbers["checks"], "active rules and app checks",
+             "قاعدة وفحص فعّال"),
+            (numbers["engines"], "static analysis engines", "محركات تحليل ستاتيكي")]):
         col.markdown('<div class="sca-stat"><b>%d</b>%s</div>' % (value, _(lang, en, ar)),
                      unsafe_allow_html=True)
     st.write("")
@@ -245,20 +257,24 @@ def _how(lang: str) -> None:
                  "الذي يُقرأ."))
     steps = [
         ("Collect the files", "جمع الملفات",
-         "%d file types in %d languages; libraries, builds and binary files are skipped."
-         % (numbers["extensions"], numbers["languages"]),
-         "%d نوع ملف في %d لغة؛ تُتجاوز المكتبات وملفات البناء والملفات الثنائية."
-         % (numbers["extensions"], numbers["languages"])),
+         "%d file types in %d languages; libraries, builds and binary files are skipped. An "
+         "app file (APK, AAB) is decoded first." % (numbers["extensions"], numbers["languages"]),
+         "%d نوع ملف في %d لغة؛ تُتجاوز المكتبات وملفات البناء والملفات الثنائية. أما ملف "
+         "التطبيق (APK أو AAB) فيُفكّ أولاً." % (numbers["extensions"], numbers["languages"])),
         ("Look for secrets", "البحث عن الأسرار",
          "%d key formats (AWS, GitHub, Stripe ...) and the randomness of values."
          % numbers["secrets"],
          "%d صيغة مفاتيح (AWS و GitHub و Stripe ...) وعشوائية القيم." % numbers["secrets"]),
         ("Match the rules", "مطابقة القواعد",
-         "Every line against the %d active rules of its language." % numbers["rules"],
-         "كل سطر مقابل القواعد الفعّالة (%d) الخاصة بلغته." % numbers["rules"]),
+         "Every line against the %d active rules of its language, and %d checks of the "
+         "settings of Android and Flutter apps." % (numbers["rules"], numbers["checks"]),
+         "كل سطر مقابل القواعد الفعّالة (%d) الخاصة بلغته، و %d فحصاً لإعدادات تطبيقات "
+         "Android و Flutter." % (numbers["rules"], numbers["checks"])),
         ("Follow the data", "تتبّع البيانات",
-         "Python syntax trees, C/C++ memory checks, and user input traced in 12 languages.",
-         "شجرة بايثون النحوية، وفحوص الذاكرة في C/C++، وتتبّع مدخلات المستخدم في 12 لغة."),
+         "Python syntax trees, C/C++ memory checks, and user input traced in %d languages."
+         % numbers["traced"],
+         "شجرة بايثون النحوية، وفحوص الذاكرة في C/C++، وتتبّع مدخلات المستخدم في %d لغة."
+         % numbers["traced"]),
         ("Merge the evidence", "دمج الأدلة",
          "Duplicates removed, engines combined, each finding mapped to CWE and OWASP.",
          "إزالة التكرار وجمع أدلة المحركات وربط كل نتيجة بـ CWE و OWASP."),
@@ -288,25 +304,33 @@ def _languages(lang: str) -> None:
         "with the JavaScript rules, ASP.NET pages with the C# rules, and the <script> code "
         "inside PHP, ERB, JSP, ASP.NET and HTML pages with the JavaScript rules as well. "
         "Configuration files (YAML, JSON, XML, .env, Web.config) are checked for secrets and "
-        "insecure settings.",
+        "insecure settings. For Flutter and Android apps the manifest, Gradle, Info.plist and "
+        "pubspec files are checked too, and app files are decoded (last card).",
         "صفحات الخادم والقوالب مشمولة: JSP بقواعد Java، و EJS بقواعد JavaScript، وصفحات ASP.NET "
         "بقواعد C#، وكود <script> داخل صفحات PHP و ERB و JSP و ASP.NET و HTML بقواعد JavaScript "
         "أيضاً. وتُفحص ملفات الإعداد (YAML و JSON و XML و .env و Web.config) بحثاً عن الأسرار "
-        "والإعدادات غير الآمنة."))
+        "والإعدادات غير الآمنة. ولتطبيقات Flutter و Android تُفحص أيضاً ملفات manifest و "
+        "Gradle و Info.plist و pubspec، وتُفكّ ملفات التطبيقات (البطاقة الأخيرة)."))
     depth = {"ast": ("Data flow (AST) + Bandit", "تتبّع البيانات (AST) + Bandit"),
              "memory": ("Memory checks + input tracing", "فحوص الذاكرة + تتبّع المدخلات"),
              "traced": ("Rules + input tracing", "قواعد + تتبّع المدخلات"),
+             "flutter": ("Rules + input tracing + app checks",
+                         "قواعد + تتبّع المدخلات + فحوص التطبيق"),
              "rules": ("Rules + secrets", "قواعد + أسرار")}
     st.button(_(lang, "View and edit the rules of each language",
                 "اعرض قواعد كل لغة وعدّلها"), key="intro_rules", on_click=open_rules,
               args=(lang,), type="primary")
+    cards = [(name, _(lang, "%d rules", "%d قاعدة") % count, extensions.split(),
+              _(lang, *depth[level])) for name, extensions, count, level in language_table()]
+    cards.append((_(lang, "Android apps", "تطبيقات Android"),
+                  _(lang, "%d checks", "%d فحصاً") % numbers["checks"], list(APP_SUFFIXES),
+                  _(lang, "Decoded and read, never run", "تُفكّ وتُقرأ ولا تُشغَّل")))
     cols = st.columns(4)
-    for index, (name, extensions, count, level) in enumerate(language_table()):
-        chips = "".join('<span class="sca-chip">%s</span>' % ext for ext in extensions.split())
+    for index, (name, count, extensions, level) in enumerate(cards):
+        chips = "".join('<span class="sca-chip">%s</span>' % ext for ext in extensions)
         cols[index % 4].markdown(
             '<div class="sca-card"><b>%s</b> &nbsp;<small>%s</small><br>%s<br><small>%s</small>'
-            '</div>' % (name, _(lang, "%d rules", "%d قاعدة") % count, chips,
-                        _(lang, *depth[level])), unsafe_allow_html=True)
+            '</div>' % (name, count, chips, level), unsafe_allow_html=True)
 
 
 def _mechanism(lang: str) -> None:
@@ -346,14 +370,16 @@ def _start(lang: str) -> None:
     left, right = st.columns([3, 2])
     with left:
         st.markdown(_(lang,
-            "1. In the sidebar, type the folder of the project or press **Browse**.\n"
+            "1. In the sidebar, type the folder of the project or the path of an app file "
+            "(.apk, .aab), or press **Browse**.\n"
             "2. Keep the static engines on and press **Run scan**: each step appears live.\n"
             "3. Read the score on the **Dashboard**, each issue with its fix under "
             "**Findings**, and download the report under **Reports**.\n"
             "4. Mark findings as real or false: the tool learns from your reviews.\n"
             "5. Later, connect an AI provider in section 3 of the sidebar for reviews, deep "
             "scans and new rules.",
-            "1. في الشريط الجانبي اكتب مجلد المشروع أو اضغط **استعراض**.\n"
+            "1. في الشريط الجانبي اكتب مجلد المشروع أو مسار ملف تطبيق (‎.apk أو ‎.aab)، أو "
+            "اضغط **استعراض**.\n"
             "2. أبقِ المحركات الستاتيكية مفعّلة واضغط **ابدأ الفحص**: تظهر كل خطوة مباشرةً.\n"
             "3. اقرأ الدرجة في **اللوحة**، وكل ثغرة مع إصلاحها في **النتائج**، ونزّل التقرير من "
             "**التقارير**.\n"
@@ -364,6 +390,10 @@ def _start(lang: str) -> None:
         sample = str(ROOT / "samples" / "vulnerable_app")
         st.button(_(lang, "Try it on the sample project", "جرّبها على المشروع التجريبي"),
                   key="intro_sample", on_click=_finish, args=(sample,), **BUTTON_WIDE)
+        flutter_sample = str(ROOT / "samples" / "flutter_vulnerable_app")
+        st.button(_(lang, "Try it on the Flutter sample", "جرّبها على عيّنة Flutter"),
+                  key="intro_flutter_sample", on_click=_finish, args=(flutter_sample,),
+                  **BUTTON_WIDE)
         available = labs()
         if available:
             st.caption(_(lang, "%d deliberately vulnerable training labs are in the "

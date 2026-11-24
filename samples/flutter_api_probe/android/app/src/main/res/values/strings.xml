@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the google-services Gradle plugin writes from google-services.json, with invented
+     values, and the Facebook app ID. -->
+<resources>
+    <string name="google_app_id" translatable="false">1:123456789012:android:0a1b2c3d4e5f6a7b</string>
+    <string name="gcm_defaultSenderId" translatable="false">123456789012</string>
+    <string name="project_id" translatable="false">shop-probe-demo</string>
+    <string name="google_storage_bucket" translatable="false">shop-probe-demo.appspot.com</string>
+    <string name="firebase_database_url" translatable="false">https://shop-probe-demo-default-rtdb.firebaseio.com</string>
+    <string name="default_web_client_id" translatable="false">123456789012-abcdefghijklmnopqrstuvwxyz012345.apps.googleusercontent.com</string>
+    <string name="facebook_app_id" translatable="false">1234567890123456</string>
+</resources>

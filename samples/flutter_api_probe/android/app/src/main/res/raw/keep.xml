@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep the Firebase string resources in the release build: no code of this probe reads
+     them, and the resource shrinker would remove them (a real app reads them through the
+     Firebase SDK). -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/*" />

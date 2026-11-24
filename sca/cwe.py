@@ -1,8 +1,9 @@
 """Knowledge base: CWE names, OWASP Top 10 (2021) mapping, explanations and fixes
-in English and Arabic. Used to describe findings even when no LLM is available."""
+in English and Arabic, and the OWASP Mobile Top 10 (2024) risk and MASVS group of each
+weakness for mobile apps. Used to describe findings even when no LLM is available."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Tuple
 
 OWASP_2021 = {
     "A01": "A01:2021 Broken Access Control",
@@ -17,6 +18,33 @@ OWASP_2021 = {
     "A10": "A10:2021 Server-Side Request Forgery",
     "MEM": "Memory safety (outside the OWASP Top 10)",
     "OTHER": "Other",
+}
+
+# OWASP Mobile Top 10 (2024 final release): risk -> (English name, Arabic name)
+MOBILE_TOP10_2024 = {
+    "M1": ("Improper Credential Usage", "الاستخدام غير السليم لبيانات الاعتماد"),
+    "M2": ("Inadequate Supply Chain Security", "ضعف أمان سلسلة التوريد"),
+    "M3": ("Insecure Authentication/Authorization", "مصادقة وتفويض غير آمنين"),
+    "M4": ("Insufficient Input/Output Validation", "تحقق غير كافٍ من المدخلات والمخرجات"),
+    "M5": ("Insecure Communication", "اتصال غير آمن"),
+    "M6": ("Inadequate Privacy Controls", "ضوابط خصوصية غير كافية"),
+    "M7": ("Insufficient Binary Protections", "حماية غير كافية للملف التنفيذي"),
+    "M8": ("Security Misconfiguration", "إعدادات أمان خاطئة"),
+    "M9": ("Insecure Data Storage", "تخزين غير آمن للبيانات"),
+    "M10": ("Insufficient Cryptography", "تشفير غير كافٍ"),
+}
+
+# OWASP MASVS v2 control groups: group -> (English name, Arabic name)
+MASVS_GROUPS = {
+    "MASVS-STORAGE": ("Storage", "التخزين"),
+    "MASVS-CRYPTO": ("Cryptography", "التشفير"),
+    "MASVS-AUTH": ("Authentication and Authorization", "المصادقة والتفويض"),
+    "MASVS-NETWORK": ("Network Communication", "الاتصال الشبكي"),
+    "MASVS-PLATFORM": ("Platform Interaction", "التفاعل مع المنصة"),
+    "MASVS-CODE": ("Code Quality", "جودة الكود"),
+    "MASVS-RESILIENCE": ("Resilience Against Reverse Engineering and Tampering",
+                         "مقاومة الهندسة العكسية والتلاعب"),
+    "MASVS-PRIVACY": ("Privacy", "الخصوصية"),
 }
 
 # cwe -> (name, owasp key, description_en, fix_en, description_ar, fix_ar)
@@ -41,6 +69,11 @@ _KB = {
                "Remove eval/exec. Parse data with a safe parser (json, ast.literal_eval) or use a lookup table.",
                "تُنفَّذ بيانات متغيرة ككود (eval/exec)، مما يسمح للمهاجم بتنفيذ أي كود.",
                "احذف eval/exec واستخدم محللاً آمناً مثل json أو ast.literal_eval أو جدول اختيارات ثابت."),
+    "CWE-94": ("Code Injection / Dynamic Code Loading", "A03",
+               "Code is generated from external data or loaded at run time from a source outside the application (a download, a URL, a writable folder), so whoever controls that source decides what code runs.",
+               "Run only code that ships inside the application, never build code from input, and verify a signature before loading any external code module.",
+               "يُولَّد كود من بيانات خارجية أو يُحمَّل أثناء التشغيل من مصدر خارج التطبيق (ملف منزَّل أو رابط أو مجلد قابل للكتابة)، فيتحكم من يملك هذا المصدر في الكود الذي يُنفَّذ.",
+               "نفّذ فقط الكود المضمَّن داخل التطبيق، ولا تبنِ كوداً من المدخلات، وتحقق من التوقيع قبل تحميل أي وحدة كود خارجية."),
     "CWE-1336": ("Server-Side Template Injection", "A03",
                  "User input is used as a template, so template expressions written by the attacker are evaluated on the server.",
                  "Never build templates from user input; render a fixed template and pass the data as variables.",
@@ -271,6 +304,117 @@ _KB = {
                  "Reject the keys __proto__, constructor and prototype, or copy into objects created with Object.create(null).",
                  "تُنسخ مفاتيح يتحكم بها المهاجم إلى كائن، مما قد يعدّل Object.prototype ويؤثر على التطبيق كله.",
                  "ارفض المفاتيح __proto__ و constructor و prototype أو انسخ إلى كائنات منشأة بـ Object.create(null)."),
+    # storage, platform, build and dependency weaknesses (mostly found in mobile apps)
+    "CWE-200": ("Exposure of Sensitive Information", "A01",
+                "Information that should stay private, such as secrets, personal data, local files or internal paths, is exposed to other apps, web pages or users.",
+                "Keep sensitive data out of shared places (the clipboard, files that web pages can read, released builds) and give access only to the users who need it.",
+                "معلومات يجب أن تبقى خاصة، مثل الأسرار أو البيانات الشخصية أو الملفات المحلية أو المسارات الداخلية، تصبح مكشوفة لتطبيقات أخرى أو لصفحات ويب أو لمستخدمين.",
+                "أبعِد البيانات الحساسة عن الأماكن المشتركة (الحافظة، والملفات التي تستطيع صفحات الويب قراءتها، والنسخ المنشورة) وامنح الوصول فقط للمستخدمين الذين يحتاجونه."),
+    "CWE-215": ("Sensitive Information in Debugging Code", "A05",
+                "Debugging information such as symbols, source paths or debug output is left in the released build, which helps attackers understand and reverse-engineer the application.",
+                "Build releases without debugging information (for Flutter: --split-debug-info and --obfuscate) and keep the symbol files private.",
+                "تبقى معلومات التصحيح، مثل الرموز (symbols) ومسارات الكود المصدري ومخرجات التصحيح، داخل النسخة المنشورة، مما يساعد المهاجم على فهم التطبيق وإجراء الهندسة العكسية عليه.",
+                "ابنِ نسخ الإصدار دون معلومات التصحيح (في Flutter: الخياران split-debug-info و obfuscate) واحتفظ بملفات الرموز في مكان خاص."),
+    "CWE-250": ("Execution with Unnecessary Privileges", "A05",
+                "The application asks for more privileges than it needs, such as dangerous Android permissions, so a bug or a malicious library can misuse them.",
+                "Request only the permissions your features need, at the moment they are needed, and remove unused ones (including those that plugins add).",
+                "يطلب التطبيق صلاحيات أكثر مما يحتاج، مثل صلاحيات Android الخطرة، فيستطيع خطأ برمجي أو مكتبة خبيثة إساءة استخدامها.",
+                "اطلب فقط الصلاحيات التي تحتاجها الميزات وفي وقت الحاجة إليها، واحذف الصلاحيات غير المستخدمة (ومنها ما تضيفه الإضافات)."),
+    "CWE-276": ("Incorrect Default Permissions", "A01",
+                "Files or resources are created with permissions that let other users or apps read or change them, for example world-readable files.",
+                "Create files with owner-only permissions (MODE_PRIVATE on Android, 0o600 on Unix) and widen access only where it is needed.",
+                "تُنشأ الملفات أو الموارد بصلاحيات تسمح لمستخدمين أو تطبيقات أخرى بقراءتها أو تعديلها، مثل الملفات القابلة للقراءة من الجميع.",
+                "أنشئ الملفات بصلاحيات للمالك فقط (MODE_PRIVATE في Android أو 0o600 في أنظمة Unix) ولا توسّع الوصول إلا حيث يلزم."),
+    "CWE-284": ("Improper Access Control", "A01",
+                "Access to data or functions is not limited to the users who should have it, for example database or storage rules that let anyone read or write.",
+                "Deny access by default and allow it per user and per path (Firebase: require request.auth and check the owner in the security rules).",
+                "الوصول إلى البيانات أو الوظائف غير مقصور على المستخدمين المخوَّلين، مثل قواعد قاعدة بيانات أو تخزين تسمح لأي شخص بالقراءة أو الكتابة.",
+                "امنع الوصول افتراضياً واسمح به لكل مستخدم ولكل مسار على حدة (في Firebase: اشترط request.auth وتحقق من المالك داخل قواعد الأمان)."),
+    "CWE-287": ("Improper Authentication", "A07",
+                "The application does not reliably prove who the user is, for example it trusts a result computed on the device such as a biometric check that only returns true or false.",
+                "Verify identity on the server, and bind biometric checks to a key in the platform keystore (a CryptoObject) instead of trusting a boolean.",
+                "لا يتحقق التطبيق بشكل موثوق من هوية المستخدم، كأن يثق بنتيجة تُحسب على الجهاز مثل فحص بصمة لا يعيد إلا true أو false.",
+                "تحقق من الهوية على الخادم، واربط فحص البصمة بمفتاح في مخزن مفاتيح المنصة (CryptoObject) بدلاً من الاعتماد على قيمة منطقية."),
+    "CWE-311": ("Missing Encryption of Sensitive Data", "A04",
+                "Sensitive data is stored or sent without encryption, so anyone who obtains the file, the backup or the network traffic can read it.",
+                "Encrypt sensitive data with a vetted library (for example an encrypted Hive box) and keep the key in the platform keystore (Android Keystore / iOS Keychain).",
+                "تُخزَّن بيانات حساسة أو تُرسَل دون تشفير، فيستطيع كل من يحصل على الملف أو النسخة الاحتياطية أو حركة الشبكة قراءتها.",
+                "شفّر البيانات الحساسة بمكتبة موثوقة (مثل صندوق Hive مشفَّر) واحفظ المفتاح في مخزن مفاتيح المنصة (Android Keystore أو iOS Keychain)."),
+    "CWE-312": ("Cleartext Storage of Sensitive Information", "A04",
+                "A token, password or other sensitive value is saved in readable form, for example in SharedPreferences, browser local storage or a plain file, where backups and rooted devices expose it.",
+                "Keep secrets in a secure store (the platform keystore, flutter_secure_storage or a secrets manager) and encrypt other sensitive data before saving it.",
+                "يُحفَظ رمز أو كلمة مرور أو قيمة حساسة أخرى بشكل مقروء، مثلاً في SharedPreferences أو التخزين المحلي للمتصفح أو ملف عادي، حيث تكشفه النسخ الاحتياطية والأجهزة التي فُتحت فيها صلاحيات الجذر (root).",
+                "احفظ الأسرار في مخزن آمن (مخزن مفاتيح المنصة أو flutter_secure_storage أو مدير أسرار)، وشفّر البيانات الحساسة الأخرى قبل حفظها."),
+    "CWE-359": ("Exposure of Private Personal Information", "A01",
+                "Personal data such as location, contacts, device identifiers or health data is collected, shown or shared further than the user expects or agreed to.",
+                "Collect only the personal data a feature needs, ask for consent, and keep it out of logs, analytics and third-party SDKs.",
+                "تُجمَع البيانات الشخصية (مثل الموقع وجهات الاتصال ومعرّفات الجهاز والبيانات الصحية) أو تُعرَض أو تُشارَك بما يتجاوز ما يتوقعه المستخدم أو ما وافق عليه.",
+                "اجمع فقط البيانات الشخصية التي تحتاجها الميزة، واطلب موافقة المستخدم، وأبعِدها عن السجلات وأدوات التحليلات ومكتبات الأطراف الثالثة."),
+    "CWE-530": ("Exposure of Backup File", "A05",
+                "Copies of the application's data can be taken out through backups, for example Android backups allowed by android:allowBackup, so stored tokens and files can be read or restored elsewhere.",
+                "Set android:allowBackup=\"false\" or add backup rules (dataExtractionRules / fullBackupContent) that exclude sensitive files, and never leave backup files where they can be downloaded.",
+                "يمكن إخراج نسخ من بيانات التطبيق عبر النسخ الاحتياطي، مثل النسخ الاحتياطي في Android الذي يسمح به android:allowBackup، فتُقرأ الرموز والملفات المخزَّنة أو تُستعاد على جهاز آخر.",
+                "اضبط android:allowBackup=\"false\" أو أضف قواعد نسخ احتياطي (dataExtractionRules أو fullBackupContent) تستثني الملفات الحساسة، ولا تترك ملفات نسخ احتياطية في مكان يمكن تنزيلها منه."),
+    "CWE-532": ("Sensitive Information in Log Files", "A09",
+                "Passwords, tokens or personal data are written to logs, where other tools, crash reports or anyone with access to the device logs can read them.",
+                "Do not log secrets or personal data; remove debug logging (print, debugPrint, Log.d) from release builds or mask the values first.",
+                "تُكتب كلمات مرور أو رموز أو بيانات شخصية في السجلات، حيث يمكن أن تقرأها أدوات أخرى أو تقارير الأعطال أو أي شخص يصل إلى سجلات الجهاز.",
+                "لا تسجّل الأسرار أو البيانات الشخصية؛ احذف رسائل التصحيح (print و debugPrint و Log.d) من نسخ الإصدار أو أخفِ القيم قبل تسجيلها."),
+    "CWE-552": ("Files or Directories Accessible to External Parties", "A01",
+                "Files or folders of the application can be reached by other apps or users, for example a FileProvider that shares a whole storage root or iOS file sharing of the Documents folder.",
+                "Share only dedicated folders that hold non-sensitive files, and keep private data in internal app storage that is never shared.",
+                "يمكن لتطبيقات أخرى أو لمستخدمين الوصول إلى ملفات التطبيق أو مجلداته، مثل FileProvider يشارك جذر التخزين بالكامل أو مشاركة مجلد Documents في iOS.",
+                "شارك فقط مجلدات مخصصة تحتوي ملفات غير حساسة، واحفظ البيانات الخاصة في التخزين الداخلي للتطبيق الذي لا تتم مشاركته أبداً."),
+    "CWE-749": ("Exposed Dangerous Method or Function", "A05",
+                "A powerful native function is exposed to less trusted code, for example a JavaScript bridge that any page loaded in a WebView can call.",
+                "Use bridges only in WebViews that load your own HTTPS pages, check the origin of every bridge message, and expose as few functions as possible.",
+                "دالة أصلية ذات صلاحيات واسعة مكشوفة لكود أقل موثوقية، مثل جسر JavaScript تستطيع أي صفحة تُحمَّل في WebView استدعاءه.",
+                "استخدم الجسور فقط في WebView يحمّل صفحاتك أنت عبر HTTPS، وتحقق من مصدر كل رسالة تصل عبر الجسر، واكشف أقل عدد ممكن من الدوال."),
+    "CWE-829": ("Inclusion of Functionality from Untrusted Control Sphere", "A08",
+                "Scripts or other code are loaded from a source the application does not control, or over plain HTTP, so that source or anyone on the network can change what runs.",
+                "Bundle the code with the application, or load it over HTTPS from a trusted host with Subresource Integrity (the integrity attribute).",
+                "تُحمَّل سكربتات أو أكواد أخرى من مصدر لا يتحكم به التطبيق أو عبر HTTP غير المشفَّر، فيستطيع هذا المصدر أو أي شخص على الشبكة تغيير ما يُنفَّذ.",
+                "ضمّن الكود داخل التطبيق، أو حمّله عبر HTTPS من مصدر موثوق مع التحقق من سلامته بالخاصية integrity (Subresource Integrity)."),
+    "CWE-922": ("Insecure Storage of Sensitive Information", "A01",
+                "Sensitive data is stored where other apps or users can reach it, such as shared external storage, or with weakened protection options.",
+                "Keep sensitive files in app-private storage and secrets in the platform keystore with strict options (available only while the device is unlocked, no cloud sync).",
+                "تُخزَّن بيانات حساسة في مكان تستطيع تطبيقات أخرى أو مستخدمون الوصول إليه، مثل التخزين الخارجي المشترك، أو بخيارات حماية مُضعَفة.",
+                "احفظ الملفات الحساسة في التخزين الخاص بالتطبيق، والأسرار في مخزن مفاتيح المنصة بخيارات صارمة (متاحة فقط حين يكون الجهاز غير مقفل، ودون مزامنة سحابية)."),
+    "CWE-926": ("Improper Export of Android Application Components", "A05",
+                "An activity, service, broadcast receiver or content provider is exported without a permission, so any app on the device can start it or read its data.",
+                "Set android:exported=\"false\" unless other apps must use the component, and protect exported components with a signature-level permission.",
+                "مكوّن من نوع activity أو service أو broadcast receiver أو content provider مُصدَّر (exported) دون صلاحية، فيستطيع أي تطبيق على الجهاز تشغيله أو قراءة بياناته.",
+                "اضبط android:exported=\"false\" ما لم تحتج تطبيقات أخرى إلى المكوّن، واحمِ المكوّنات المُصدَّرة بصلاحية من مستوى signature."),
+    "CWE-939": ("Improper Authorization in Handler for Custom URL Scheme", "A05",
+                "The app acts on links from other apps or websites (custom URL schemes, deep links) without checking them; any app can send such a link, and another app can register the same custom scheme to receive it.",
+                "Prefer verified App Links / Universal Links (android:autoVerify=\"true\"), treat every link parameter as untrusted input, and never pass link data straight to a WebView, a URL launcher or a sensitive action.",
+                "ينفّذ التطبيق ما تطلبه روابط قادمة من تطبيقات أو مواقع أخرى (مخططات URL مخصصة أو روابط عميقة) دون التحقق منها؛ فأي تطبيق يستطيع إرسال مثل هذا الرابط، ويستطيع تطبيق آخر تسجيل المخطط المخصص نفسه لاستقباله.",
+                "استخدم روابط موثَّقة (App Links أو Universal Links مع android:autoVerify=\"true\")، وعامل كل معامل في الرابط كمدخل غير موثوق، ولا تمرّر بيانات الرابط مباشرة إلى WebView أو إلى أداة فتح الروابط أو إلى عملية حساسة."),
+    "CWE-1021": ("Improper Restriction of Rendered UI Layers or Frames", "A04",
+                 "Another app or website can show its own screens over or inside this application (task hijacking on Android, clickjacking on the web) and trick the user into typing data or tapping.",
+                 "On Android set android:taskAffinity=\"\" and avoid allowTaskReparenting; on the web forbid framing with the Content-Security-Policy frame-ancestors directive or X-Frame-Options.",
+                 "يستطيع تطبيق أو موقع آخر عرض شاشاته فوق هذا التطبيق أو داخله (اختطاف المهام في Android أو clickjacking على الويب) فيخدع المستخدم ليُدخل بيانات أو ينقر على عناصر.",
+                 "في Android اضبط android:taskAffinity=\"\" وتجنّب allowTaskReparenting، وعلى الويب امنع عرض الصفحة داخل إطارات عبر التوجيه frame-ancestors في Content-Security-Policy أو عبر X-Frame-Options."),
+    "CWE-1104": ("Use of Unmaintained Third-Party Components", "A06",
+                 "The application depends on a package that is discontinued or no longer maintained, so security bugs in it will not be fixed.",
+                 "Replace the package with a maintained alternative (pub.dev names a replacement for discontinued packages) and review dependencies regularly.",
+                 "يعتمد التطبيق على حزمة متوقفة أو لم تعد تُصان، فلن تُصلَح الثغرات الأمنية التي فيها.",
+                 "استبدل الحزمة ببديل تتم صيانته (يقترح موقع pub.dev بديلاً للحزم المتوقفة) وراجع الاعتماديات بانتظام."),
+    "CWE-1188": ("Initialization of a Resource with an Insecure Default", "A05",
+                 "A security setting keeps an insecure default value, for example a release build that is still signed with the shared Android debug key from the project template.",
+                 "Replace template defaults with secure values: sign releases with your own private release key and review every setting left from the template.",
+                 "يبقى إعداد أمني على قيمة افتراضية غير آمنة، مثل نسخة إصدار ما زالت موقَّعة بمفتاح التصحيح المشترك في Android الآتي من قالب المشروع.",
+                 "استبدل القيم الافتراضية للقالب بقيم آمنة: وقّع نسخ الإصدار بمفتاح إصدار خاص بك، وراجع كل إعداد بقي من القالب."),
+    "CWE-1357": ("Reliance on Insufficiently Trustworthy Component", "A06",
+                 "Dependencies are not held to reviewed versions (open ranges such as 'any', dependency overrides, no committed lock file), so a build can pull in an unreviewed or malicious version.",
+                 "Commit the lock file (pubspec.lock), use bounded version constraints and remove dependency overrides from released apps.",
+                 "الاعتماديات غير مثبَّتة على إصدارات تمت مراجعتها (نطاقات مفتوحة مثل any، أو تجاوزات للاعتماديات، أو ملف قفل غير محفوظ في المستودع)، فقد يجلب البناء إصداراً لم تتم مراجعته أو إصداراً خبيثاً.",
+                 "احفظ ملف القفل (pubspec.lock) في المستودع، واستخدم قيود إصدار محدَّدة، واحذف تجاوزات الاعتماديات (dependency_overrides) من التطبيقات المنشورة."),
+    "CWE-1395": ("Dependency on Vulnerable Third-Party Component", "A06",
+                 "A third-party package with a publicly known vulnerability is used, and attackers can rely on the published details to exploit it.",
+                 "Upgrade the package to a version that fixes the advisory (or remove it), and check dependencies against security advisories regularly.",
+                 "تُستخدم حزمة خارجية فيها ثغرة معروفة علناً، ويستطيع المهاجمون الاعتماد على التفاصيل المنشورة لاستغلالها.",
+                 "حدّث الحزمة إلى إصدار يعالج الثغرة المعلنة (أو احذفها)، وافحص الاعتماديات مقابل النشرات الأمنية بانتظام."),
 }
 
 # Weaknesses that are only real when attacker-controlled data reaches the line (injection
@@ -278,14 +422,16 @@ _KB = {
 # The others (weak algorithm, disabled TLS check, hard-coded secret, gets() ...) are a
 # property of the line itself.
 FLOW_CWES = {"CWE-89", "CWE-78", "CWE-79", "CWE-95", "CWE-22", "CWE-98", "CWE-601", "CWE-918",
-             "CWE-90", "CWE-643", "CWE-501",
+             "CWE-90", "CWE-643", "CWE-501", "CWE-94",
              "CWE-943", "CWE-502", "CWE-1336", "CWE-134", "CWE-120", "CWE-434", "CWE-621"}
 
 _EQUIVALENT = {  # CWEs that describe the same weakness for merging purposes
-    "CWE-94": "CWE-95", "CWE-96": "CWE-95",
+    "CWE-96": "CWE-95",
     "CWE-328": "CWE-327", "CWE-326": "CWE-327", "CWE-916": "CWE-327",
-    "CWE-330": "CWE-338",
-    "CWE-259": "CWE-798", "CWE-321": "CWE-798", "CWE-312": "CWE-798", "CWE-540": "CWE-798",
+    "CWE-780": "CWE-327", "CWE-1204": "CWE-327",
+    "CWE-330": "CWE-338", "CWE-331": "CWE-338",
+    "CWE-259": "CWE-798", "CWE-260": "CWE-798", "CWE-321": "CWE-798", "CWE-540": "CWE-798",
+    "CWE-297": "CWE-295",
     "CWE-77": "CWE-78", "CWE-88": "CWE-78", "CWE-191": "CWE-190",
     "CWE-80": "CWE-79",
     "CWE-119": "CWE-120", "CWE-121": "CWE-120", "CWE-676": "CWE-120", "CWE-787": "CWE-120",
@@ -293,6 +439,28 @@ _EQUIVALENT = {  # CWEs that describe the same weakness for merging purposes
     "CWE-564": "CWE-89",
     "CWE-1333": "CWE-1333",
 }
+
+# The project's own mapping, not an official OWASP one, from a canonical CWE to its OWASP
+# Mobile Top 10 (2024) risk and MASVS group. Merge copies it into the findings of mobile
+# apps and projects; a CWE that is not listed gets empty values.
+_MOBILE_ROWS = (
+    ("M1", "MASVS-STORAGE", (798,)),
+    ("M2", "MASVS-CODE", (494, 1104, 1357, 1395)),
+    ("M3", "MASVS-AUTH", (287, 347, 862, 284, 639)),
+    ("M3", "MASVS-PLATFORM", (939,)),            # a deep link that acts without authorization
+    ("M4", "MASVS-CODE", (89, 78, 22, 94, 95, 601, 643, 943, 90, 98, 1336, 502, 611)),
+    ("M4", "MASVS-PLATFORM", (79, 749)),
+    ("M5", "MASVS-NETWORK", (295, 319, 829)),    # 829: a script loaded over plain HTTP
+    ("M6", "MASVS-PRIVACY", (200, 359)),
+    ("M7", "MASVS-RESILIENCE", (693, 489, 215)),
+    ("M8", "MASVS-PLATFORM", (1188, 926, 1021, 250, 732, 276, 942, 614, 1004)),
+    ("M8", "MASVS-STORAGE", (552,)),             # app files shared with other apps or the user
+    ("M9", "MASVS-STORAGE", (312, 311, 922, 530, 532)),   # 532: secrets written to the log
+    ("M10", "MASVS-CRYPTO", (327, 338)),
+)
+MOBILE_BY_CWE: Dict[str, Tuple[str, str]] = {
+    "CWE-%d" % number: (risk, group)
+    for risk, group, numbers in _MOBILE_ROWS for number in numbers}
 
 
 def canonical(cwe: str) -> str:
@@ -314,8 +482,30 @@ def canonical(cwe: str) -> str:
     return _EQUIVALENT.get(value, value)
 
 
+def _localized(names: Tuple[str, str], lang: str) -> str:
+    return names[1] if lang == "ar" else names[0]
+
+
+def mobile_name(risk: str, lang: str = "en") -> str:
+    """Name of an OWASP Mobile Top 10 (2024) risk such as "M5"; "" for an unknown risk."""
+    return _localized(MOBILE_TOP10_2024[risk], lang) if risk in MOBILE_TOP10_2024 else ""
+
+
+def masvs_name(group: str, lang: str = "en") -> str:
+    """Name of a MASVS group such as "MASVS-NETWORK"; "" for an unknown group."""
+    return _localized(MASVS_GROUPS[group], lang) if group in MASVS_GROUPS else ""
+
+
 def info(cwe: str, lang: str = "en") -> Dict[str, str]:
+    """What the knowledge base says about a CWE, in English or Arabic ("ar").
+
+    Keys: cwe, name, owasp, description, fix, url, and the mobile classification:
+    owasp_mobile ("M5"), owasp_mobile_name, masvs ("MASVS-NETWORK") and masvs_name, which
+    are empty strings for a CWE outside the mobile mapping."""
     key = canonical(cwe)
+    risk, group = MOBILE_BY_CWE.get(key, ("", ""))
+    mobile = {"owasp_mobile": risk, "owasp_mobile_name": mobile_name(risk, lang),
+              "masvs": group, "masvs_name": masvs_name(group, lang)}
     if key in _KB:
         name, owasp, d_en, f_en, d_ar, f_ar = _KB[key]
         return {
@@ -323,10 +513,11 @@ def info(cwe: str, lang: str = "en") -> Dict[str, str]:
             "description": d_ar if lang == "ar" else d_en,
             "fix": f_ar if lang == "ar" else f_en,
             "url": "https://cwe.mitre.org/data/definitions/%s.html" % key.split("-")[1],
+            **mobile,
         }
     url = "https://cwe.mitre.org/data/definitions/%s.html" % key.split("-")[1] if key else ""
     return {"cwe": key, "name": key or "Security issue", "owasp": OWASP_2021["OTHER"],
-            "description": "", "fix": "", "url": url}
+            "description": "", "fix": "", "url": url, **mobile}
 
 
 def owasp_for(cwe: str) -> str:

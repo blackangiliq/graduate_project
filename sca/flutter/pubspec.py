@@ -589,6 +589,8 @@ def _yaml_error(exc: Exception) -> str:
     mark = getattr(exc, "problem_mark", None)
     problem = getattr(exc, "problem", None) or (str(exc).splitlines() or [""])[0]
     where = " at line %d" % (mark.line + 1) if mark is not None else ""
+    if "nesting depth" in str(problem):      # newer libyaml stops deep nesting itself
+        return "not valid YAML%s (nested too deeply)" % where
     return "not valid YAML%s (%s)" % (where, (problem or type(exc).__name__)[:200])
 
 

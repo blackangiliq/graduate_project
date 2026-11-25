@@ -63,5 +63,17 @@
   {"name": "DVGA", "repo": "dolevf/Damn-Vulnerable-GraphQL-Application", "commit": "a961308c02d1fb462b192681c336b0739e432da7",
    "languages": "Python (GraphQL), JavaScript", "license": "MIT", "author": "Dolev Farhi",
    "about": "Damn Vulnerable GraphQL Application: injections, SSRF, denial of service and information disclosure through GraphQL.",
-   "about_ar": "تطبيق GraphQL ضعيف عمداً: الحقن و SSRF وحجب الخدمة وكشف المعلومات عبر GraphQL."}
+   "about_ar": "تطبيق GraphQL ضعيف عمداً: الحقن و SSRF وحجب الخدمة وكشف المعلومات عبر GraphQL."},
+  {"name": "DVMA", "repo": "cpeoples/dvma", "commit": "eadf986191b2ad9e71b6e711915e59ce79e8f335",
+   "languages": "Dart (Flutter), Kotlin, Swift", "license": "MIT", "author": "Chris Peoples",
+   "about": "Damn Vulnerable Mobile App: a Flutter app with over 200 deliberately vulnerable modules (storage, crypto, network, platform, WebView, supply chain), each mapped to the OWASP Mobile Top 10 2024, MASVS and CWE.",
+   "about_ar": "تطبيق جوّال مبني بـ Flutter فيه أكثر من 200 وحدة ضعيفة عمداً (التخزين والتشفير والشبكة والمنصّة و WebView وسلسلة التوريد)، كلٌّ منها مربوط بقائمة OWASP Mobile Top 10 لعام 2024 و MASVS و CWE."},
+  {"name": "DVFA", "repo": "Schmiemandev/dvfa", "commit": "bd291ed010cd362abe80204aae59a04335cfc756",
+   "languages": "Dart (Flutter), Python", "license": "MIT", "author": "Schmiemandev",
+   "about": "Damn Vulnerable Flutter App (FinTech edition): ten challenges such as a PIN stored in SharedPreferences, cleartext HTTP, SQL injection in sqflite, a deep link that triggers a transfer and a hard-coded AES key.",
+   "about_ar": "تطبيق Flutter مالي ضعيف عمداً: عشرة تحدّيات، منها رمز PIN محفوظ في SharedPreferences واتصال HTTP غير مشفّر وحقن SQL في sqflite ورابط عميق يُطلق تحويلاً مالياً ومفتاح AES مكتوب في الكود."},
+  {"name": "Ostorlab-Insecure-Flutter", "repo": "Ostorlab/ostorlab_insecure_ios_app", "commit": "649e05c79bace88451cf9ab761c7510ba37e4e25",
+   "languages": "Dart (Flutter)", "license": "Apache-2.0", "author": "Ostorlab",
+   "about": "Ostorlab's insecure Flutter app: one weakness per file (ECB mode, static IV, weak hash, insecure random, cleartext traffic, SQL injection, path traversal, command execution, insecure WebView settings, plaintext shared preferences).",
+   "about_ar": "تطبيق Flutter غير آمن من Ostorlab: ثغرة واحدة في كل ملف (نمط ECB ومتجه تهيئة ثابت ودالة تجزئة ضعيفة وعشوائية غير آمنة واتصال غير مشفّر وحقن SQL واجتياز المسارات وتنفيذ الأوامر وإعدادات WebView غير آمنة وتخزين غير مشفّر في shared preferences)."}
 ]

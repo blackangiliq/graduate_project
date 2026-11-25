@@ -67,6 +67,7 @@ def _form_values(prefix: str, suffix: str) -> Dict[str, Any]:
     return {
         "title": state[prefix + "title" + suffix].strip(),
         "languages": list(state[prefix + "languages" + suffix]),
+        "files": rules_engine.file_patterns(state[prefix + "files" + suffix]),
         "cwe": state[prefix + "cwe" + suffix].strip(),
         "severity": state[prefix + "severity" + suffix],
         "confidence": round(float(state[prefix + "confidence" + suffix]), 2),
@@ -135,6 +136,12 @@ def _rule_fields(prefix: str, suffix: str, values: Dict[str, Any], t: Callable[[
               key=prefix + "confidence" + suffix,
               help=t("How sure the rule is on its own, from 0 to 1. Lower it for a rule "
                      "that is often wrong; your reviews also move it automatically."))
+    st.text_input(t("Files (optional: name patterns separated by commas)"),
+                  value=", ".join(values.get("files") or []), key=prefix + "files" + suffix,
+                  placeholder="*.gradle, **/web/index.html",
+                  help=t("The rule reads only the files of its languages whose path or name "
+                         "matches one of these patterns. Leave it empty for every file of "
+                         "its languages."))
     st.text_area(t("Pattern (regular expression that marks a vulnerable line)"),
                  value=values.get("pattern", ""), key=prefix + "pattern" + suffix, height=90,
                  help=t("Python regular-expression syntax. The rule reports a code line "
@@ -262,6 +269,8 @@ def rule_path(rule: rules_engine.Rule) -> str:
 
 
 def _file_types(rule: rules_engine.Rule) -> str:
+    if rule.files:                        # the rule names its files itself
+        return " ".join(rule.files)
     files, pages = rule_extensions(rule.languages)
     return " ".join(files) + (" + <script>" if pages else "")
 
@@ -275,7 +284,7 @@ def _details(rule: rules_engine.Rule, storage: Storage, t: Callable[[str], str],
     if rule.kind == "secret":
         badges.append(t("credential format"))
     st.markdown("**%s** &nbsp; `%s`" % (rule.id, "` `".join(badges)))
-    files, pages = rule_extensions(rule.languages)
+    files, pages = (rule.files, []) if rule.files else rule_extensions(rule.languages)
     st.markdown(t("**Applies to:** %s") % (t("every file") if files == ["*"] else
                                            " ".join("`%s`" % ext for ext in files))
                 + ((t(" and the `<script>` code of %s pages")

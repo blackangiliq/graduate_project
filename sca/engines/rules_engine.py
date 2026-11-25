@@ -19,6 +19,7 @@ A rule looks like this:
     - id: JS-SQLI-001
       title: SQL query built with string concatenation
       languages: [javascript]        # or [any]
+      files: []                      # optional name patterns: ['*.gradle', '**/web/index.html']
       cwe: CWE-89
       severity: high                 # critical | high | medium | low | info
       confidence: 0.7                # 0..1
@@ -40,6 +41,7 @@ its match is treated as a credential, masked everywhere, and may require `keywor
 """
 from __future__ import annotations
 
+import fnmatch
 import os
 import re
 from dataclasses import dataclass, field
@@ -57,9 +59,12 @@ IMPORTED_DIR = RULES_DIR / "imported"
 MAX_LINE_LENGTH = 600  # longer lines are almost always minified or generated code
 ORIGINS = ("builtin", "imported", "learned", "custom")
 # the fields a user may change through learned/edits.yaml
-EDITABLE = ("title", "languages", "cwe", "severity", "confidence", "pattern", "exclude",
-            "ignore_case", "message", "fix", "enabled", "near", "within", "requires_taint")
+EDITABLE = ("title", "languages", "files", "cwe", "severity", "confidence", "pattern",
+            "exclude", "ignore_case", "message", "fix", "enabled", "near", "within",
+            "requires_taint")
 DEFAULT_WITHIN = 5
+# text that is not code: the strings dump of a binary, the stand-in for a binary file
+SKIPPED_ORIGINS = ("strings", "placeholder")
 
 
 def learned_dir() -> Path:
@@ -99,6 +104,23 @@ class Rule:
     near: Optional["re.Pattern[str]"] = None      # must match a line close to the match
     within: int = DEFAULT_WITHIN                  # how close, in lines
     requires_taint: bool = False                  # only report when input is traced
+    files: List[str] = field(default_factory=list)  # only files matching these patterns
+
+    def applies_to(self, rel: str) -> bool:
+        """True if the rule looks at the file with this relative path: the rule names no
+        file patterns, or one of them matches the path or the file name. A pattern is a
+        glob that ignores case ("*.gradle", "**/web/index.html"); a leading "**/" also
+        matches a file in the top folder."""
+        if not self.files:
+            return True
+        path = rel.replace("\\", "/").lower()
+        name = path.rsplit("/", 1)[-1]
+        for glob in self.files:
+            glob = glob.replace("\\", "/").lower()
+            globs = (glob, glob[3:]) if glob.startswith("**/") else (glob,)
+            if any(fnmatch.fnmatchcase(target, g) for g in globs for target in (path, name)):
+                return True
+        return False
 
     def matches(self, line: str) -> bool:
         if not self.pattern.search(line):
@@ -111,6 +133,7 @@ class Rule:
         """Plain values, for the dashboard, the CLI and export."""
         return {
             "id": self.id, "title": self.title, "languages": list(self.languages),
+            "files": list(self.files),
             "cwe": self.cwe, "severity": self.severity, "confidence": self.confidence,
             "pattern": self.pattern.pattern,
             "exclude": self.exclude.pattern if self.exclude else "",
@@ -134,6 +157,13 @@ class Rule:
         first, last = max(0, number - 1 - self.within), min(len(lines), number + self.within)
         return any(self.near.search(lines[i]) for i in range(first, last)
                    if len(lines[i]) <= MAX_LINE_LENGTH)
+
+
+def file_patterns(value: Any) -> List[str]:
+    """The `files` field as a list of patterns. Text is read as patterns separated by commas."""
+    if isinstance(value, str):
+        value = value.split(",")
+    return [str(x).strip() for x in value or [] if str(x).strip()]
 
 
 def parse_rule(raw: Dict, origin: str = "builtin", meta: Optional[Dict] = None,
@@ -175,6 +205,7 @@ def parse_rule(raw: Dict, origin: str = "builtin", meta: Optional[Dict] = None,
         near=re.compile(raw["near"], flags) if raw.get("near") else None,
         within=max(0, min(60, int(raw.get("within", DEFAULT_WITHIN) or 0))),
         requires_taint=bool(raw.get("requires_taint")),
+        files=file_patterns(raw.get("files")),
     )
 
 
@@ -390,11 +421,13 @@ def script_lines(sf: SourceFile) -> Set[int]:
 
 def scan_file(sf: SourceFile, disabled: Optional[Set[str]] = None,
               rules: Optional[List[Rule]] = None) -> List[Finding]:
+    if sf.origin in SKIPPED_ORIGINS:
+        return []
     active: List[Rule] = []
     ids: Set[str] = set()
     for language in sf.rule_languages:           # a page also gets the JavaScript rules
         for rule in rules_for(language, rules, disabled):
-            if rule.id not in ids:
+            if rule.id not in ids and rule.applies_to(sf.rel):
                 ids.add(rule.id)
                 active.append(rule)
     if not active:

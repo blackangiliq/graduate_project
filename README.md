@@ -2,18 +2,20 @@
 
 **Intelligent Source Code Vulnerability Detection and Security Assessment Platform**
 
-Choose a project folder. The tool scans the source code with several static analysis
-engines, reviews the results with AI (a cloud API or a local model), separates confirmed
-findings from probable ones, scores the project, and **learns**: what the AI discovers
-becomes a proposed rule that is validated automatically and activated only after you
-approve it.
+Choose a project folder or an Android app file. The tool scans the source code with several
+static analysis engines, reviews the results with AI (a cloud API or a local model),
+separates confirmed findings from probable ones, scores the project, and **learns**: what
+the AI discovers becomes a proposed rule that is validated automatically and activated only
+after you approve it. Flutter and Android apps are analysed both as source projects and as
+built packages (APK, AAB), which are decoded and read, never run.
 
-> وثيقة المشرف: **[docs/SUPERVISOR_AR.md](docs/SUPERVISOR_AR.md)** ([PDF](docs/SUPERVISOR_AR.pdf)) ·
+> وثيقة المشرف: **[docs/SUPERVISOR_AR.md](docs/SUPERVISOR_AR.md)** ([PDF](docs/SUPERVISOR_AR.pdf)، يُولَّد من ملف md، وعند الاختلاف فملف md هو المعتمد) ·
 > الدليل الكامل بالعربية: **[docs/GUIDE_AR.md](docs/GUIDE_AR.md)** ·
 > الشرح المصوَّر بكل المخططات: **[docs/DIAGRAMS_AR.md](docs/DIAGRAMS_AR.md)** ·
 > هيكل بحث التخرج: **[docs/THESIS_OUTLINE_AR.md](docs/THESIS_OUTLINE_AR.md)**
 >
 > Rules guide (EN + AR): [docs/RULES.md](docs/RULES.md) ·
+> Flutter and Android apps: [docs/FLUTTER.md](docs/FLUTTER.md) ([العربية](docs/FLUTTER_AR.md)) ·
 > Diagrams explained: [docs/DIAGRAMS.md](docs/DIAGRAMS.md) ·
 > Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -47,8 +49,8 @@ line, and are saved in the JSON report (`steps`).
 ## The dashboard
 
 Opening the dashboard shows a short splash screen and then five introduction pages, in
-English or Arabic: what the tool does (with live numbers: 22 languages, 66 file types, the
-active rules), how a scan works step by step, a card for every language with its file
+English or Arabic: what the tool does (with live numbers: 22 languages, 70 file types, the
+active rules and app checks), how a scan works step by step, a card for every language with its file
 types, its rule count and how deep the analysis goes, how a finding is decided (source,
 sink, confirmed or probable), and how to start, with a button that scans the sample or one
 of the training labs. **Skip** goes straight to the dashboard, and **Show the
@@ -59,9 +61,18 @@ sidebar). Every option has a (?) tooltip that says what it does, and the **Guide
 the instructions, the meaning of every setting, the rule-writing guide, all diagrams with
 their explanation, the command reference and the references.
 
-**Training labs.** The folder [infected_project](infected_project/README.md) lists 16
+**Apps.** The target box also takes an app file (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`):
+type its path, press **Browse app...**, or upload it. **Flutter sample** selects the
+deliberately vulnerable Flutter app in `samples/flutter_vulnerable_app`. For a Flutter or
+Android target the Dashboard tab adds an app panel (package, versions, build mode, signing,
+permissions, components, deep links, Dart packages), an **APIs and keys** panel (every server
+address, API call, API path and key, with its places and alerts; keys masked) and charts by
+OWASP Mobile Top 10 (2024) and MASVS group.
+
+**Training labs.** The folder [infected_project](infected_project/README.md) lists 19
 deliberately vulnerable open-source applications from different sources (OWASP, security
-companies, independent authors) in more than 10 languages, with their links and licences.
+companies, independent authors) in more than 10 languages, three of them Flutter apps,
+with their links and licences.
 `python infected_project/fetch_labs.py` downloads them at pinned commits, the sidebar's
 **Training lab** selector scans any of them, and `python infected_project/scan_labs.py`
 scans all of them ([RESULTS.md](infected_project/RESULTS.md),
@@ -89,7 +100,10 @@ Command line:
 ```bash
 python -m sca scan path/to/project --format html,json,sarif,pdf
 python -m sca scan path/to/project --llm --deep --strict --lang ar
-python -m sca doctor       # which engines and AI parts are available
+python -m sca scan app-release.apk                   # an Android app package (APK, AAB, APK set)
+python -m sca flutter info app-release.apk           # package, build mode, signing, components
+python -m sca flutter apis app-release.apk           # server addresses, API calls and keys, with their places
+python -m sca doctor       # which engines, AI parts and optional app tools are available
 ```
 
 ## Connecting an AI provider
@@ -126,13 +140,13 @@ Click the image to enlarge it. Source: [docs/diagrams/pipeline.mmd](docs/diagram
 | Stage | Code | Tools and techniques |
 |---|---|---|
 | 0. Input | `app.py`, `sca/__main__.py` | Streamlit dashboard, argparse command line, tkinter folder dialog |
-| 1. Collect | `sca/walker.py` | `os.walk`, extension-to-language map (66 extensions, 22 languages, including JSP, EJS and ASP.NET pages; a backup copy such as `config.php.dist` is read as the original), binary/minified/size filters |
-| 2. Detect | `sca/engines/`, `sca/rules/` | Secrets: regex key formats (8 built in + 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 163 built-in YAML rules + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules; pages and templates also get the JavaScript rules inside their `<script>` code. Python: `ast` module, taint analysis with function summaries. C/C++: per-function memory checks (`c_memory`): double free, use after free, leaks, allocation sizes that overflow, division by zero, out-of-bounds indexes, copies larger than the buffer. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
-| 3. Refine | `sca/learn/feedback.py`, `sca/engines/taint_lite.py` | Beta-posterior rule confidence and quarantine from your reviews; heuristic input tracing for 9 more languages |
-| 4. Merge | `sca/merge.py`, `sca/cwe.py` | Deduplication, noisy-OR confidence, CWE normalization, OWASP Top 10 (2021) mapping, English/Arabic knowledge base, SHA-256 fingerprints |
+| 1. Collect | `sca/walker.py`, `sca/flutter/` | `os.walk`, extension-to-language map (70 extensions, 22 languages, including JSP, EJS and ASP.NET pages; a backup copy such as `config.php.dist` is read as the original), binary/minified/size filters. An app package is decoded instead (own readers for ZIP, binary and protobuf XML, `resources.arsc`, DEX, APK signatures, the Dart kernel and the AOT snapshot) into virtual files |
+| 2. Detect | `sca/engines/`, `sca/rules/`, `sca/flutter/checks.py` | Secrets: regex key formats (11 in the engine, 2 Dart formats in `dart.yaml`, 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 215 built-in YAML pattern rules (47 of them for Dart) + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules; pages and templates also get the JavaScript rules inside their `<script>` code. Python: `ast` module, taint analysis with function summaries. C/C++: per-function memory checks (`c_memory`): double free, use after free, leaks, allocation sizes that overflow, division by zero, out-of-bounds indexes, copies larger than the buffer. Flutter/Android: 49 structural checks of the manifest, network security config, Gradle, signing, Info.plist, build mode and Dart dependencies. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
+| 3. Refine | `sca/learn/feedback.py`, `sca/engines/taint_lite.py` | Beta-posterior rule confidence and quarantine from your reviews; heuristic input tracing for 13 languages (Dart included) |
+| 4. Merge | `sca/merge.py`, `sca/cwe.py` | Deduplication, noisy-OR confidence, CWE normalization, OWASP Top 10 (2021) mapping (plus OWASP Mobile Top 10 2024 and MASVS for apps), English/Arabic knowledge base, SHA-256 fingerprints |
 | 5. ML | `sca/ai/classifier.py` | scikit-learn: code tokenizer, TF-IDF 1-3-grams, logistic regression; retrained with reviewed lines |
 | 6. AI review | `sca/ai/providers.py`, `sca/ai/llm.py` | OpenAI-compatible and Anthropic APIs or Ollama over `urllib`; JSON-only prompts; deep scan with second-pass verification; SQLite answer cache; secret masking |
-| 7. Assess | `sca/scoring.py` | Confirmed/probable tier, strict mode, risk 0-10, exponential project score 0-100, grade A-F |
+| 7. Assess | `sca/scoring.py`, `sca/flutter/inventory.py` | Confirmed/probable tier, strict mode, risk 0-10, exponential project score 0-100, grade A-F. For a mobile target, an API and key inventory follows: server addresses, API calls and paths, masked keys, service identifiers and alerts, read from text only (nothing is contacted) |
 | 8. Store and report | `sca/storage.py`, `sca/report/` | SQLite, pandas, self-contained HTML, fpdf2 (PDF), JSON, SARIF 2.1.0 |
 | 9. Learn | `sca/learn/` | LLM-written rules as JSON, 9 automatic checks, regex sandbox in a killable child process, human approval, YAML rule store |
 
@@ -178,11 +192,12 @@ AI service.)
 
 ### The rule set: built in, imported, learned, your own
 
-The tool ships **463 rules, 416 of them active**. Full guide: [docs/RULES.md](docs/RULES.md).
+The tool ships **517 rules, 470 of them active**, plus the 49 structural checks for Flutter
+and Android apps (section below). Full guide: [docs/RULES.md](docs/RULES.md).
 
 | Origin | Rules | Active | File |
 |---|---:|---:|---|
-| Built in, written with the tool | 163 | 163 | `sca/rules/*.yaml` |
+| Built in, written with the tool | 217 | 217 | `sca/rules/*.yaml` |
 | Imported from [Microsoft DevSkim](https://github.com/microsoft/DevSkim) (MIT) | 95 | 49 | `sca/rules/imported/devskim.yaml` |
 | Imported from [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT), credential formats | 205 | 204 | `sca/rules/imported/gitleaks.yaml` |
 | Learned from the AI, approved by you | grows with use | | `learned/rules.yaml` |
@@ -231,7 +246,7 @@ vulnerable is undecidable in general. What the tool does instead:
 | Layer | Effect |
 |---|---|
 | Exclusions and sanitizer lists in the rules | safe variants are not reported |
-| Taint tracing (AST for Python, taint-lite for 7 more language families) | separates "user input reaches this line" from "a pattern matched" |
+| Taint tracing (AST for Python, taint-lite for 8 more language families) | separates "user input reaches this line" from "a pattern matched" |
 | Several engines + noisy-OR | agreement raises confidence |
 | AI review with a second-pass check | false positives are labelled, AI discoveries need confirmation |
 | Your reviews | dismissed findings stay dismissed; noisy rules lose confidence and are quarantined; exclusions are learned |
@@ -239,6 +254,52 @@ vulnerable is undecidable in general. What the tool does instead:
 | **Strict mode** | only findings backed by independent evidence are counted; the rest move to *Needs review* |
 
 A finding is *confirmed* by your review, by the AI review, or by a traced flow of user input. Agreement between engines (or a single high-confidence rule) confirms only weaknesses that are a property of the line itself, such as a weak algorithm or a hard-coded key. For the injection family it does not: two engines that both notice a call to `pickle.loads()` have seen the same thing, and neither has shown that attacker data reaches it.
+
+## Flutter and Android apps
+
+The same scan works on a Flutter or Android **source project** and on a **built app
+package** (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). Full description:
+[docs/FLUTTER.md](docs/FLUTTER.md).
+
+- **Source project.** 47 Dart pattern rules (TLS, cleartext traffic, WebView settings, plain
+  and world-readable storage, SQL built from strings, weak cryptography and seeded random
+  numbers, logging of secrets, deep links, commands, reflection, paths) and 2 Dart credential
+  formats, input tracing for Dart, 5 rules for CI scripts, Firebase rules and the web page,
+  and 49 structural checks that parse `AndroidManifest.xml`, the network security config,
+  FileProvider paths, the Gradle release build, `key.properties`, keystores, `Info.plist`,
+  `pubspec.yaml` and `pubspec.lock` (25 curated advisories for 23 Pub packages, 16
+  discontinued packages). An Android library module gets only its component, permission and
+  link checks, product-flavor source sets count as release, and the platform folders of a
+  Flutter plugin are not audited as an app.
+- **App package.** Decoded in pure Python, with no Android SDK: the binary manifest and
+  resources, the DEX strings, the signing certificates, and the Flutter parts. A debug build
+  ships its Dart source in `kernel_blob.bin`, which is recovered and scanned like source code;
+  a release build ships an AOT snapshot in `libapp.so`, whose strings, build mode, Dart
+  version, obfuscation and package names are read. Findings point at a line of a decoded
+  file (the manifest is written one attribute per line), and app facts go into every report.
+- **API and key inventory.** After each scan of an app or project, the tool lists every
+  server address (with its service: Firebase, Supabase, AWS, Stripe ... or the app's own
+  server), the HTTP, WebSocket and GraphQL calls in code, the API paths kept as texts, the
+  keys and tokens (masked, with what to do about each), service identifiers such as the
+  Firebase project, and `.env` entries, each with all its places. Alerts point out secret
+  keys in the package, `http://` addresses, test servers and tunnels, keys in addresses,
+  webhooks and bot tokens. Addresses are only read, never contacted. It is in the dashboard
+  (*APIs and keys*), in the reports, and in `python -m sca flutter apis`. Details:
+  [docs/FLUTTER.md](docs/FLUTTER.md#7-api-and-key-inventory).
+- **Optional tools.** With `--apk-tools`, jadx decompiles the app's own classes and
+  apksigner verifies the signature, when they are installed.
+- **Mobile taxonomy.** Findings of a mobile target also carry an OWASP Mobile Top 10 (2024)
+  risk and a MASVS group, mapped from the CWE (the project's own mapping).
+
+```bash
+python -m sca flutter info app-release.apk                  # the facts of a package or project
+python -m sca flutter deps path/to/flutter_app              # Dart packages and known advisories
+python -m sca flutter apis app-release.apk                  # server addresses, API calls, keys, alerts
+python -m sca flutter decode app-release.apk --out decoded  # every decoded file + facts.json
+python -m sca flutter tools                                 # which optional tools are installed
+python -m sca scan app-release.apk --apk-tools              # also jadx and apksigner
+python -m sca scan path/to/project --no-flutter             # without the Flutter/Android checks, app facts and inventory
+```
 
 ## Measured results
 
@@ -259,7 +320,7 @@ Read these numbers with care:
 - The samples were written together with the tool, and some heuristics were adjusted while
   looking at them. They show that the pipeline works, not how it performs on unseen code.
 - Strict mode reached zero false positives **on these samples** by giving up a third of the
-  recall: the 23 real findings it set aside are in *Needs review*, not lost. An AI review is
+  recall: the 25 real findings it set aside are in *Needs review*, not lost. An AI review is
   what moves them back; that experiment needs your API key and is described in the guide.
 - The three misses of the normal mode are a missing access check, prototype pollution and
   a password passed as a positional argument. The first two are what the AI deep scan and
@@ -268,6 +329,39 @@ Read these numbers with care:
 - Bandit's hard-coded password test reports placeholders such as 'Enter your password';
   the tool now drops those as its own secrets engine does, which also changes the Bandit
   baseline row.
+
+### Flutter and Android apps
+
+`python evaluation/flutter_eval.py` (full output in
+[evaluation/flutter_results.md](evaluation/flutter_results.md)); static engines only.
+
+| Measurement | Result |
+|---|---|
+| Flutter samples, all static engines (60 labelled weaknesses, 5 decoys, plus a safe app) | precision 1.000, recall 0.983, F1 0.992 (59 TP, 0 FP, 1 FN) |
+| Same, pattern rules and secrets without the Flutter checks | precision 1.000, recall 0.550 |
+| Same, strict mode | precision 1.000, recall 0.233 |
+| [DVMA](https://github.com/cpeoples/dvma), 218 modules, module-level recall | 26 (11.9%); code-level categories 26.2%, authorization/IPC 10.0%, AI and runtime 4.3% |
+| [Ostorlab Insecure Flutter](https://github.com/Ostorlab/ostorlab_insecure_ios_app), 16 files | 15 found (93.8%) |
+| [DVFA](https://github.com/Schmiemandev/dvfa), 10 challenges | 5 found (50%), 5 of the 7 not marked hard |
+| Probe app built with Flutter 3.44.8: planted weaknesses still found | source 16/16, debug APK 16/16, release APK 14/16, obfuscated 14/16, AAB 14/16 |
+| API probe app (`samples/flutter_api_probe`, 25 items): items the API and key inventory lists | source 21/21, debug APK 22/22, release APK 24/24, obfuscated 24/24 |
+
+Read these numbers with care: the samples and the probe apps were written with the tool.
+The labs were not, but their truth files (`evaluation/flutter_truth/`) were written for this
+evaluation from each lab's documentation. Ostorlab rose from 10 to 15 of 16 with four Dart
+rules written after its misses were known, so for those five files it is no longer an
+unseen test. Most DVMA modules are authorization, IPC, AI-agent or runtime-defence
+weaknesses that no static pattern can see. The two weaknesses lost in release builds (a TLS
+callback that accepts every certificate, a token written to the log) are code structure,
+which survives only as machine code; strings, the manifest, resources, assets and the
+signature survive every build mode.
+
+The one sample weakness still missed is an access token in the query of a URL (CWE-598);
+the inventory raises an alert for it, but no rule reports it as a finding. A secret in a
+`.env` file, missed before, is now found because the secrets engine reads unquoted
+`NAME=value` lines. The release builds of the API probe list more keys than its source (10
+against 5), because the compiler joins the keys written there in parts; obfuscation changes
+nothing in the inventory.
 
 ### On the OWASP Benchmark (test cases not written with the tool)
 
@@ -375,11 +469,20 @@ scan about 40% slower. On the labelled samples the precision and recall above di
 ## What was and was not tested
 
 - Tested (Linux and Windows through GitHub Actions, Python 3.10 and 3.12; locally 3.13):
-  374 automated tests covering every engine, the pipeline, reports, the dashboard
+  1,394 automated tests covering every engine, the pipeline, reports, the dashboard
   (including the learn-and-approve flow, the Rules tab and the Guide tab in both
   languages), the provider clients, the configuration command, the learning loop, feedback,
-  quarantine, strict mode, the imported rules, rule management and the evaluation script.
+  quarantine, strict mode, the imported rules, rule management, the evaluation scripts, and
+  every decoder of the app module against synthetic and deliberately malformed packages.
+  The last full run on Windows (Python 3.12), with the real APKs, the probe builds and
+  jadx available: all 1,394 passed. Without them pytest skips the tests that need them
+  (next point).
   The dashboard was also driven through every tab in a real browser, in both languages.
+- App packages: the decoders were checked against real APKs and app bundles built with
+  Flutter 3.44.8 (debug, release, obfuscated release, AAB) and compared with the output of
+  `aapt2` and `apksigner`. Tests that need these packages, or jadx, run only when
+  `SCA_FLUTTER_APK_DIR`, `SCA_FLUTTER_PROBE_DIR`, `SCA_FLUTTER_API_DIR` or `SCA_JADX` is set. The built packages
+  were only decoded, never installed or run. iOS packages (`.ipa`) are not supported.
 - **No real AI service was called.** The provider clients and the learning loop were tested
   against local scripted servers that imitate the Ollama, OpenAI and Anthropic HTTP
   formats. The request format for the Claude API was checked against its current
@@ -408,15 +511,27 @@ scan about 40% slower. On the labelled samples the precision and recall above di
   languages are checked line by line, with a heuristic tracer for user input. The C/C++
   memory checks read one function at a time, top to bottom, without following paths.
 - Access control (IDOR), CSRF, business logic and outdated dependencies are not found by
-  the static engines; they need the AI deep scan, a dependency scanner or a person.
+  the static engines; they need the AI deep scan, a dependency scanner or a person. The
+  exception is Dart: `pubspec.lock` is checked against a curated, offline list of Pub
+  advisories.
+- A release app is read through its strings, not its machine code, so weaknesses that are
+  code structure (a certificate callback, data flowing into a log) are found only in the
+  source or in a debug build. There is no Dart data-flow engine and no analysis across Dart
+  and Kotlin/Java platform channels. The score of an app package counts only its decoded,
+  recovered and decompiled lines (not the strings dumps), so release APKs often score low
+  from a few findings; compare them by their findings. The API and key inventory only reads
+  addresses: it does not test whether a database or a storage bucket is really public or
+  whether a key still works. More limits of the app module are in
+  [docs/FLUTTER.md](docs/FLUTTER.md#10-limits).
 - A learned rule is a single-line regular expression. It cannot express multi-line or
   data-flow conditions; such weaknesses remain the job of the AI deep scan.
 - AI answers can be wrong in both directions. The design assumes this: nothing an AI says is
   acted on without validation, and nothing is ever deleted on its word.
 - The security score is a heuristic of this tool, not an official CVSS score.
 
-`samples/vulnerable_app` is intentionally insecure and exists only as test input. Never
-deploy it.
+`samples/vulnerable_app`, `samples/flutter_vulnerable_app`, `samples/flutter_apk_probe` and
+`samples/flutter_api_probe` are intentionally insecure and exist only as test input. Never
+deploy them, and never install or publish packages built from them.
 
 ## Project layout
 
@@ -424,30 +539,43 @@ deploy it.
 app.py                 Streamlit dashboard (English and Arabic)
 run.bat / run.sh       one-click launchers
 sca/
-  __main__.py          command line: scan, config, learn, rules, feedback, coverage, ...
+  __main__.py          command line: scan, config, learn, rules, feedback, coverage, flutter, ...
   pipeline.py          runs every stage in order
   walker.py            file discovery, language detection, secret masking
   engines/             rules_engine, python_ast, taint_lite, c_memory, secrets, external
-  rules/               built-in YAML rules: javascript, php, java, c_cpp, ruby, shell, other
+  rules/               built-in YAML rules: javascript, php, java, c_cpp, ruby, shell, dart,
+                       flutter, other
   rules/imported/      rules converted from DevSkim and Gitleaks, with source and licence
+  flutter/             app packages and Flutter/Android projects: decoders (zipread, axml,
+                       aabproto, arsc, dex, signing, kernel, snapshot), pubspec audit and
+                       advisories, loaders (apk, project), checks, inventory (API and key
+                       inventory), optional tools
   rulebook.py          rule management: list, check, create, edit, enable, reset, export
-  ui/                  splash and introduction pages, Rules tab, Guide tab, texts (EN + AR)
+  ui/                  splash and introduction pages, Rules tab, Guide tab, app panel,
+                       texts (EN + AR)
   merge.py             deduplication and noisy-OR confidence
-  cwe.py               CWE + OWASP knowledge base (English and Arabic)
+  cwe.py               CWE + OWASP knowledge base (English and Arabic), OWASP Mobile and MASVS
   ai/                  providers (API clients), llm (prompts), classifier (ML), seed_corpus
   learn/               propose, sandbox, validate, store, feedback, loop
   scoring.py           confirmed/probable tier, risk score, project score, grade
   storage.py           SQLite: history, LLM cache, reviews, rule candidates
   report/              HTML, PDF, SARIF, JSON
 learned/               learned rules, your own rules, your edits and exclusions (YAML)
-tools/                 import_rules.py (import and vet open-source rules), build_docs.py
-samples/               vulnerable_app, safe_app, ground_truth.json
-infected_project/      16 training labs: sources and licences, fetch_labs.py, scan_labs.py,
+tools/                 import_rules.py (import and vet open-source rules), build_docs.py,
+                       build_flutter_apks.py (builds the probe apps into APKs and an AAB),
+                       build_pdf.py (renders docs/SUPERVISOR_AR.md as the PDF; needs
+                       Playwright, rerun it after every change to the .md)
+samples/               vulnerable_app, safe_app, ground_truth.json; flutter_vulnerable_app,
+                       flutter_safe_app, flutter_ground_truth.json, flutter_apk_probe,
+                       flutter_api_probe
+infected_project/      19 training labs: sources and licences, fetch_labs.py, scan_labs.py,
                        RESULTS.md, REVIEW.md (the labs themselves are downloaded, not stored)
-evaluation/            evaluate.py, results.md, owasp_benchmark.py and .md, import_report.json
-tests/                 374 tests
-docs/                  supervisor document, Arabic guide, rules guide, illustrated walk-through,
-                       thesis outline, architecture,
+evaluation/            evaluate.py, results.md, owasp_benchmark.py and .md, import_report.json,
+                       flutter_eval.py, flutter_results.md, flutter_truth/ (truth files of
+                       the labs and the probe apps)
+tests/                 1,394 tests
+docs/                  supervisor document, Arabic guide, rules guide, Flutter guide (EN + AR),
+                       illustrated walk-through, thesis outline, architecture,
                        diagrams/ (Mermaid sources) and images/
 experiments/           optional CodeBERT fine-tuning script (not executed)
 ```

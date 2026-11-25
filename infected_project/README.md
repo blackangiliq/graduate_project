@@ -8,8 +8,8 @@
 
 ## بالعربية
 
-هذا المجلد يجمع **16 مختبراً** من مصادر مختلفة (OWASP، وشركات أمن، وباحثين مستقلين) بـ
-**أكثر من 10 لغات برمجة**، لنختبر عليها الأداة على كود لم يُكتب معها.
+هذا المجلد يجمع **19 مختبراً** من مصادر مختلفة (OWASP، وشركات أمن، وباحثين مستقلين) بـ
+**أكثر من 10 لغات برمجة**، منها ثلاثة تطبيقات Flutter، لنختبر عليها الأداة على كود لم يُكتب معها.
 
 **لماذا لا يوجد كود المختبرات نفسه في المستودع؟** لأنها ملك مؤلفيها وبرخص مختلفة (GPL و MIT
 وغيرها)، وحجمها معاً كبير، وبعضها يحوي مفاتيح وهمية عمداً يمنع GitHub رفعها. لذلك يحوي المستودع
@@ -18,9 +18,10 @@
 ### التشغيل
 
 ```bash
-python infected_project/fetch_labs.py          # ينزّل المختبرات الـ 16 (نحو 130 MB)
+python infected_project/fetch_labs.py          # ينزّل المختبرات الـ 19 (نحو 195 MB على القرص)
 python infected_project/scan_labs.py           # يفحصها كلها ويكتب RESULTS.md
 python infected_project/scan_labs.py --reports # ومعها تقرير HTML و JSON لكل مختبر
+python evaluation/flutter_eval.py              # استرجاع الأداة على مختبرات Flutter الثلاثة
 ```
 
 أو من اللوحة: القسم **1. المشروع ← مختبر تدريبي**، ثم **ابدأ الفحص**. والصفحة الأخيرة من
@@ -46,6 +47,17 @@ python infected_project/scan_labs.py --reports # ومعها تقرير HTML و J
 | 14 | VAmPI | Python (Flask API) | [erev0s/VAmPI](https://github.com/erev0s/VAmPI) | MIT | واجهة REST API ضعيفة تغطي OWASP API Security Top 10 |
 | 15 | xvwa | PHP | [s4n7h0/xvwa](https://github.com/s4n7h0/xvwa) | GPL-3.0 | الحقن و XSS ورفع الملفات وإدارة الجلسات غير الآمنة |
 | 16 | DVGA | Python (GraphQL) | [dolevf/Damn-Vulnerable-GraphQL-Application](https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application) | MIT | الحقن و SSRF وحجب الخدمة وكشف المعلومات عبر GraphQL |
+| 17 | DVMA | Dart (Flutter), Kotlin, Swift | [cpeoples/dvma](https://github.com/cpeoples/dvma) | MIT | تطبيق جوال فيه 218 وحدة ضعيفة عمداً في 15 فئة (التخزين والتشفير والشبكة والمنصّة و WebView وسلسلة التوريد والمصادقة والذكاء الاصطناعي)، ولكل وحدة أرقام CWE في سجلّه |
+| 18 | DVFA | Dart (Flutter), Python | [Schmiemandev/dvfa](https://github.com/Schmiemandev/dvfa) | MIT | تطبيق مالي فيه 10 تحدّيات موثّقة: PIN في SharedPreferences، و HTTP غير مشفّر، وحقن SQL في sqflite، ورابط عميق يُطلق تحويلاً، ومفتاح AES مكتوب في الكود |
+| 19 | Ostorlab-Insecure-Flutter | Dart (Flutter) | [Ostorlab/ostorlab_insecure_ios_app](https://github.com/Ostorlab/ostorlab_insecure_ios_app) | Apache-2.0 | 16 ملفاً في كل منها ثغرة واحدة: نمط ECB، ومتجه تهيئة ثابت، وتجزئة ضعيفة، وعشوائية غير آمنة، واتصال غير مشفّر، وحقن SQL، واجتياز المسارات، وتنفيذ الأوامر، وإعدادات WebView |
+
+**مختبرات Flutter الثلاثة** (17 إلى 19) تقيس وحدة تطبيقات Flutter و Android. لكل منها ملف إجابات
+صحيحة: سجل DVMA نفسه (الوحدة وأرقام CWE الخاصة بها)، وملفان كتبناهما لـ DVFA و Ostorlab من توثيقهما
+وكودهما مع ملف كل بند وسطره (`evaluation/flutter_truth/`). النتائج في
+`evaluation/flutter_results.md`: DVMA 26 من 218 وحدة، و Ostorlab 15 من 16 ملفاً، و DVFA 5 من 10
+تحدّيات. ورقم DVMA منخفض لأن أغلب وحداته ثغرات تفويض وسلوك ذكاء اصطناعي وغياب دفاعات وقت
+التشغيل، وهذه لا يراها التحليل الستاتيكي. وارتفع Ostorlab من 10 إلى 15 بأربع قواعد Dart كُتبت بعد
+معرفة الثغرات التي فاتت الأداة فيه.
 
 ### مختبرات أونلاين (للمقارنة)
 
@@ -70,9 +82,9 @@ python infected_project/scan_labs.py --reports # ومعها تقرير HTML و J
 
 ## In English
 
-This folder gathers **16 labs** from different sources (OWASP, security companies and
-independent researchers) in **more than 10 programming languages**, to test the tool on code
-that was not written together with it.
+This folder gathers **19 labs** from different sources (OWASP, security companies and
+independent researchers) in **more than 10 programming languages**, three of them Flutter
+apps, to test the tool on code that was not written together with it.
 
 The labs' code is not stored in the repository: it belongs to its authors under different
 licences, it is large, and some labs contain fake keys on purpose that GitHub refuses to
@@ -80,9 +92,10 @@ accept. The repository holds the list, pinned to one commit per lab (`labs.json`
 script that downloads all of them with one command.
 
 ```bash
-python infected_project/fetch_labs.py          # downloads the 16 labs (about 130 MB)
+python infected_project/fetch_labs.py          # downloads the 19 labs (about 195 MB on disk)
 python infected_project/scan_labs.py           # scans all of them, writes RESULTS.md
 python infected_project/scan_labs.py --reports # plus an HTML and JSON report per lab
+python evaluation/flutter_eval.py              # recall on the three Flutter labs
 ```
 
 In the dashboard: **1. Project → Training lab**, then **Run scan**; the last introduction
@@ -106,6 +119,18 @@ page has a **Scan this lab** button.
 | 14 | VAmPI | Python (Flask API) | [erev0s/VAmPI](https://github.com/erev0s/VAmPI) | MIT | A vulnerable REST API for the OWASP API Security Top 10 |
 | 15 | xvwa | PHP | [s4n7h0/xvwa](https://github.com/s4n7h0/xvwa) | GPL-3.0 | Injections, XSS, upload, insecure session handling |
 | 16 | DVGA | Python (GraphQL) | [dolevf/Damn-Vulnerable-GraphQL-Application](https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application) | MIT | Injections, SSRF, denial of service, information disclosure via GraphQL |
+| 17 | DVMA | Dart (Flutter), Kotlin, Swift | [cpeoples/dvma](https://github.com/cpeoples/dvma) | MIT | Mobile app with 218 deliberately vulnerable modules in 15 categories (storage, crypto, network, platform, WebView, supply chain, auth, AI), each with its CWEs in a registry |
+| 18 | DVFA | Dart (Flutter), Python | [Schmiemandev/dvfa](https://github.com/Schmiemandev/dvfa) | MIT | FinTech app with 10 documented challenges: PIN in SharedPreferences, cleartext HTTP, SQL injection in sqflite, a deep link that runs a transfer, a hard-coded AES key |
+| 19 | Ostorlab-Insecure-Flutter | Dart (Flutter) | [Ostorlab/ostorlab_insecure_ios_app](https://github.com/Ostorlab/ostorlab_insecure_ios_app) | Apache-2.0 | 16 files with one weakness each: ECB mode, static IV, weak hash, insecure random, cleartext traffic, SQL injection, path traversal, command execution, WebView settings |
+
+The three Flutter labs (17 to 19) measure the Flutter/Android module. Each has a truth
+file: DVMA's own registry (module and CWEs), and two files written for DVFA and Ostorlab
+from their documentation and code, with the file and line of every item
+(`evaluation/flutter_truth/`). Results in `evaluation/flutter_results.md`: DVMA 26 of 218
+modules, Ostorlab 15 of 16 files, DVFA 5 of 10 challenges. The DVMA number is low because
+most of its modules are authorization, AI-behaviour and missing runtime-defence weaknesses
+that static analysis does not see. Ostorlab rose from 10 to 15 with four Dart rules written
+after its misses were known.
 
 Online labs without published source (PortSwigger Web Security Academy, the Acunetix test
 sites, TryHackMe, Hack The Box Academy, PentesterLab, Root Me) are listed in the Arabic

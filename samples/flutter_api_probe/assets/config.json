@@ -1,0 +1,5 @@
+{
+  "analyticsEndpoint": "http://collect.shop-probe.example/v1/events",
+  "supportApiToken": "c0ffee00deadbeef0123456789abcdef",
+  "cdn": "https://cdn.shop-probe.example/assets/"
+}

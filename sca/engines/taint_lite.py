@@ -43,6 +43,21 @@ SOURCES: Dict[str, "re.Pattern[str]"] = {
     "csharp": re.compile(r"\bRequest\.(QueryString|Form|Params|Cookies|Headers|Query)\b|\bRequest\["),
     "ruby": re.compile(r"\bparams\[|\brequest\.(params|body|headers)\b|\bcookies\["),
     "c": re.compile(r"\bargv\b|\bgetenv\s*\("),
+    # Flutter: text typed into a field, deep links and route parameters, push messages,
+    # the page URL on the web, console input, and requests to a Dart server (shelf, dart:io)
+    "dart": re.compile(
+        r"\b\w*([Cc]ontroller|[Cc]trl)\.text\b|\bUri\.base\b|\.queryParameters(All)?\b"
+        r"|\.pathParameters\b|\.pathSegments\b"
+        r"|\bsettings\??\.arguments\b|\b(getInitialLink|getInitialUri|getInitialAppLink"
+        r"|getLatestLink|getLatestAppLink|uriLinkStream|linkStream|stringLinkStream|appLinks)\b"
+        r"|\bstdin\.readLineSync\s*\(|\bstate\.(uri|params|queryParams)\b|\bGoRouterState\b"
+        r"|\bRemoteMessage\b|\bmessage\.data\b|\bwindow\.location\.(href|search|hash)\b"
+        r"|\b(req|request)\.(uri|url|requestedUri|headers|readAsString)\b"),
+}
+# Sanitizers that only one language has; SANITIZERS below applies to every language
+LANGUAGE_SANITIZERS: Dict[str, "re.Pattern[str]"] = {
+    "dart": re.compile(r"\b(int|double|num)\.tryParse\b|\bUri\.encode(Query)?Component\b"
+                       r"|\bhtmlEscape\.convert\b|\bHtmlEscape\b"),
 }
 SANITIZERS = re.compile(
     r"htmlspecialchars|htmlentities|escapeshellarg|escapeshellcmd|intval|\(int\)|parseInt"
@@ -64,6 +79,8 @@ DESTRUCTURE = re.compile(r"\{\s*([\w\s,:$]+)\}\s*=(?!=)\s*(.+)")
 KEYWORDS = {"if", "else", "for", "while", "return", "const", "let", "var", "new", "function",
             "echo", "print", "true", "false", "null", "nil", "this", "self", "String", "int",
             "char", "void", "public", "private", "static", "final", "await", "async"}
+# Keywords of one language only: they are never variable names there
+LANGUAGE_KEYWORDS: Dict[str, Set[str]] = {"dart": KEYWORDS | {"late", "required", "dynamic"}}
 
 
 def strip_lookups(text: str) -> str:
@@ -109,12 +126,17 @@ REQUEST_PARAMETER = re.compile(
     r"(?:final\s+)?[\w.<>\[\]?, ]+?\s+(\w+)\s*[,)]")
 INTERPOLATION = re.compile(r"\$\{([^}]*)\}|#\{([^}]*)\}|\{(\$[^}]*)\}|(\$[A-Za-z_]\w*)")
 CSHARP_HOLE = re.compile(r"\{([^}]*)\}")
+DART_NAME = re.compile(r"[A-Za-z_]\w*")
+DART_MAX_DEPTH = 8                   # ${ ... } holes nested deeper are read as plain words
 
 
-def code_only(text: str) -> str:
+def code_only(text: str, language: str = "") -> str:
     """The line with the words of its string literals removed. A literal is text, not
     variables: ``out.print("Missing url parameter")`` mentions no variable ``url``. What a
-    string interpolates stays: "$name", "{$name}", `${name}`, "#{name}", C# $"{name}"."""
+    string interpolates stays: "$name", "{$name}", `${name}`, "#{name}", C# $"{name}".
+    In Dart both quotes interpolate ('$name', "${expr}") unless the string is raw (r'...')."""
+    if language == "dart":
+        return _dart_code_only(text)
     out: List[str] = []
     i = 0
     while i < len(text):
@@ -139,8 +161,75 @@ def code_only(text: str) -> str:
     return "".join(out)
 
 
-def _idents(text: str) -> Set[str]:
-    return {m.group(0) for m in IDENT.finditer(code_only(text))} - KEYWORDS
+def _dart_code_only(text: str, depth: int = 0) -> str:
+    """code_only for Dart. A hole gives the bare name ('$name' -> name) or its expression
+    ('${user.name}' -> user.name), so it can be compared with assigned names."""
+    out: List[str] = []
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch not in "\"'":
+            out.append(ch)
+            i += 1
+            continue
+        before = out[-2][-1:] if len(out) > 1 else ""
+        raw = bool(out) and out[-1] == "r" and not (before.isalnum() or before == "_")
+        if raw:
+            out.pop()                                   # the r of r'...' is not a name
+        quote = ch * 3 if text.startswith(ch * 3, i) else ch
+        j = i + len(quote)
+        holes: List[str] = []
+        while j < len(text) and not text.startswith(quote, j):
+            if raw or text[j] not in "\\$":
+                j += 1
+            elif text[j] == "\\":
+                j += 2
+            elif text.startswith("${", j):
+                end = _closing_brace(text, j + 2)
+                hole = text[j + 2:end]
+                holes.append(_dart_code_only(hole, depth + 1) if depth < DART_MAX_DEPTH else hole)
+                j = end + 1
+            else:
+                name = DART_NAME.match(text, j + 1)
+                if name:
+                    holes.append(name.group(0))
+                j = name.end() if name else j + 1
+        out.append(" " + " ".join(holes) + " ")
+        i = j + len(quote)
+    return "".join(out)
+
+
+def _closing_brace(text: str, start: int) -> int:
+    """Where the ${ ... } hole that starts at ``start`` ends: the index of its closing brace,
+    or the end of the text. Braces inside the hole's own string literals do not count."""
+    level, quote = 1, ""
+    for j in range(start, len(text)):
+        ch = text[j]
+        if quote:
+            if ch == quote and text[j - 1] != "\\":
+                quote = ""
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "{":
+            level += 1
+        elif ch == "}":
+            level -= 1
+            if not level:
+                return j
+    return len(text)
+
+
+def _keywords(language: str) -> Set[str]:
+    return LANGUAGE_KEYWORDS.get(language, KEYWORDS)
+
+
+def _idents(text: str, language: str = "") -> Set[str]:
+    return {m.group(0) for m in IDENT.finditer(code_only(text, language))} - _keywords(language)
+
+
+def _sanitized(text: str, language: str) -> bool:
+    own = LANGUAGE_SANITIZERS.get(language)
+    return bool(SANITIZERS.search(text) or (own is not None and own.search(text)))
 
 
 def tainted_names(sf: SourceFile, line: int, source: "re.Pattern[str]") -> Set[str]:
@@ -161,11 +250,11 @@ def tainted_names(sf: SourceFile, line: int, source: "re.Pattern[str]") -> Set[s
                 continue
             names = [n.strip() for n in match.group(1).split(",")]
         rhs = strip_lookups(match.group(2))
-        if SANITIZERS.search(rhs):
+        if _sanitized(rhs, sf.rule_language):
             tainted.difference_update(names)      # re-assigned from a sanitized value
             continue
-        if source.search(rhs) or (_idents(rhs) & tainted):
-            tainted.update(n for n in names if n and n not in KEYWORDS)
+        if source.search(rhs) or (_idents(rhs, sf.rule_language) & tainted):
+            tainted.update(n for n in names if n and n not in _keywords(sf.rule_language))
     return tainted
 
 
@@ -174,12 +263,12 @@ def is_traced(sf: SourceFile, line: int) -> bool:
     if source is None or not 1 <= line <= len(sf.lines):
         return False
     text = sf.lines[line - 1]
-    if SANITIZERS.search(text):
+    if _sanitized(text, sf.rule_language):
         return False
     stripped = strip_lookups(text)
     if source.search(stripped):
         return True
-    return bool(_idents(stripped) & tainted_names(sf, line, source))
+    return bool(_idents(stripped, sf.rule_language) & tainted_names(sf, line, source))
 
 
 def apply(findings: Iterable[Finding], by_rel: Dict[str, SourceFile]) -> int:

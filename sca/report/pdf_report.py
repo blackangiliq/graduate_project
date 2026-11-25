@@ -1,13 +1,18 @@
 """PDF report (uses fpdf2, pure Python).
 
 The built-in PDF fonts only cover Latin characters, so non-Latin text (for example Arabic
-AI explanations) is left out of the PDF; the HTML report shows everything.
+AI explanations) is left out of the PDF; the HTML report shows everything. For an app
+package or a Flutter/Android project the PDF lists the app facts as Latin text and counts the
+findings by OWASP Mobile Top 10 (2024) risk.
 """
 from __future__ import annotations
 
-from typing import List
+from typing import Dict, List
 
+from ..cwe import MOBILE_TOP10_2024, mobile_name
 from ..models import SEVERITIES, ScanResult
+from .html_report import (API_ROWS, APP_ROWS, api_alerts, api_summary, api_tables,
+                          api_truncated, app_overview, app_tables)
 
 COLORS = {"critical": (153, 27, 27), "high": (194, 65, 12), "medium": (180, 120, 10),
           "low": (37, 99, 150), "info": (100, 100, 100)}
@@ -73,6 +78,46 @@ def render_pdf(result: ScanResult) -> bytes:
             line("AI %s: %s" % (key.upper(), result.ai[key]), 8, "", (90, 90, 90), 4.5)
     pdf.ln(3)
 
+    if result.app:
+        line("App facts", 12, "B")
+        for label, text in app_overview(result.app):
+            line("%s: %s" % (label, text), 9, "", (30, 30, 30), 4.5)
+        for title, columns, rows in app_tables(result.app):
+            pdf.ln(1)
+            line("%s (%d)" % (title, len(rows)), 10, "B")
+            for row in rows[:APP_ROWS]:
+                more = ", ".join("%s: %s" % (column.lower(), cell)
+                                 for column, cell in zip(columns[1:], row[1:]) if cell)
+                line("  %s%s" % (row[0], "  (%s)" % more if more else ""), 8, "",
+                     (60, 60, 60), 4)
+            if len(rows) > APP_ROWS:
+                line("  and %d more" % (len(rows) - APP_ROWS), 8, "I", (90, 90, 90), 4)
+        pdf.ln(3)
+        apis = result.app.get("apis")
+        if isinstance(apis, dict):
+            line("APIs and keys", 12, "B")
+            line(api_summary(apis) + ". Keys are masked; no address was contacted.", 9, "",
+                 (30, 30, 30), 4.5)
+            if api_truncated(apis):
+                line(api_truncated(apis), 8, "I", (90, 90, 90), 4)
+            colors = {"danger": (155, 28, 28), "warning": (161, 98, 7), "info": (29, 95, 138)}
+            alerts = api_alerts(apis)
+            for level, text in alerts[:API_ROWS]:
+                line("  ! %s" % text, 8, "", colors.get(level, (60, 60, 60)), 4)
+            if len(alerts) > API_ROWS:
+                line("  and %d more alerts" % (len(alerts) - API_ROWS), 8, "I", (90, 90, 90), 4)
+            for title, columns, rows in api_tables(apis):
+                pdf.ln(1)
+                line("%s (%d)" % (title, len(rows)), 10, "B")
+                for row in rows[:API_ROWS]:
+                    more = ", ".join("%s: %s" % (column.lower(), cell)
+                                     for column, cell in zip(columns[1:], row[1:]) if cell)
+                    line("  %s%s" % (row[0], "  (%s)" % more if more else ""), 8, "",
+                         (60, 60, 60), 4)
+                if len(rows) > API_ROWS:
+                    line("  and %d more" % (len(rows) - API_ROWS), 8, "I", (90, 90, 90), 4)
+            pdf.ln(3)
+
     by_owasp = {}
     for finding in result.open_findings:
         by_owasp[finding.owasp] = by_owasp.get(finding.owasp, 0) + 1
@@ -80,6 +125,15 @@ def render_pdf(result: ScanResult) -> bytes:
         line("Findings by OWASP Top 10 category", 12, "B")
         for name, count in sorted(by_owasp.items(), key=lambda kv: -kv[1]):
             line("  %3d   %s" % (count, name), 9)
+        pdf.ln(3)
+    by_risk: Dict[str, int] = {}
+    for finding in result.open_findings:
+        if finding.owasp_mobile:
+            by_risk[finding.owasp_mobile] = by_risk.get(finding.owasp_mobile, 0) + 1
+    if result.app:
+        line("Findings by OWASP Mobile Top 10 (2024) risk", 12, "B")
+        for code in MOBILE_TOP10_2024:
+            line("  %3d   %s %s" % (by_risk.get(code, 0), code, mobile_name(code)), 9)
         pdf.ln(3)
 
     line("Findings", 14, "B")
@@ -95,8 +149,10 @@ def render_pdf(result: ScanResult) -> bytes:
             tag += ", confirmed"
         line("%d. [%s] %s" % (number, tag, finding.title), 10, "B",
              COLORS[finding.severity])
-        line("%s:%d    %s    risk %.1f/10    confidence %d%%    engines: %s"
-             % (finding.file, finding.line, finding.cwe or "-", finding.risk_score,
+        mobile = "    ".join(tag for tag in (finding.owasp_mobile, finding.masvs) if tag)
+        line("%s:%d    %s    %srisk %.1f/10    confidence %d%%    engines: %s"
+             % (finding.file, finding.line, finding.cwe or "-",
+                mobile + "    " if mobile else "", finding.risk_score,
                 round(finding.confidence * 100), ", ".join(finding.engines)), 8, "",
              (90, 90, 90), 4.5)
         if finding.snippet:

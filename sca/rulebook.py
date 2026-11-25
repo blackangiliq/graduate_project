@@ -37,8 +37,8 @@ LANGUAGES = ["any"] + CODE_LANGUAGES + ["config", "html"]
 ID_FORMAT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]{2,63}")
 USER_FILES = {"learned": "rules.yaml", "custom": "custom.yaml"}
 # the fields of a rule as they are written to a YAML file, in this order
-FILE_KEYS = ("id", "kind", "title", "languages", "cwe", "severity", "confidence", "pattern",
-             "exclude", "ignore_case", "near", "within", "requires_taint", "enabled",
+FILE_KEYS = ("id", "kind", "title", "languages", "files", "cwe", "severity", "confidence",
+             "pattern", "exclude", "ignore_case", "near", "within", "requires_taint", "enabled",
              "message", "fix", "keywords", "entropy",
              "secret_group", "examples_vulnerable", "examples_safe", "note", "learned")
 HEADERS = {
@@ -195,6 +195,11 @@ def check(raw: Dict[str, Any], storage: Optional[Storage] = None,
         errors.append("title: missing")
     if not languages or any(l not in LANGUAGES for l in languages):
         errors.append("languages: choose from %s" % ", ".join(LANGUAGES))
+    files = raw.get("files")
+    if files not in (None, "") and (not isinstance(files, (list, tuple))
+                                    or not all(isinstance(f, str) and f.strip() for f in files)):
+        errors.append("files: a list of file name patterns, for example "
+                      "['*.gradle', '**/web/index.html']")
     if not re.fullmatch(r"CWE-\d{1,4}", str(raw.get("cwe") or "")):
         errors.append("cwe: must look like CWE-89")
     if str(raw.get("severity", "")).lower() not in SEVERITY_RANK:
@@ -274,12 +279,15 @@ def create(raw: Dict[str, Any], storage: Optional[Storage] = None) -> Dict[str, 
 
 
 def normalise(raw: Dict[str, Any]) -> Dict[str, Any]:
-    """Accept "89" or "cwe-89" for the weakness and any letter case for the severity."""
+    """Accept "89" or "cwe-89" for the weakness, any letter case for the severity, and file
+    patterns as text separated by commas."""
     raw = dict(raw)
     if "cwe" in raw:
         raw["cwe"] = canonical_or_same(raw["cwe"])
     if "severity" in raw:
         raw["severity"] = str(raw["severity"]).lower()
+    if isinstance(raw.get("files"), str):
+        raw["files"] = rules_engine.file_patterns(raw["files"])
     return raw
 
 
@@ -313,7 +321,7 @@ def update(rule_id: str, changes: Dict[str, Any], storage: Optional[Storage] = N
     edits = _read("edits.yaml", {})
     entry = {**(edits.get(rule_id) or {}), **{k: v for k, v in changes.items() if k in EDITABLE}}
     defaults = {"exclude": "", "ignore_case": False, "message": "", "fix": "", "enabled": True,
-                "confidence": 0.6, "severity": "medium"}
+                "confidence": 0.6, "severity": "medium", "files": []}
     entry = {k: v for k, v in entry.items()        # keep only real differences
              if v != original.get(k, defaults.get(k))}
     if entry:
@@ -434,6 +442,8 @@ TEMPLATE = """# A rule for Secure Code Analyzer. Fill it in and add it with:
 - id: MY-RULE-001                 # unique name
   title: Short description of the weakness
   languages: [javascript]         # any, %(languages)s
+  files: []                       # optional: only files whose path or name matches, for
+                                  # example ['*.gradle', '**/web/index.html']
   cwe: CWE-89                     # https://cwe.mitre.org
   severity: high                  # critical, high, medium, low, info
   confidence: 0.6                 # 0..1: how sure the rule is on its own

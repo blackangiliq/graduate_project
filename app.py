@@ -5,12 +5,14 @@ The dashboard is only reachable from this computer (localhost).
 """
 from __future__ import annotations
 
+import hashlib
 import inspect
 import json
 import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -21,9 +23,13 @@ from sca import __version__, scoring
 from sca.ai.classifier import SKLEARN_AVAILABLE
 from sca.ai.llm import DEFAULT_MODEL
 from sca.ai.providers import PRESETS, LLMConfig, load_config, make_client, save_config
-from sca.cwe import info as cwe_info
+from sca.cwe import MASVS_GROUPS, MOBILE_TOP10_2024, info as cwe_info, masvs_name, mobile_name
 from sca.engines import external
 from sca.engines.rules_engine import load_rules
+from sca.flutter import APP_SUFFIXES, AppError, is_app_package
+from sca.flutter import tools as app_tools
+from sca.flutter import zipread
+from sca.flutter.pubspec import parse_pubspec
 from sca.learn import feedback as feedback_module
 from sca import rulebook
 from sca.learn import loop, store
@@ -32,19 +38,22 @@ from sca.pipeline import ScanOptions, run_scan
 from sca.report.html_report import render_html
 from sca.report.pdf_report import render_pdf
 from sca.report.sarif import to_sarif
-from sca.storage import Storage
-from sca.ui import guide_tab, intro, rules_tab, texts
+from sca.storage import Storage, data_dir
+from sca.ui import app_panel, guide_tab, intro, rules_tab, texts
 from sca.ui.i18n import AR
-from sca.walker import CODE_LANGUAGES
+from sca.walker import CODE_LANGUAGES, strip_bidi
 
 ROOT = Path(__file__).resolve().parent
 SAMPLE = ROOT / "samples" / "vulnerable_app"
+FLUTTER_SAMPLE = ROOT / "samples" / "flutter_vulnerable_app"
 SEV_COLOR = {"critical": "#9b1c1c", "high": "#c2410c", "medium": "#a16207", "low": "#1d5f8a",
              "info": "#5f5e5a"}
 CODE_LANG = {"python": "python", "javascript": "javascript", "typescript": "typescript",
              "php": "php", "java": "java", "c": "c", "cpp": "cpp", "csharp": "csharp",
              "go": "go", "config": "yaml", "shell": "bash", "html": "html", "ruby": "ruby",
-             "kotlin": "kotlin", "rust": "rust", "swift": "swift", "powershell": "powershell"}
+             "kotlin": "kotlin", "rust": "rust", "swift": "swift", "powershell": "powershell",
+             "dart": "dart"}
+UPLOAD_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 STATUS_LABEL = {"open": "Open", "needs_review": "Needs review",
                 "likely_false_positive": "Likely false positives (AI)",
                 "dismissed": "Dismissed by you"}
@@ -54,6 +63,8 @@ st.set_page_config(page_title="Secure Code Analyzer", page_icon=":shield:", layo
 # Streamlit renamed the "fill the available width" option; support old and new versions.
 WIDE = ({"width": "stretch"} if "width" in inspect.signature(st.button).parameters
         else {"use_container_width": True})
+# Newer Streamlit can keep the bars of a chart in data order (older ones sort them by name).
+CHART_ORDER = {"sort": False} if "sort" in inspect.signature(st.bar_chart).parameters else {}
 
 
 # ------------------------------------------------------------------ helpers
@@ -73,11 +84,23 @@ def t(text: str) -> str:
 
 
 MARKDOWN_SPECIAL = re.compile(r"([\\`*_\[\]<>#|~$])")
+# where Markdown would turn an address or an e-mail into a link: after the ':' of '://',
+# before '@' and after 'www'. An invisible WORD JOINER (U+2060) there stops it; a backslash
+# escape does not (Streamlit's Markdown still links "https\://...").
+AUTOLINK = re.compile(r"(?i)(?<=:)(?=//)|(?=@)|(?<=\bwww)(?=\.)")
 
 
 def plain(text: str) -> str:
-    """Escape Markdown, so that a path such as C:\\my_app\\*.py is shown as it is."""
-    return MARKDOWN_SPECIAL.sub(r"\\\1", text)
+    """Escape Markdown, so that a path such as C:\\my_app\\*.py is shown as it is, and keep an
+    address or e-mail of a scanned app from becoming a link."""
+    return AUTOLINK.sub("\u2060", MARKDOWN_SPECIAL.sub(r"\\\1", text))
+
+
+def untrusted(text: str) -> str:
+    """Text of a scanned project or app (a title, a file name, a quoted value) for a place
+    that renders Markdown, a label included: shown as it is, without links, images or
+    formatting, and without the Unicode controls that would show it in another order."""
+    return plain(strip_bidi(str(text)))
 
 
 def scan_text(message: str) -> str:
@@ -140,18 +163,30 @@ RTL_CSS = """<style>
 </style>"""
 
 
-def pick_folder() -> str:
-    """Open the operating system's folder dialog (in a separate process so that it cannot
-    interfere with the web server) and return the chosen path."""
+def run_dialog(call: str) -> str:
+    """Open a dialog of the operating system (in a separate process so that it cannot
+    interfere with the web server) and return the path it printed. The child prints UTF-8,
+    so a path with Arabic letters survives a console that uses another code page."""
     code = ("import tkinter as tk\nfrom tkinter import filedialog\nroot = tk.Tk()\n"
             "root.withdraw()\nroot.attributes('-topmost', True)\n"
-            "print(filedialog.askdirectory(title='Choose the project folder') or '')")
+            "print(filedialog.%s or '')" % call)
     try:
-        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
-                             timeout=600)
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True,
+                             encoding="utf-8", errors="replace", timeout=600,
+                             env={**os.environ, "PYTHONIOENCODING": "utf-8"})
         return out.stdout.strip()
     except (subprocess.SubprocessError, OSError):
         return ""
+
+
+def pick_folder() -> str:
+    return run_dialog("askdirectory(title='Choose the project folder')")
+
+
+def pick_app() -> str:
+    patterns = " ".join("*" + suffix for suffix in APP_SUFFIXES)
+    return run_dialog("askopenfilename(title='Choose the app file', filetypes=[('Android app', "
+                      "%r), ('All files', '*.*')])" % patterns)
 
 
 def browse_clicked() -> None:
@@ -163,8 +198,106 @@ def browse_clicked() -> None:
                                             "available here). You can paste the path instead.")
 
 
+def browse_app_clicked() -> None:
+    chosen = pick_app()
+    if chosen:
+        st.session_state["target"] = chosen
+    else:
+        st.session_state["browse_note"] = t("No app file was chosen (or the file dialog is not "
+                                            "available here). You can paste the path instead.")
+
+
+def app_uploaded() -> None:
+    """Keep an uploaded app file under data/uploads, named after its content: the same app
+    uploaded again, under any name, is the same file and the same scan target (one line in
+    History). A file that is not a ZIP archive is refused and not kept."""
+    uploaded = st.session_state.get("app_upload")
+    if uploaded is None:
+        return
+    original = Path(uploaded.name.replace("\\", "/"))
+    suffix = original.suffix.lower()
+    if suffix not in APP_SUFFIXES:
+        st.session_state["browse_note"] = t("Only app files (.apk, .aab, .apks, .xapk, .apkm) "
+                                            "can be uploaded.")
+        return
+    data = uploaded.getvalue()
+    if not is_zip_data(data):           # checked before anything is written
+        st.session_state["browse_note"] = t(
+            "This file is not a readable app package (it is not a ZIP archive): %s") \
+            % plain(original.name)
+        return
+    digest = hashlib.sha256(data).hexdigest()[:12]
+    folder = data_dir() / "uploads"
+    kept = sorted(p for p in folder.glob("%s-*%s" % (digest, suffix))
+                  if p.is_file() and p.suffix == suffix) if folder.is_dir() else []
+    if kept:                            # uploaded before, perhaps under another name
+        st.session_state["target"] = str(kept[0])
+        return
+    # only safe characters in the stored name; a name of other letters (Arabic) becomes "app"
+    stem = UPLOAD_NAME.sub("_", original.stem).strip("._")[:60] or "app"
+    path = folder / ("%s-%s%s" % (digest, stem, suffix))
+    partial = folder / (".%s.part" % digest)      # a half-written file never becomes a target
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        partial.write_bytes(data)
+        os.replace(partial, path)
+    except OSError as exc:
+        st.session_state["browse_note"] = t("The upload could not be saved: %s") % plain(str(exc))
+        try:
+            partial.unlink()
+        except OSError:
+            pass
+        return
+    st.session_state["target"] = str(path)
+
+
+def is_zip_data(data: bytes) -> bool:
+    """The check of sca.flutter.zipread.is_zip on bytes in memory: a ZIP header at the start,
+    or an end of central directory record near the end (an archive with data in front)."""
+    return (data[:4] in (zipread.LOCAL_SIG, zipread.EOCD_SIG)
+            or zipread.EOCD_SIG in data[-(zipread.EOCD_SIZE + zipread.MAX_COMMENT):])
+
+
 def use_sample() -> None:
     st.session_state["target"] = str(SAMPLE)
+
+
+def use_flutter_sample() -> None:
+    st.session_state["target"] = str(FLUTTER_SAMPLE)
+
+
+PUBSPEC_LIMIT = 1_000_000      # a larger pubspec.yaml is not read by the sidebar
+
+
+def target_note(target: str) -> str:
+    """A caption under the path box: what kind of target it is. Only cheap checks, without
+    walking the folder (the sidebar runs on every click): a pubspec.yaml that depends on the
+    Flutter SDK, or the manifest of an Android module one level down (app/src/main/...,
+    android/app/src/main/...) or of the folder itself."""
+    try:
+        path = Path(target).expanduser()
+        if path.suffix.lower() in APP_SUFFIXES and path.is_file():
+            return t("An app file: it is decoded and read, never installed or run.")
+        if not path.is_dir():
+            return ""
+        pubspec = path / "pubspec.yaml"
+        if pubspec.is_file() and pubspec.stat().st_size <= PUBSPEC_LIMIT and parse_pubspec(
+                pubspec.read_text(encoding="utf-8", errors="replace")).is_flutter:
+            return t("A Flutter project: the Flutter / Android checks run as well.")
+        modules = [path / "android" / "app", path] + [
+            manifest.parents[2] for manifest in path.glob("*/src/main/AndroidManifest.xml")]
+        if any(android_module(module) for module in modules):
+            return t("An Android project: the Flutter / Android checks run as well.")
+    except Exception:                   # a caption is never worth an error in the sidebar
+        pass
+    return ""
+
+
+def android_module(folder: Path) -> bool:
+    """A Gradle module of an Android app or library: src/main/AndroidManifest.xml and a build
+    file (what the Flutter / Android engine looks for)."""
+    return (folder / "src" / "main" / "AndroidManifest.xml").is_file() and any(
+        (folder / name).is_file() for name in ("build.gradle", "build.gradle.kts"))
 
 
 def lab_chosen() -> None:
@@ -185,6 +318,13 @@ def provider_models(preset: str, base_url: str, api_key: str):
 def provider_ready(preset: str, base_url: str, api_key: str, model: str):
     return make_client(LLMConfig(preset=preset, base_url=base_url, api_key=api_key,
                                  model=model, timeout=10)).check()
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def mobile_tools() -> dict:
+    """Which optional tools for app files are installed. Cached for 30 seconds."""
+    found = app_tools.availability()
+    return {name: bool(found.get(name)) for name in ("jadx", "apksigner")}
 
 
 @st.cache_resource
@@ -218,6 +358,10 @@ def review(index: int, verdict: str) -> None:
     scoring.assign_tier(finding)
     finding.risk_score = scoring.risk_score(finding)
     result.score, result.grade = scoring.project_score(result.findings, result.lines_scanned)
+    apis = (getattr(result, "app", None) or {}).get("apis")
+    if isinstance(apis, dict):       # a dismissed key leaves the inventory, a confirmed returns
+        from sca.flutter.inventory import refresh_keys
+        refresh_keys(apis, result.findings)
 
 
 def decide(candidate_id: str, approve: bool) -> None:
@@ -250,15 +394,24 @@ with st.sidebar:
         st.markdown(RTL_CSS, unsafe_allow_html=True)
     st.caption(t("Static + AI vulnerability detection that learns - v%s") % __version__)
 
-    st.subheader(t("1. Project folder"))
+    st.subheader(t("1. Project folder or app"))
     st.text_input(key="target", placeholder=r"C:\projects\my-app", **opt("target"))
+    chosen_target = st.session_state["target"].strip().strip('"')
+    note = target_note(chosen_target) if chosen_target else ""
+    if note:
+        st.caption(note)
     col_a, col_b = st.columns(2)
     col_a.button(on_click=browse_clicked, **opt("browse"), **WIDE)
     col_b.button(on_click=use_sample, **opt("sample"), **WIDE)
+    col_a.button(on_click=browse_app_clicked, **opt("browse_app"), **WIDE)
+    col_b.button(on_click=use_flutter_sample, **opt("flutter_sample"), **WIDE)
     training_labs = intro.labs()
     if training_labs:
         st.selectbox(options=[""] + training_labs, key="lab_choice", on_change=lab_chosen,
                      format_func=lambda name: name or "-", **opt("lab"))
+    with st.expander(t("Upload an app file")):
+        st.file_uploader(type=[suffix.lstrip(".") for suffix in APP_SUFFIXES], key="app_upload",
+                         on_change=app_uploaded, **opt("app_upload"))
     if st.session_state.get("browse_note"):
         st.caption(st.session_state.pop("browse_note"))
 
@@ -281,9 +434,19 @@ with st.sidebar:
     use_gitleaks = st.checkbox("Gitleaks" + ("" if tools["gitleaks"] else missing),
                                value=tools["gitleaks"], disabled=not tools["gitleaks"],
                                help=opt("use_gitleaks")["help"])
+    use_flutter = st.checkbox(value=True, **opt("use_flutter"))
     with st.expander(t("More engine options")):
         use_taint_lite = st.checkbox(value=True, **opt("use_taint_lite"))
         use_c_memory = st.checkbox(value=True, **opt("use_c_memory"))
+        absent = [name for name, found in mobile_tools().items() if not found]
+        if len(absent) == 2:
+            tools_note = missing
+        elif absent:
+            tools_note = t(" (%s not installed)") % absent[0]
+        else:
+            tools_note = ""
+        apk_tools = st.checkbox(opt("apk_tools")["label"] + tools_note, value=False,
+                                disabled=len(absent) == 2, help=opt("apk_tools")["help"])
         exclude_dirs = st.text_input(placeholder="docs, third_party", **opt("exclude_dirs"))
 
     st.subheader(t("3. Artificial intelligence"))
@@ -361,10 +524,15 @@ status_area = st.container()
 if run:
     with status_area:
         target = st.session_state["target"].strip().strip('"')
+        target_path = Path(target).expanduser()
         if not target:
-            st.error(t("Choose a project folder first."))
-        elif not Path(target).expanduser().exists():
-            st.error(t("This path does not exist: %s") % target)
+            st.error(t("Choose a project folder or an app file first."))
+        elif not target_path.exists():
+            st.error(t("This path does not exist: %s") % plain(target))
+        elif (target_path.is_file() and target_path.suffix.lower() in APP_SUFFIXES
+              and not is_app_package(target_path)):
+            st.error(t("This file is not a readable app package (it is not a ZIP archive): %s")
+                     % plain(target))
         else:
             options = ScanOptions(
                 use_rules=use_rules, use_ast=use_ast, use_secrets=use_secrets,
@@ -373,7 +541,7 @@ if run:
                 llm_api_key=api_key, llm_model=llm_model, llm_max_findings=llm_max,
                 llm_deep_scan=deep and use_llm, lang=lang, strict=strict,
                 include_tests=not skip_tests, use_taint_lite=use_taint_lite,
-                use_c_memory=use_c_memory,
+                use_c_memory=use_c_memory, use_flutter=use_flutter, apk_tools=apk_tools,
                 use_feedback=use_feedback, save=save_scan, llm_deep_max_files=deep_max_files,
                 llm_timeout=llm_timeout,
                 exclude_dirs=[d.strip() for d in exclude_dirs.split(",") if d.strip()])
@@ -392,10 +560,15 @@ if run:
                 st.session_state["result"] = run_scan(target, options, on_progress, get_storage())
                 live.empty()     # the same steps stay on the Dashboard tab, see "scan_log"
                 st.session_state["scan_log_open"] = True
+            except AppError as exc:   # the file is not an app package that can be read
+                bar.empty()
+                box.update(label=t("The app file cannot be read: %s") % untrusted(exc),
+                           state="error")
+                st.error(t("The app file cannot be read: %s") % untrusted(exc))
             except Exception as exc:  # show the problem instead of a stack trace
                 bar.empty()
-                box.update(label=t("The scan failed: %s") % plain(str(exc)), state="error")
-                st.error(t("The scan failed: %s") % exc)
+                box.update(label=t("The scan failed: %s") % untrusted(exc), state="error")
+                st.error(t("The scan failed: %s") % untrusted(exc))
 
 result: ScanResult = st.session_state.get("result")
 
@@ -416,19 +589,27 @@ with tab_guide:
 with tab_dash:
     if result is None:
         st.header(t("Scan a project to begin"))
-        st.write(t("Choose a folder in the sidebar and press **Run scan**. "
-                 "To see a full example, press **Use sample** first."))
+        st.write(t("Choose a folder or an app file (.apk, .aab) in the sidebar and press "
+                   "**Run scan**. To see a full example, press **Use sample** first."))
         st.info(t("Static engines always run on this computer. The optional AI review uses the "
                 "provider you choose: a local model (Ollama) or a cloud API."))
     else:
         counts = result.counts()
         st.caption(t("%s - %s - %d files, %d lines, %.1f s") % (
-            ltr(result.target), result.started_at, result.files_scanned, result.lines_scanned,
-            result.duration_seconds))
+            ltr(untrusted(result.target)), result.started_at, result.files_scanned,
+            result.lines_scanned, result.duration_seconds))
         if result.steps:   # open right after a scan; a scan loaded from history has no steps
             with st.expander(t("What the scan did, step by step"),
                              expanded=st.session_state.pop("scan_log_open", False)):
                 show_steps(result.steps)
+        app_facts = getattr(result, "app", None)    # a scan saved by an older version has none
+        if app_facts:
+            with st.expander(plain(app_panel.title(app_facts, t, ltr)), expanded=True):
+                app_panel.render(app_facts, t, ltr, WIDE)
+            apis = app_facts.get("apis")
+            if isinstance(apis, dict):      # a scan saved by an older version has none
+                with st.expander(app_panel.apis_title(apis, t), expanded=True):
+                    app_panel.render_apis(apis, t, ltr, WIDE)
         cols = st.columns(6)
         cols[0].metric(t("Security score (grade %s)") % result.grade, "%d / 100" % result.score)
         for col, sev in zip(cols[1:], SEVERITIES[:4]):
@@ -458,6 +639,26 @@ with tab_dash:
                 st.bar_chart(pd.DataFrame({"findings": by_owasp}), horizontal=True, height=240)
             else:
                 st.write(t("No open findings."))
+
+        if app_facts:
+            risks = Counter(getattr(f, "owasp_mobile", "") for f in result.open_findings)
+            groups = Counter(getattr(f, "masvs", "") for f in result.open_findings)
+            by_risk = {"%s %s" % (risk, mobile_name(risk, lang)): risks[risk]
+                       for risk in MOBILE_TOP10_2024 if risks[risk]}
+            by_group = {"%s (%s)" % (masvs_name(group, lang), group): groups[group]
+                        for group in MASVS_GROUPS if groups[group]}
+            left, right = st.columns(2)
+            for column, heading, counted in (
+                    (left, t("By OWASP Mobile Top 10 (2024)"), by_risk),
+                    (right, t("By MASVS group"), by_group)):
+                with column:
+                    st.subheader(heading)
+                    if counted:   # M1 to M10 in their order, where Streamlit allows it
+                        st.bar_chart(pd.DataFrame({"findings": list(counted.values())},
+                                                  index=list(counted)),
+                                     horizontal=True, height=240, **CHART_ORDER)
+                    else:
+                        st.write(t("No open findings."))
 
         left, right = st.columns(2)
         with left:
@@ -500,7 +701,8 @@ with tab_findings:
                 continue
             if f.severity not in sev_filter or (file_filter and f.file not in file_filter):
                 continue
-            haystack = " ".join([f.title, f.cwe, f.snippet, f.file]).lower()
+            haystack = " ".join([f.title, f.cwe, f.snippet, f.file,
+                                 getattr(f, "owasp_mobile", ""), getattr(f, "masvs", "")]).lower()
             if text_filter and text_filter.lower() not in haystack:
                 continue
             shown.append((index, f))
@@ -519,11 +721,20 @@ with tab_findings:
 
         st.subheader(t("Details"))
         for position, (index, f) in enumerate(shown[:150]):
-            label = "%s | %s | %s:%d" % (f.severity.upper(), f.title, f.file, f.line)
+            # a label renders Markdown: the title can quote the app (a name, a URL)
+            label = "%s | %s | %s:%d" % (f.severity.upper(), untrusted(f.title),
+                                         untrusted(f.file), f.line)
             with st.expander(label, expanded=(position == 0)):
                 kb = cwe_info(f.cwe, lang)
+                tags = [f.owasp]
+                risk, group = getattr(f, "owasp_mobile", ""), getattr(f, "masvs", "")
+                if risk:
+                    tags.append("%s %s" % (risk, mobile_name(risk, lang)))
+                if group:
+                    tags.append(group)
                 st.markdown(severity_badge(f.severity) + "&nbsp; **%s** %s &nbsp;-&nbsp; %s"
-                            % (f.cwe, kb["name"] if kb["name"] != f.cwe else "", f.owasp),
+                            % (f.cwe, kb["name"] if kb["name"] != f.cwe else "",
+                               " &nbsp;-&nbsp; ".join(tag for tag in tags if tag)),
                             unsafe_allow_html=True)
                 c1, c2, c3, c4 = st.columns(4)
                 c1.metric(t("Risk"), "%.1f / 10" % f.risk_score)
@@ -539,20 +750,23 @@ with tab_findings:
                 st.code(f.context or f.snippet, language=CODE_LANG.get(f.language, "text"))
                 st.caption(t("Flagged line: %d - found by: %s - rule: %s") % (
                     f.line, ", ".join(f.engines), ", ".join(f.rule_ids)))
-                description = kb["description"] or f.description
-                fix = kb["fix"] or f.fix
-                if f.description and f.description != description and lang == "en":
-                    st.write(f.description)
+                # the texts of the knowledge base are written with the tool; the texts of the
+                # finding itself can quote the scanned code or app, so they are escaped
+                description = kb["description"] or untrusted(f.description)
+                fix = kb["fix"] or untrusted(f.fix)
+                if f.description and f.description != kb["description"] and kb["description"] \
+                        and lang == "en":
+                    st.markdown(untrusted(f.description))
                 if description:
                     st.markdown(t("**Why it matters**"))
-                    st.write(description)
+                    st.markdown(description)
                 if fix:
                     st.markdown(t("**How to fix**"))
-                    st.write(fix)
+                    st.markdown(fix)
                 if f.ai_explanation or f.ai_fix:
-                    st.markdown(t("**AI review** (%s)") % (f.ai_model or "model"))
+                    st.markdown(t("**AI review** (%s)") % untrusted(f.ai_model or "model"))
                     if f.ai_explanation:
-                        st.info(f.ai_explanation)
+                        st.info(untrusted(f.ai_explanation))
                     if f.ai_fix:
                         st.code(f.ai_fix, language=CODE_LANG.get(f.language, "text"))
                 if kb["url"]:
@@ -597,7 +811,7 @@ with tab_learn:
                    "*AI review* and *Deep scan* switched on."))
         if st.button(t("Learn from this scan"), disabled=not llm_ready or result is None, **WIDE):
             with st.spinner(t("Proposing and validating rules")):
-                created = loop.learn_from_scan(result, loop.load_files(result.target),
+                created = loop.learn_from_scan(result, loop.load_files(result.target, apk_tools),
                                                make_client(llm_config), storage)
             ok = sum(1 for c in created if c["status"] == "pending")
             st.session_state["learn_note"] = t(
@@ -642,8 +856,9 @@ with tab_learn:
     for c in pending:
         kind = "Exclusion for %s" % c.get("target_rule") if c.get("kind") == "exclude" \
             else "New rule"
-        with st.expander("%s | %s | %s | %s" % (kind, ", ".join(c.get("languages", [])),
-                                                c.get("cwe", ""), c.get("title", ""))):
+        with st.expander("%s | %s | %s | %s" % (untrusted(kind), ", ".join(c.get("languages", [])),
+                                                untrusted(c.get("cwe", "")),
+                                                untrusted(c.get("title", "")))):
             st.caption(t("%s - proposed by %s - origin: %s") % (c["id"], c.get("source", ""),
                                                              c.get("origin", "")))
             if c.get("origin") == "bootstrap":
@@ -659,10 +874,12 @@ with tab_learn:
                     st.markdown(t("**Unless the line also matches**"))
                     st.code(c["exclude"], language="text")
             if c.get("message"):
-                st.write(c["message"])
+                st.markdown(untrusted(c["message"]))
             evidence = (c.get("evidence") or {}).get("snippet")
             if evidence:
-                st.markdown(t("**Learned from** `%s`") % (c["evidence"].get("file") or "your review"))
+                # a file name of the scanned project, shown as code: no backtick may end it
+                st.markdown(t("**Learned from** `%s`") % strip_bidi(
+                    str(c["evidence"].get("file") or "your review")).replace("`", "'"))
                 st.code(evidence, language="text")
             e1, e2 = st.columns(2)
             if c.get("examples_vulnerable"):

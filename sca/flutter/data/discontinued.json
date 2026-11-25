@@ -1,0 +1,98 @@
+{
+ "android_intent": {
+  "reason": "Discontinued on pub.dev. The last version, 2.0.2 (2021-05-26), does not support Dart 3.",
+  "replaced_by": "android_intent_plus",
+  "url": "https://pub.dev/packages/android_intent",
+  "discontinued": true
+ },
+ "aqueduct": {
+  "reason": "Discontinued on pub.dev with no replacement. The last version of this server framework, 3.3.0+1 (2020-05-03), does not support Dart 3.",
+  "replaced_by": "",
+  "url": "https://pub.dev/packages/aqueduct",
+  "discontinued": true
+ },
+ "connectivity": {
+  "reason": "Discontinued on pub.dev. The last version, 3.0.6 (2021-05-26), does not support Dart 3.",
+  "replaced_by": "connectivity_plus",
+  "url": "https://pub.dev/packages/connectivity",
+  "discontinued": true
+ },
+ "device_info": {
+  "reason": "Discontinued on pub.dev. The last version, 2.0.3 (2021-11-01), does not support Dart 3.",
+  "replaced_by": "device_info_plus",
+  "url": "https://pub.dev/packages/device_info",
+  "discontinued": true
+ },
+ "firebase_admob": {
+  "reason": "Discontinued on pub.dev. The last version is 0.11.2 (2021-06-03).",
+  "replaced_by": "google_mobile_ads",
+  "url": "https://pub.dev/packages/firebase_admob",
+  "discontinued": true
+ },
+ "firebase_dynamic_links": {
+  "reason": "Discontinued on pub.dev with no replacement: the Firebase Dynamic Links service shut down on 2025-08-25, so deep links that rely on it no longer work.",
+  "replaced_by": "",
+  "url": "https://pub.dev/packages/firebase_dynamic_links",
+  "discontinued": true
+ },
+ "firebase_ml_vision": {
+  "reason": "Discontinued on pub.dev. The last version is 0.12.0+3 (2021-10-21).",
+  "replaced_by": "google_ml_kit",
+  "url": "https://pub.dev/packages/firebase_ml_vision",
+  "discontinued": true
+ },
+ "flutter_inappbrowser": {
+  "reason": "Discontinued on pub.dev: the plugin was moved and renamed. The last version, 2.0.2 (2019-11-29), is an unmaintained WebView component that does not support Dart 3.",
+  "replaced_by": "flutter_inappwebview",
+  "url": "https://pub.dev/packages/flutter_inappbrowser",
+  "discontinued": true
+ },
+ "flutter_sodium": {
+  "reason": "Discontinued on pub.dev. The last version of these libsodium bindings, 0.2.0 (2021-03-11), does not support Dart 3.",
+  "replaced_by": "sodium_libs",
+  "url": "https://pub.dev/packages/flutter_sodium",
+  "discontinued": true
+ },
+ "http_server": {
+  "reason": "Discontinued on pub.dev. The last version, 1.0.0 (2021-03-18), does not support Dart 3; versions before 0.9.6 also have CVE-2014-125098 (XSS in VirtualDirectory).",
+  "replaced_by": "shelf",
+  "url": "https://pub.dev/packages/http_server",
+  "discontinued": true
+ },
+ "moor": {
+  "reason": "Discontinued on pub.dev. The last version is 4.6.1+1 (2021-10-31).",
+  "replaced_by": "drift",
+  "url": "https://pub.dev/packages/moor",
+  "discontinued": true
+ },
+ "package_info": {
+  "reason": "Discontinued on pub.dev. The last version, 2.0.2 (2021-05-26), does not support Dart 3.",
+  "replaced_by": "package_info_plus",
+  "url": "https://pub.dev/packages/package_info",
+  "discontinued": true
+ },
+ "receive_sharing_intent": {
+  "reason": "Not discontinued, but a known vulnerability has no fixed version: CVE-2026-60117 (GHSA-wvv2-g99g-c5px, path traversal on Android) affects 1.4.1 to 1.9.0, and 1.9.0 is the latest release.",
+  "replaced_by": "",
+  "url": "https://pub.dev/packages/receive_sharing_intent",
+  "discontinued": false
+ },
+ "share": {
+  "reason": "Discontinued on pub.dev. The last version, 2.0.4 (2021-05-26), does not support Dart 3.",
+  "replaced_by": "share_plus",
+  "url": "https://pub.dev/packages/share",
+  "discontinued": true
+ },
+ "sodium_libs": {
+  "reason": "Discontinued on pub.dev. The last version is 4.0.1 (2026-07-11).",
+  "replaced_by": "sodium",
+  "url": "https://pub.dev/packages/sodium_libs",
+  "discontinued": true
+ },
+ "uni_links": {
+  "reason": "Discontinued on pub.dev. The last version of this deep-link plugin, 0.5.1 (2021-04-28), does not support Dart 3.",
+  "replaced_by": "app_links",
+  "url": "https://pub.dev/packages/uni_links",
+  "discontinued": true
+ }
+}

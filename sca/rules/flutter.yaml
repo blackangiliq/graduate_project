@@ -1,0 +1,114 @@
+# Rules for the files around a Flutter app: CI build scripts, Firebase Security Rules and the
+# web entry page. Each rule names the files it reads (files:). Manifests, network security
+# config, Gradle, Info.plist, pubspec and signing are checked by the Flutter engine
+# (sca/flutter/checks.py), not by expressions.
+
+# ---- Build scripts
+- id: FLUTTER-BUILD-001
+  title: Release build without Dart obfuscation (--obfuscate)
+  languages: [config, shell]
+  files: ['**/.github/workflows/*.yml', '**/.github/workflows/*.yaml', '**/codemagic.yaml', '**/.gitlab-ci.yml', '**/bitbucket-pipelines.yml', '**/bitrise.yml', '**/azure-pipelines.yml', '**/.circleci/config.yml', '**/.travis.yml', '**/*.sh']
+  cwe: CWE-693
+  severity: low
+  confidence: 0.45
+  pattern: '\bflutter\s+build\s+(?:apk|appbundle|ipa|ios|aar|macos|windows|linux|ios-framework|macos-framework)\b'
+  exclude: '--obfuscate|--debug\b|--profile\b|--config-only\b|\\\s*$'
+  # The command must end on its own line: a run: or script: key on the line, or a neighbouring
+  # line that is another command, a YAML key or blank. When both neighbours only hold flags
+  # (--obfuscate on the next line) or open a folded block (run: >), the command goes on there.
+  near: '\b(?:run|script|cmd|command|sh|bash|content)\s*:\s*[''"]?\s*flutter\s+build\b|^(?!.*\bflutter\s+build\b)(?!\s*--)(?!.*:\s*>[-+0-9]*\s*$)'
+  within: 1
+  message: The release build does not obfuscate the Dart code, so class and function names stay readable in libapp.so and make reverse engineering easier. Obfuscation needs --obfuscate together with --split-debug-info.
+  fix: Build with flutter build appbundle --release --obfuscate --split-debug-info=build/symbols and keep the symbol files private.
+  examples_vulnerable:
+    - '      - run: flutter build appbundle --release'
+    - 'flutter build apk --split-per-abi'
+    - '        script: flutter build ipa --export-options-plist=ios/ExportOptions.plist'
+  examples_safe:
+    - '      - run: flutter build appbundle --obfuscate --split-debug-info=build/symbols'
+    - 'flutter build web --release'
+    - 'flutter build apk --debug'
+    - '          flutter build appbundle --release \'
+
+- id: FLUTTER-BUILD-002
+  title: Secret passed to the app with --dart-define
+  languages: [config, shell]
+  files: ['**/.github/workflows/*.yml', '**/.github/workflows/*.yaml', '**/codemagic.yaml', '**/.gitlab-ci.yml', '**/bitbucket-pipelines.yml', '**/bitrise.yml', '**/azure-pipelines.yml', '**/.circleci/config.yml', '**/.travis.yml', '**/*.sh']
+  cwe: CWE-798
+  severity: medium
+  confidence: 0.6
+  pattern: '--dart-define[= ]+["'']?[A-Za-z0-9_]*(?i:key|secret|token|passw|private)|--dart-define-from-file[= ]+["'']?[\w./\-]*(?i:\.env|secret|key|token)'
+  message: A key, secret or token is passed to the app with --dart-define. The value becomes a constant inside the app binary, where anyone can read it, even when the CI pipeline keeps it in a protected secret store.
+  fix: Pass only configuration that is not secret (flavor, base URL). Keep secrets on your server and give the app short-lived tokens after the user signs in.
+  examples_vulnerable:
+    - 'flutter build apk --release --dart-define=OPENAI_API_KEY=$OPENAI_API_KEY'
+    - '      - run: flutter build ipa --dart-define=STRIPE_SECRET=${{ secrets.STRIPE_SECRET }}'
+    - 'flutter run --dart-define-from-file=.env'
+  examples_safe:
+    - 'flutter build apk --release --dart-define=FLAVOR=prod'
+    - 'flutter build web --dart-define=API_BASE_URL=https://api.example.com'
+
+# ---- Firebase Security Rules
+- id: FLUTTER-FIREBASE-001
+  title: Firebase Security Rules open to everyone
+  languages: [config]
+  files: ['**/firestore.rules', '**/storage.rules', '**/database.rules.json']
+  cwe: CWE-284
+  severity: high
+  confidence: 0.8
+  pattern: '\ballow\s+[a-z, ]+(?:;|:\s*if\s+(?:true\s*(?:;|$)|request\.time\s*<\s*timestamp\.date\s*\())|["'']\.(?:read|write)["'']\s*:\s*(?:true\b|["'']true["'']|["'']\s*now\s*<\s*\d{10,}\s*["''])|\ballow\s+[a-z, ]+:\s*if\s*$'
+  # an `if` at the end of the line counts only when the next (or previous) line is `true;`;
+  # the other forms are complete on their own line, which is part of the window
+  near: '\ballow\s+[a-z, ]+(?:;|:\s*if\s+(?:true\s*(?:;|$)|request\.time\s*<\s*timestamp\.date\s*\())|["'']\.(?:read|write)["'']\s*:\s*(?:true\b|["'']true["'']|["'']\s*now\s*<\s*\d{10,}\s*["''])|^\s*true\s*(?:;|\}|$)'
+  within: 1
+  message: 'These rules let anyone read or change the data: no condition, `if true` (also with true on the next line), the console''s test-mode date limit (request.time < timestamp.date(...) in Firestore and Storage, "now < <time>" in the Realtime Database), or a Realtime Database rule of true. The project id needed to reach the database ships in every copy of the app.'
+  fix: 'Allow access only to the signed-in owner, for example allow read, write: if request.auth != null && request.auth.uid == userId; and deploy the rules before the release.'
+  examples_vulnerable:
+    - '      allow read, write: if true;'
+    - '      allow read, write;'
+    - '      allow read, write: if request.time < timestamp.date(2025, 6, 30);'
+    - '    ".read": true,'
+    - '    ".write": "true"'
+    - '    ".read": "now < 1735689600000",'
+    - '      allow read, write: if'
+  examples_safe:
+    - '      allow read, write: if false;'
+    - '    ".read": "auth != null && now < 1735689600000",'
+    - '      allow read: if request.auth != null && request.auth.uid == userId;'
+    - '    ".read": "auth != null",'
+
+- id: FLUTTER-FIREBASE-002
+  title: Firebase Security Rules give every signed-in user full access
+  languages: [config]
+  files: ['**/firestore.rules', '**/storage.rules']
+  cwe: CWE-862
+  severity: medium
+  confidence: 0.7
+  pattern: '\ballow\s+[a-z, ]+:\s*if\s+request\.auth\s*!=\s*null\s*(?:;|\})'
+  message: Any user who can sign in (anonymous accounts too, when they are enabled) can read and change every document this rule matches, including other users' data.
+  fix: 'Also check that the document belongs to the user: allow read, write: if request.auth != null && request.auth.uid == resource.data.ownerId;'
+  examples_vulnerable:
+    - '      allow read, write: if request.auth != null;'
+    - '    allow read: if request.auth != null;'
+  examples_safe:
+    - '      allow read, write: if request.auth != null && request.auth.uid == userId;'
+    - '      allow read: if request.auth.uid == resource.data.author_uid;'
+    - '      allow read: if request.auth != null'
+
+# ---- Flutter web
+- id: FLUTTER-WEB-001
+  title: Flutter web page loads a script over HTTP
+  languages: [html]
+  files: ['**/web/index.html']
+  cwe: CWE-829
+  severity: medium
+  confidence: 0.85
+  pattern: '<script\b[^>]*\bsrc\s*=\s*["'']http://(?!localhost\b|127\.0\.0\.1\b)'
+  message: web/index.html loads a script over plain HTTP. Anyone on the network can replace it, and it then runs with the app's origin, its session and its stored tokens.
+  fix: Load scripts over HTTPS, ideally with Subresource Integrity (integrity and crossorigin attributes).
+  examples_vulnerable:
+    - '  <script src="http://cdn.example-analytics.com/sdk.js"></script>'
+    - '<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=KEY"></script>'
+  examples_safe:
+    - '  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>'
+    - '  <script src="flutter_bootstrap.js" async></script>'

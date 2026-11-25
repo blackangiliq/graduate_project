@@ -238,8 +238,8 @@ def test_custom_rule_edit_disable_delete():
 
 def test_list_filters_and_summary():
     counts = rulebook.summary()
-    assert counts["by_origin"]["builtin"]["total"] == 163
-    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 163
+    assert counts["by_origin"]["builtin"]["total"] == 217
+    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 217
     assert counts["enabled"] < counts["total"] and counts["secret"] > 150
     php = rulebook.list_rules(language="php", origin="builtin")
     assert php and all("php" in r.languages for r in php)

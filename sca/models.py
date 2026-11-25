@@ -36,6 +36,8 @@ class Finding:
     context: str = ""              # a few lines around it
     language: str = ""
     owasp: str = ""
+    owasp_mobile: str = ""         # OWASP Mobile Top 10 (2024) risk, e.g. "M5" (mobile targets)
+    masvs: str = ""                # MASVS group, e.g. "MASVS-NETWORK" (mobile targets)
     tainted: bool = False          # user-controlled data was traced to the sink
     rule_ids: List[str] = field(default_factory=list)   # every rule that reported this issue
     evidence: List[str] = field(default_factory=list)   # reasons the finding counts as confirmed
@@ -101,6 +103,8 @@ class ScanResult:
     scan_id: Optional[int] = None
     # what the scan did, step by step (pipeline.Message objects; plain text in the report)
     steps: List[str] = field(default_factory=list)
+    # facts about a scanned app package or mobile project (sca.flutter); empty otherwise
+    app: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def open_findings(self) -> List[Finding]:
@@ -133,6 +137,7 @@ class ScanResult:
             "likely_false_positives": self.status_count("likely_false_positive"),
             "dismissed": self.status_count("dismissed"),
             "ai": self.ai,
+            "app": self.app,
             "steps": [str(step) for step in self.steps],
             "findings": [f.to_dict() for f in self.findings],
         }

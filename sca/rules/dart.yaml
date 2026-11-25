@@ -1,0 +1,941 @@
+# Rules for Dart and Flutter code.
+#
+# A Flutter app keeps its logic in Dart: these rules look for the weaknesses that the OWASP
+# Mobile Top 10 and MASVS describe for it (TLS checks switched off, cleartext endpoints,
+# insecure WebView settings, secrets in plain storage or in logs, SQL injection in sqflite
+# and drift, weak cryptography). Android manifests, network security config, Gradle,
+# Info.plist and pubspec files are checked by the Flutter engine (sca/flutter/checks.py),
+# not here.
+
+# ---- TLS and network
+- id: DART-TLS-001
+  title: 'TLS certificate check switched off: badCertificateCallback returns true'
+  languages: [dart]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.9
+  pattern: '(?:badCertificateCallback\s*=|\bonBadCertificate\s*[:=])\s*\(?\s*\([^)]*\)\s*(?:=>\s*true\b|\{\s*return\s+true\s*;)|\(\s*X509Certificate\s+\w+\s*,\s*String\s+\w+\s*,\s*int\s+\w+\s*\)\s*(?:=>\s*true\b|\{\s*return\s+true\s*;)'
+  exclude: '^\s*(?:\w+\s*:\s*)?r?[''"]'
+  message: A certificate callback that returns true accepts every server certificate, so anyone on the network can read and change the traffic. It applies to HttpClient and to what wraps it (IOClient, dio), to SecureSocket and to MQTT clients.
+  fix: 'Remove the callback: the default rejects a certificate that fails validation. To trust a private CA, load it into SecurityContext(withTrustedRoots: false) and pass that context to HttpClient.'
+  examples_vulnerable:
+    - '      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;'
+    - 'client.badCertificateCallback = (cert, host, port) => true;'
+    - 'final client = HttpClient()..badCertificateCallback = (cert, host, port) { return true; };'
+    - 'final socket = await SecureSocket.connect(host, 8883, onBadCertificate: (cert) => true);'
+    - '        (X509Certificate cert, String host, int port) => true;'
+    - '  static bool acceptAny(X509Certificate cert, String host, int port) => true;'
+  examples_safe:
+    - 'client.badCertificateCallback = (cert, host, port) => false;'
+    - 'client.badCertificateCallback = (cert, host, port) => kDebugMode && host == ''10.0.2.2'';'
+    - 'final socket = await SecureSocket.connect(host, 8883, context: pinnedContext);'
+    - '  value: ''client.badCertificateCallback = (cert, host, port) => true;'','
+
+- id: DART-TLS-002
+  title: 'TLS certificate check switched off: a callback block that returns true'
+  languages: [dart]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.8
+  pattern: '(?:badCertificateCallback\s*=\s*\(?\s*\([^)]*\)|\(\s*X509Certificate\s+\w+\s*,\s*String\s+\w+\s*,\s*int\s+\w+\s*\))\s*(?:async\s*)?\{\s*(?://.*)?$'
+  near: '^\s*return\s+true\s*;'
+  within: 1
+  message: The certificate callback opens a block whose first statement is return true, so every server certificate is accepted. This is typical of an HttpOverrides class copied from a forum answer. (A block that first compares the certificate, for example its SHA-256 fingerprint, and returns true inside an if is pinning and is not reported.)
+  fix: Delete the override. If a certificate must be pinned, compare its fingerprint and return true only for that certificate.
+  examples_vulnerable:
+    - '    client.badCertificateCallback = (X509Certificate cert, String host, int port) {'
+    - '      ..badCertificateCallback = (cert, host, port) {'
+    - '        (X509Certificate cert, String host, int port) {'
+  examples_safe:
+    - 'client.badCertificateCallback = (cert, host, port) => false;'
+    - 'client.badCertificateCallback = null;'
+    - '    if (sha256.convert(cert.der).toString() == pinnedFingerprint) {'
+
+- id: DART-TLS-003
+  title: WebView told to continue after a TLS error
+  languages: [dart]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.8
+  pattern: 'ServerTrustAuthResponseAction\.PROCEED\b|\.proceed\s*\(\s*\)'
+  near: 'onReceivedServerTrustAuthRequest|ServerTrustAuthResponse|onSslAuthError|SslAuthError'
+  within: 6
+  message: The WebView keeps loading a page whose certificate failed validation (flutter_inappwebview PROCEED, webview_flutter SslAuthError.proceed), so an attacker on the network controls the page, its cookies and its JavaScript channels.
+  fix: Cancel instead (ServerTrustAuthResponseAction.CANCEL, error.cancel()) and show an error page.
+  examples_vulnerable:
+    - 'return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);'
+    - 'onSslAuthError: (SslAuthError error) => error.proceed(),'
+  examples_safe:
+    - 'return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.CANCEL);'
+    - 'onSslAuthError: (SslAuthError error) => error.cancel(),'
+
+- id: DART-NET-001
+  title: Cleartext HTTP or WebSocket endpoint (http://, ws://, Uri.http)
+  languages: [dart]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.6
+  pattern: '[''"](?:http|ws)://(?:(?=[\w$\[{])(?!localhost\b|127\.0\.0\.1\b|10\.0\.2\.2\b|0\.0\.0\.0\b|\[::1\]|(?:www\.)?w3\.org/|schemas\.(?:android|xmlsoap|microsoft)\.com|xmlns\.|ns\.adobe\.com|purl\.org|json-schema\.org|www\.apache\.org/licenses|opensource\.org|example\.(?:com|org|net)\b)|[''"]\s*\+)|\bUri\.http\s*\((?!\s*(?:[''"](?:localhost|127\.0\.0\.1|10\.0\.2\.2)\b|[''"]\[::1\]|[''"]?\$?\{?\s*InternetAddress\.loopback))'
+  exclude: '\bxmlns(?::[\w.-]+)?\s*=\s*\\?["''](?:http|ws)://'
+  message: The app talks to an http:// or ws:// address (or builds one with Uri.http), so requests, tokens and personal data travel unencrypted. Requests made through dart:io (package:http, dio, web_socket_channel) are not stopped by Android's cleartext setting or by iOS App Transport Security.
+  fix: Use https:// and wss:// (Uri.https) for every endpoint and keep the base URL in one place.
+  examples_vulnerable:
+    - 'final response = await http.get(Uri.parse(''http://api.shop-backend.io/v1/login''));'
+    - 'static const String baseUrl = "http://myapp-backend.herokuapp.com/api/";'
+    - 'final channel = WebSocketChannel.connect(Uri.parse(''ws://chat.myserver.io/socket''));'
+    - 'final uri = Uri.http(''api.shop-backend.io'', ''/v1/orders'', {''page'': ''1''});'
+    - 'final url = ''http://'' + host + ''/api'';'
+  examples_safe:
+    - 'final response = await http.get(Uri.parse(''https://api.shop-backend.io/v1/login''));'
+    - 'const devBaseUrl = ''http://10.0.2.2:8080/api'';'
+    - 'const androidNs = ''http://schemas.android.com/apk/res/android'';'
+    - 'final dev = Uri.http(''localhost:8080'', ''/api'');'
+    - 'final insecure = url.startsWith(''http://'');'
+    - 'const gpx = ''<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">'';'
+    - 'final callback = Uri.http(''${InternetAddress.loopbackIPv4.address}:$port'', ''/callback'');'
+
+# ---- WebView
+- id: DART-WEBVIEW-001
+  title: JavaScript enabled in a webview_flutter WebView
+  languages: [dart]
+  cwe: CWE-79
+  severity: low
+  confidence: 0.4
+  pattern: '\bsetJavaScriptMode\s*\(\s*JavaScriptMode\.unrestricted\b|\bjavascriptMode\s*:\s*JavascriptMode\.unrestricted\b'
+  message: JavaScript is switched on for the WebView. It is often needed, but any page or injected script that reaches the WebView can then run code inside the app and use its JavaScript channels.
+  fix: Enable JavaScript only for your own HTTPS pages and keep navigation on an allowlist (NavigationDelegate onNavigationRequest).
+  examples_vulnerable:
+    - '      ..setJavaScriptMode(JavaScriptMode.unrestricted)'
+    - '        javascriptMode: JavascriptMode.unrestricted,'
+  examples_safe:
+    - '      ..setJavaScriptMode(JavaScriptMode.disabled)'
+    - '        javascriptMode: JavascriptMode.disabled,'
+
+- id: DART-WEBVIEW-002
+  title: JavaScript bridge to Dart code exposed to web content
+  languages: [dart]
+  cwe: CWE-749
+  severity: medium
+  confidence: 0.5
+  pattern: '\baddJavaScriptChannel\s*\(|\baddJavaScriptHandler\s*\(|\bJavascriptChannel\s*\('
+  message: Page JavaScript can call Dart code through this channel or handler. The message does not say which page sent it, so any page or frame that ends up in the WebView can use it, for example to read a token or start a payment.
+  fix: 'Expose as little as possible, check the page origin where the plugin gives it (flutter_inappwebview: origin, isMainFrame), validate every message and keep the WebView on your own domains.'
+  examples_vulnerable:
+    - '      ..addJavaScriptChannel(''Toaster'', onMessageReceived: (JavaScriptMessage message) {'
+    - 'controller.addJavaScriptHandler(handlerName: ''getToken'', callback: (args) async => token);'
+    - '    return JavascriptChannel(name: ''Native'', onMessageReceived: (msg) => _handle(msg.message));'
+  examples_safe:
+    - 'controller.removeJavaScriptChannel(''Toaster'');'
+    - '      ..setNavigationDelegate(NavigationDelegate(onNavigationRequest: _allowOnlyOwnHost))'
+
+- id: DART-WEBVIEW-003
+  title: Data inserted into HTML or JavaScript run by a WebView
+  languages: [dart]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.55
+  pattern: '\b(?:loadHtmlString|runJavaScript|runJavaScriptReturningResult|evaluateJavascript|loadData)\s*\(\s*(?:source\s*:\s*|data\s*:\s*)?(?:''{1,3}[^'']*\$[{A-Za-z_]|"{1,3}[^"]*\$[{A-Za-z_]|''[^'']*''\s*\+|"[^"]*"\s*\+|[A-Za-z_][\w.]*\s*\+)'
+  exclude: '\bjsonEncode\s*\(|\bhtmlEscape\b|\bHtmlEscape\s*\('
+  message: HTML or JavaScript for the WebView is built by inserting values into a string. A value from the server, a link or the user can add its own markup or script, which then runs with the page's rights and its JavaScript channels.
+  fix: 'Pass data, not code: encode values with jsonEncode() for JavaScript and HtmlEscape for HTML, or send them through a JavaScript channel.'
+  examples_vulnerable:
+    - 'await controller.runJavaScript("window.setUser(''${user.name}'', ''${user.token}'')");'
+    - 'controller.loadHtmlString(''<html><body>'' + comment.body + ''</body></html>'');'
+    - 'await webViewController.evaluateJavascript(source: "showMessage(''$message'');");'
+  examples_safe:
+    - 'await controller.loadHtmlString(kStaticAboutHtml);'
+    - 'await controller.runJavaScript(''window.scrollTo(0, 0);'');'
+    - 'await controller.runJavaScript(''setData(${jsonEncode(payload)})'');'
+
+- id: DART-WEBVIEW-004
+  title: WebView lets file:// pages read other files or origins
+  languages: [dart]
+  cwe: CWE-200
+  severity: high
+  confidence: 0.85
+  pattern: '\ballow(?:FileAccessFromFileURLs|UniversalAccessFromFileURLs)\s*:\s*true\b'
+  message: With allowFileAccessFromFileURLs or allowUniversalAccessFromFileURLs, script in a file:// page can read the app's other files (databases, preferences, cookies) or any web origin, so one downloaded HTML file can copy the app's data.
+  fix: Keep both settings false (their default) and serve local pages from an asset or an https origin.
+  examples_vulnerable:
+    - '          allowUniversalAccessFromFileURLs: true,'
+    - 'initialSettings: InAppWebViewSettings(allowFileAccessFromFileURLs: true),'
+  examples_safe:
+    - '          allowUniversalAccessFromFileURLs: false,'
+    - '          allowFileAccess: false,'
+
+- id: DART-WEBVIEW-005
+  title: WebView file access switched on
+  languages: [dart]
+  cwe: CWE-200
+  severity: medium
+  confidence: 0.6
+  pattern: '\.setAllowFileAccess\s*\(\s*true\s*\)|\ballowFileAccess\s*:\s*true\b'
+  message: The WebView may load file:// URLs from the app's storage. If an attacker can steer navigation (a link, a redirect, injected HTML), local files are shown with JavaScript and the bridges attached.
+  fix: Switch it off and load bundled pages with loadFlutterAsset().
+  examples_vulnerable:
+    - 'await (controller.platform as AndroidWebViewController).setAllowFileAccess(true);'
+    - '          allowFileAccess: true,'
+  examples_safe:
+    - 'await androidController.setAllowFileAccess(false);'
+    - 'await controller.loadFlutterAsset(''assets/www/index.html'');'
+
+- id: DART-WEBVIEW-006
+  title: WebView allows HTTP content inside HTTPS pages (mixed content)
+  languages: [dart]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.85
+  pattern: 'MixedContentMode\.(?:MIXED_CONTENT_ALWAYS_ALLOW|alwaysAllow)\b'
+  message: An HTTPS page in this WebView may load scripts and frames over plain HTTP, which an attacker on the network can replace.
+  fix: Keep the default mode that never allows mixed content and serve every resource over HTTPS.
+  examples_vulnerable:
+    - '          mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,'
+    - 'await androidController.setMixedContentMode(MixedContentMode.alwaysAllow);'
+  examples_safe:
+    - '          mixedContentMode: MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,'
+    - 'await androidController.setMixedContentMode(MixedContentMode.neverAllow);'
+
+- id: DART-WEBVIEW-007
+  title: WebView debugging switched on in release code
+  languages: [dart]
+  cwe: CWE-489
+  severity: medium
+  confidence: 0.75
+  pattern: '\bAndroidWebViewController\.enableDebugging\s*\(\s*true\s*\)|\.setInspectable\s*\(\s*true\s*\)|\bisInspectable\s*:\s*true\b|\bsetWebContentsDebuggingEnabled\s*\(\s*true\s*\)|\bdebuggingEnabled\s*:\s*true\b'
+  exclude: '\bkDebugMode\b|\bkProfileMode\b|!\s*kReleaseMode|^\s*(?:\w+\s*:\s*)?r?[''"]'
+  message: 'WebView debugging (Chrome DevTools, Safari Web Inspector) is on for every build: anyone with the unlocked device and a cable can read the page, its cookies and storage, and call its JavaScript bridges.'
+  fix: Tie it to debug builds, for example AndroidWebViewController.enableDebugging(kDebugMode).
+  examples_vulnerable:
+    - 'AndroidWebViewController.enableDebugging(true);'
+    - 'await InAppWebViewController.setWebContentsDebuggingEnabled(true);'
+    - '          isInspectable: true,'
+  examples_safe:
+    - 'AndroidWebViewController.enableDebugging(kDebugMode);'
+    - 'if (kDebugMode) await InAppWebViewController.setWebContentsDebuggingEnabled(true);'
+    - '  label: ''Remote debugging: setWebContentsDebuggingEnabled(true) in release'','
+
+# ---- Storage
+- id: DART-STORAGE-001
+  title: Secret stored in plain key-value storage (shared_preferences, get_storage, localStorage)
+  languages: [dart]
+  cwe: CWE-312
+  severity: medium
+  confidence: 0.65
+  pattern: '(?:\.set(?:String|StringList)\s*\(|\b(?:GetStorage\s*\([^)]*\)|box|_box|storage|_storage|getStorage|_getStorage)\.write\s*\(\s*[''"]|\blocalStorage\s*(?:\[|\.setItem\s*\())(?=.*(?i:passw|pwd\b|secret|token(?!iz)|api_?key|apikey|credential|private_?key|\bpin(?:_?code)?\b|\botp\b|session_?(?:id|key|token)|jwt|bearer|card_?(?:number|no)\b|cvv))'
+  exclude: '(?i:encrypted|secure_?storage|FlutterSecureStorage|fcm_?token|push_?token|apns_?token|messaging_?token)|\bkey\s*:'
+  message: A token, password, PIN or key is stored with shared_preferences, get_storage or localStorage. They write plain files (XML, plist, JSON, browser storage) that backups, rooted devices and, on the web, any script can read.
+  fix: 'Keep secrets in the platform keystore with flutter_secure_storage: await FlutterSecureStorage().write(key: ''token'', value: token).'
+  examples_vulnerable:
+    - 'await prefs.setString(''auth_token'', response.data[''access_token'']);'
+    - 'prefs.setString(''password'', passwordController.text);'
+    - 'GetStorage().write(''token'', token);'
+    - 'html.window.localStorage[''jwt''] = jwt;'
+  examples_safe:
+    - 'await prefs.setString(''theme_mode'', ''dark'');'
+    - 'await storage.write(key: ''auth_token'', value: token);'
+    - 'await prefs.setStringList(''recent_searches'', searches);'
+    - 'await prefs.setString(''fcm_token'', fcmToken);'
+    - 'prefs.setString(''pushToken'', token);'
+
+- id: DART-STORAGE-002
+  title: Hive box with sensitive data opened without encryption
+  languages: [dart]
+  cwe: CWE-311
+  severity: medium
+  confidence: 0.5
+  pattern: '\bHive\.open(?:Lazy)?Box\s*(?:<[^>]*>)?\s*\(\s*[''"][^''"]*(?i:token|auth|secret|cred|session|account|wallet|passw|vault|secure|private)'
+  exclude: '\bencryptionCipher\s*:'
+  message: Hive keeps each box in a plain file in the app folder. Without an encryptionCipher a box for tokens, accounts or credentials can be read from a backup or a rooted device.
+  fix: 'Create a key once, keep it in flutter_secure_storage and open the box with encryptionCipher: HiveAesCipher(key).'
+  examples_vulnerable:
+    - 'final box = await Hive.openBox(''auth'');'
+    - 'final tokens = await Hive.openBox<String>(''tokens'');'
+    - 'await Hive.openLazyBox(''user_credentials'');'
+  examples_safe:
+    - 'final box = await Hive.openBox(''auth'', encryptionCipher: HiveAesCipher(key));'
+    - 'final settings = await Hive.openBox(''settings'');'
+    - 'final cart = await Hive.openBox<CartItem>(''cart'');'
+
+- id: DART-STORAGE-003
+  title: Files kept on external or shared storage
+  languages: [dart]
+  cwe: CWE-922
+  severity: low
+  confidence: 0.45
+  pattern: '\bgetExternal(?:Storage|Cache)Director(?:y|ies)\s*\(|[''"]/(?:sdcard|mnt/sdcard|storage/emulated/0)(?:/|[''"])'
+  message: getExternalStorageDirectory and paths under /sdcard or /storage/emulated/0 point to storage that other apps (before Android 11) and the user can read. Sensitive files do not belong there.
+  fix: 'Keep app data in internal storage: getApplicationSupportDirectory() or getApplicationDocumentsDirectory().'
+  examples_vulnerable:
+    - 'final dir = await getExternalStorageDirectory();'
+    - 'final file = File(''/storage/emulated/0/Download/backup.json'');'
+  examples_safe:
+    - 'final dir = await getApplicationDocumentsDirectory();'
+    - 'final dir = await getApplicationSupportDirectory();'
+
+- id: DART-STORAGE-004
+  title: Secret written to a plain file
+  languages: [dart]
+  cwe: CWE-312
+  severity: medium
+  confidence: 0.5
+  pattern: '^(?=.*(?i:passw|secret|token(?!iz)|private_?key|api_?key|credential|jwt|mnemonic|seed_?phrase)).*\.writeAsString(?:Sync)?\s*\('
+  exclude: '(?i:encrypt|cipher)'
+  message: A token, password, key or wallet phrase is written to a file as plain text. Files in the app folder still end up in backups and can be read on a rooted or jailbroken device.
+  fix: Keep small secrets in flutter_secure_storage, and encrypt larger files with a key held in the keystore.
+  examples_vulnerable:
+    - 'await File(''${dir.path}/token.txt'').writeAsString(accessToken);'
+    - 'credentialsFile.writeAsStringSync(jsonEncode({''user'': u, ''password'': p}));'
+  examples_safe:
+    - 'await File(''${dir.path}/notes.txt'').writeAsString(note.body);'
+    - 'await tokenFile.writeAsString(encrypter.encrypt(token, iv: iv).base64);'
+
+- id: DART-STORAGE-005
+  title: flutter_secure_storage set up with weaker options
+  languages: [dart]
+  cwe: CWE-922
+  severity: low
+  confidence: 0.6
+  pattern: '\bKeychainAccessibility\.first_unlock\b|\bsynchronizable\s*:\s*true\b|\bKeyCipherAlgorithm\.RSA_ECB_PKCS1Padding\b|\bStorageCipherAlgorithm\.AES_CBC_PKCS7Padding\b'
+  message: 'KeychainAccessibility.first_unlock keeps items readable while the device is locked and lets them move to a new device, synchronizable: true copies them to iCloud Keychain, and RSA_ECB_PKCS1Padding or AES_CBC_PKCS7Padding are the old Android ciphers.'
+  fix: Use KeychainAccessibility.unlocked_this_device (or first_unlock_this_device) and the default Android ciphers of current versions (RSA OAEP and AES-GCM).
+  examples_vulnerable:
+    - '  iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),'
+    - '  iOptions: const IOSOptions(synchronizable: true),'
+    - '    storageCipherAlgorithm: StorageCipherAlgorithm.AES_CBC_PKCS7Padding,'
+  examples_safe:
+    - '  iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),'
+    - '  iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),'
+    - '    storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,'
+
+- id: DART-STORAGE-006
+  title: File or preferences opened world-readable or world-writable (MODE_WORLD_READABLE)
+  languages: [dart]
+  cwe: CWE-732
+  severity: medium
+  confidence: 0.7
+  pattern: '\bMODE_WORLD_(?:READABLE|WRITEABLE)\b'
+  exclude: '^\s*(?:(?:static|const|final|late|int|var)\s+)+MODE_WORLD_\w+\s*=|^\s*(?:\w+\s*:\s*)?r?[''"]'
+  message: Android's MODE_WORLD_READABLE and MODE_WORLD_WRITEABLE let every other app on the device read or change the file or shared preferences. Android 7.0 and later refuse them with a SecurityException; older versions expose the data.
+  fix: Use MODE_PRIVATE, and share single files with other apps through a FileProvider content URI.
+  examples_vulnerable:
+    - '    Context.getSharedPreferences(token, MODE_WORLD_READABLE);'
+    - '    Context.getSharedPreferences(token, MODE_WORLD_READABLE | MODE_WORLD_WRITEABLE);'
+    - 'final out = await context.openFileOutput(''report.txt'', Context.MODE_WORLD_WRITEABLE);'
+  examples_safe:
+    - '    Context.getSharedPreferences(token, MODE_PRIVATE);'
+    - '  int MODE_WORLD_READABLE = 1; // This constant was deprecated in API level 17.'
+
+# ---- SQL (sqflite, sqlite3, drift)
+- id: DART-SQLI-001
+  title: 'SQL injection: sqflite raw query built with interpolation or +'
+  languages: [dart]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: '\.(?:rawQuery|rawInsert|rawUpdate|rawDelete|rawQueryCursor)\s*\(\s*(?:''{1,3}[^'']*(?<![A-Za-z,]\s)(?<!,)(?<!FROM\s["''`])(?<!JOIN\s["''`])(?<!INTO\s["''`])(?<!UPDATE\s["''`])(?<!TABLE\s["''`])(?<!EXISTS\s["''`])\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|"{1,3}[^"]*(?<![A-Za-z,]\s)(?<!,)(?<!FROM\s["''`])(?<!JOIN\s["''`])(?<!INTO\s["''`])(?<!UPDATE\s["''`])(?<!TABLE\s["''`])(?<!EXISTS\s["''`])\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|''[^'']*(?<![A-Za-z,]\s)(?<!,)''\s*\+|"[^"]*(?<![A-Za-z,]\s)(?<!,)"\s*\+|[A-Za-z_][\w.]*\s*\+)'
+  exclude: 'VALUES\s*\(\s*\?'
+  ignore_case: true
+  message: 'The SQL text of rawQuery, rawInsert, rawUpdate or rawDelete is built from values ($value, ${expr} or +), so input can change the statement: log in without a password, read other rows, drop tables.'
+  fix: 'Write ? in the SQL and pass the values as the arguments list: db.rawQuery(''SELECT * FROM users WHERE email = ?'', [email]).'
+  examples_vulnerable:
+    - 'final rows = await db.rawQuery("SELECT * FROM users WHERE email = ''$email'' AND password = ''$password''");'
+    - 'await db.rawDelete(''DELETE FROM notes WHERE id = ${note.id}'');'
+    - 'final result = await db.rawQuery(''SELECT * FROM products WHERE name LIKE "%'' + query + ''%"'');'
+    - 'await db.rawUpdate(updateSql + whereClause);'
+  examples_safe:
+    - 'final rows = await db.rawQuery(''SELECT * FROM users WHERE email = ? AND password_hash = ?'', [email, hash]);'
+    - 'await db.rawQuery(''SELECT * FROM $tableNotes WHERE $columnId = ?'', [id]);'
+    - 'final count = Sqflite.firstIntValue(await db.rawQuery(''SELECT COUNT(*) FROM $table''));'
+    - 'await db.rawInsert(''INSERT INTO $table ($columnName, $columnAge) VALUES (?, ?)'', [name, age]);'
+    - 'await db.rawQuery(''SELECT * FROM "$tableName" WHERE id = ?'', [id]);'
+    - 'await db.rawQuery("SELECT COUNT(*) FROM ''$table''");'
+
+- id: DART-SQLI-002
+  title: 'SQL injection: execute, sqlite3 select or drift custom statement built with interpolation'
+  languages: [dart]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.75
+  pattern: '\b(?:execute|select|customStatement|customSelect|customUpdate|customInsert|customWriteReturning)\s*\(\s*(?:''{1,3}\s*(?:SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH)\b[^'']*(?<![A-Za-z,]\s)(?<!,)(?<!FROM\s["''`])(?<!JOIN\s["''`])(?<!INTO\s["''`])(?<!UPDATE\s["''`])(?<!TABLE\s["''`])(?<!EXISTS\s["''`])\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|"{1,3}\s*(?:SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH)\b[^"]*(?<![A-Za-z,]\s)(?<!,)(?<!FROM\s["''`])(?<!JOIN\s["''`])(?<!INTO\s["''`])(?<!UPDATE\s["''`])(?<!TABLE\s["''`])(?<!EXISTS\s["''`])\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|''\s*(?:SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH)\b[^'']*(?<![A-Za-z,]\s)(?<!,)''\s*\+|"\s*(?:SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH)\b[^"]*(?<![A-Za-z,]\s)(?<!,)"\s*\+)'
+  exclude: 'VALUES\s*\(\s*\?'
+  ignore_case: true
+  message: sqflite's execute, package:sqlite3's select and execute, and drift's custom statements take raw SQL. A statement assembled from interpolated or joined values can be changed by its input.
+  fix: 'Bind the values: db.execute(''DELETE FROM t WHERE id = ?'', [id]), or drift''s customSelect(sql, variables: [Variable.withString(title)]).'
+  examples_vulnerable:
+    - 'await db.execute("DELETE FROM sessions WHERE user_id = ''$userId''");'
+    - 'final rows = await customSelect(''SELECT * FROM todos WHERE title = "$title"'').get();'
+    - 'await customStatement(''UPDATE users SET name = '' + name + '' WHERE id = 1'');'
+    - 'final rs = db.select("SELECT * FROM notes WHERE tag = ''${tag}''");'
+  examples_safe:
+    - 'await db.execute(''DELETE FROM sessions WHERE user_id = ?'', [userId]);'
+    - 'await db.execute(''CREATE TABLE $tableTodo ($columnId INTEGER PRIMARY KEY, $columnTitle TEXT)'');'
+    - 'await db.execute(''INSERT INTO $table (column_1, column_2) VALUES (11, 180)'');'
+    - 'final query = select(todos)..where((t) => t.title.equals(title));'
+    - 'await db.execute(''DELETE FROM "$table" WHERE id = ?'', [id]);'
+    - 'await db.execute(''CREATE TABLE IF NOT EXISTS "$table" (id INTEGER PRIMARY KEY)'');'
+
+- id: DART-SQLI-003
+  title: 'SQL injection: where, orderBy, having or groupBy clause built with interpolation'
+  languages: [dart]
+  cwe: CWE-89
+  severity: high
+  confidence: 0.65
+  pattern: '\b(?:where|having|orderBy|groupBy)\s*:\s*(?:''[^'']*(?<![A-Za-z,]\s)(?<!,)\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|"[^"]*(?<![A-Za-z,]\s)(?<!,)\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|''[^'']*(?<![A-Za-z,]\s)(?<!,)''\s*\+|"[^"]*(?<![A-Za-z,]\s)(?<!,)"\s*\+)'
+  ignore_case: true
+  message: sqflite's query, update and delete helpers copy the where, orderBy, having and groupBy strings into the SQL as they are; only whereArgs are bound. A value inserted into these strings brings SQL injection back.
+  fix: 'Use ? with whereArgs for values, and pick sort columns from a fixed list: db.query(''users'', where: ''email = ?'', whereArgs: [email]).'
+  examples_vulnerable:
+    - 'final rows = await db.query(''users'', where: ''email = "$email"'');'
+    - 'await db.delete(''notes'', where: "id = ${note.id}");'
+    - 'final items = await db.query(''items'', orderBy: ''$sortColumn $sortDirection'');'
+    - 'await db.update(''users'', values, where: ''id = '' + id.toString());'
+  examples_safe:
+    - 'final rows = await db.query(''users'', where: ''email = ?'', whereArgs: [email]);'
+    - 'return await db.delete(tableTodo, where: ''$columnId = ?'', whereArgs: [id]);'
+    - 'final items = await db.query(''items'', orderBy: ''$columnCreated DESC'');'
+
+- id: DART-SQLI-004
+  title: SQL statement text built with interpolation or + (outside the call)
+  languages: [dart]
+  cwe: CWE-89
+  severity: medium
+  confidence: 0.5
+  pattern: '''{1,3}\s*(?:SELECT\b(?=[^'']*\bFROM\b)(?=[^'']*\b(?:WHERE|ORDER\s+BY|GROUP\s+BY|LIMIT|JOIN|HAVING)\b)|INSERT\s+(?:OR\s+\w+\s+)?INTO\b(?=[^'']*\bVALUES\b)|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b)(?:[^'']*(?<![A-Za-z,]\s)(?<!,)(?<!FROM\s["''`])(?<!JOIN\s["''`])(?<!INTO\s["''`])(?<!UPDATE\s["''`])(?<!TABLE\s["''`])(?<!EXISTS\s["''`])\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|[^'']*(?<![A-Za-z,]\s)(?<!,)''\s*\+)|"{1,3}\s*(?:SELECT\b(?=[^"]*\bFROM\b)(?=[^"]*\b(?:WHERE|ORDER\s+BY|GROUP\s+BY|LIMIT|JOIN|HAVING)\b)|INSERT\s+(?:OR\s+\w+\s+)?INTO\b(?=[^"]*\bVALUES\b)|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b)(?:[^"]*(?<![A-Za-z,]\s)(?<!,)(?<!FROM\s["''`])(?<!JOIN\s["''`])(?<!INTO\s["''`])(?<!UPDATE\s["''`])(?<!TABLE\s["''`])(?<!EXISTS\s["''`])\$(?:\{[^}]*\}|[A-Za-z_]\w*)(?!\w)(?!\s*(?:[=<>!]=?|<>|LIKE\b|IN\b)\s*\(?\s*\?)(?!\s+(?:ASC|DESC)\b)|[^"]*(?<![A-Za-z,]\s)(?<!,)"\s*\+)'
+  exclude: 'VALUES\s*\(\s*\?|\b(?:rawQuery|rawInsert|rawUpdate|rawDelete|rawQueryCursor|execute|select|customSelect|customStatement|customUpdate|customInsert|customWriteReturning)\s*\(|\b(?:where|orderBy|having|groupBy)\s*:'
+  ignore_case: true
+  message: 'A SELECT, INSERT, UPDATE or DELETE string holds $value or ${expr}, or is joined with +, on a line without the database call: the SQL is kept in a variable or the call starts on the line above. Input in the text can change the statement.'
+  fix: 'Keep the SQL constant with ? placeholders and pass the values at the call: const sql = ''SELECT * FROM notes WHERE title LIKE ?''; db.rawQuery(sql, [''%$query%'']).'
+  examples_vulnerable:
+    - '        "SELECT * FROM notes WHERE is_hidden = 0 AND title LIKE ''%$query%''"'
+    - '    return "SELECT * FROM users WHERE name = ''" + name + "''";'
+    - 'final sql = ''DELETE FROM cart WHERE user_id = ${user.id}'';'
+    - 'final q = ''''''UPDATE accounts SET balance = $amount WHERE id = $id'''''';'
+  examples_safe:
+    - 'const sql = ''SELECT * FROM notes WHERE title LIKE ?'';'
+    - 'print(''Select an account from the list for $userName'');'
+    - 'final sql = ''SELECT * FROM $table WHERE $columnId = ?'';'
+    - 'final sql = ''INSERT INTO $table ($columnName, $columnAge) VALUES (?, ?)'';'
+    - 'final sql = ''SELECT * FROM "$table" WHERE $columnId = ?'';'
+
+# ---- Cryptography
+- id: DART-CRYPTO-001
+  title: Weak hash MD5 or SHA-1 (package:crypto)
+  languages: [dart]
+  cwe: CWE-328
+  severity: medium
+  confidence: 0.6
+  pattern: '\b(?:md5|sha1)\.(?:convert|startChunkedConversion|bind)\s*\('
+  exclude: '(?i:uuid|\bv5\b|namespace)'
+  message: 'MD5 and SHA-1 are broken: collisions can be computed, so they must not protect passwords, signatures, integrity checks or tokens.'
+  fix: Use sha256 or stronger for integrity, and a password hashing function (Argon2id, PBKDF2 with many iterations) for passwords.
+  examples_vulnerable:
+    - 'final digest = md5.convert(utf8.encode(password));'
+    - 'final hash = sha1.convert(bytes).toString();'
+    - 'final h = crypto.md5.convert(data);'
+  examples_safe:
+    - 'final digest = sha256.convert(utf8.encode(input));'
+    - 'final mac = Hmac(sha256, key).convert(bytes);'
+    - 'final uuidBytes = sha1.convert([...namespaceBytes, ...utf8.encode(name)]).bytes;'
+
+- id: DART-CRYPTO-002
+  title: Weak algorithm in pointycastle (MD5, MD4, MD2, SHA-1, RC4, Triple DES)
+  languages: [dart]
+  cwe: CWE-327
+  severity: medium
+  confidence: 0.7
+  pattern: '\b(?:MD5Digest|MD4Digest|MD2Digest|SHA1Digest|RC4Engine|DESedeEngine)\s*\(|\b(?:Digest|Signer)\s*\(\s*[''"](?:MD5|MD4|MD2|SHA-1)\b'
+  message: 'pointycastle still offers broken or outdated algorithms: the MD2, MD4, MD5 and SHA-1 digests (also by name, as in Digest(''SHA-1'') or Signer(''SHA-1/RSA'')), RC4 and Triple DES.'
+  fix: Use Digest('SHA-256'), Signer('SHA-256/RSA') or Ed25519, and AES-GCM (GCMBlockCipher(AESEngine())) for encryption.
+  examples_vulnerable:
+    - 'final digest = MD5Digest().process(bytes);'
+    - 'final d = Digest(''SHA-1'');'
+    - 'final cipher = DESedeEngine()..init(true, KeyParameter(key));'
+  examples_safe:
+    - 'final digest = SHA256Digest().process(bytes);'
+    - 'final d = Digest(''SHA-256'');'
+
+- id: DART-CRYPTO-003
+  title: Block cipher in ECB mode
+  languages: [dart]
+  cwe: CWE-327
+  severity: high
+  confidence: 0.85
+  pattern: '\bAESMode\.ecb\b|\bECBBlockCipher\s*\(|[''"]AES/ECB\b'
+  message: ECB mode turns equal blocks of plaintext into equal blocks of ciphertext and uses no IV, so the structure of the data shows through and blocks can be swapped or replayed.
+  fix: 'Use an authenticated mode with a fresh random nonce, for example Encrypter(AES(key, mode: AESMode.gcm)) with IV.fromSecureRandom(12) stored next to the ciphertext.'
+  examples_vulnerable:
+    - 'final encrypter = Encrypter(AES(key, mode: AESMode.ecb));'
+    - 'final cipher = ECBBlockCipher(AESEngine())..init(true, KeyParameter(key));'
+    - 'final cipher = PaddedBlockCipher(''AES/ECB/PKCS7'');'
+  examples_safe:
+    - 'final encrypter = Encrypter(AES(key, mode: AESMode.gcm));'
+    - 'final cipher = PaddedBlockCipher(''AES/CBC/PKCS7'');'
+
+- id: DART-CRYPTO-004
+  title: Hard-coded encryption, HMAC or JWT signing key
+  languages: [dart]
+  cwe: CWE-321
+  severity: high
+  confidence: 0.8
+  pattern: '\bKey\.from(?:Utf8|Base64|Base16)\s*\(\s*r?[''"]|\b(?:Key|KeyParameter)\s*\(\s*(?:utf8\.encode\s*\(\s*r?[''"]|Uint8List\.fromList\s*\(\s*(?:const\s*)?\[\s*(?:0x[0-9a-fA-F]|\d))|\bHmac\s*\(\s*\w+\s*,\s*utf8\.encode\s*\(\s*r?[''"]|\bSecretKey\s*\(\s*r?[''"]|\bHiveAesCipher\s*\(\s*(?:const\s*)?\[\s*\d'
+  message: The key is written in the source, so it ships inside the app binary (libapp.so, App.framework) and can be read out of it; obfuscation only renames symbols. Every installation shares the key, so one copy decrypts all users' data or forges signatures and tokens.
+  fix: Create a key per installation (Key.fromSecureRandom(32)) and keep it in flutter_secure_storage, or derive it from a user secret. Never sign tokens in the app.
+  examples_vulnerable:
+    - 'final key = Key.fromUtf8(''my32lengthsupersecretnooneknows1'');'
+    - 'final hmac = Hmac(sha256, utf8.encode(''server-shared-secret''));'
+    - 'final token = JWT({''id'': userId}).sign(SecretKey(''secret passphrase''));'
+    - 'final box = await Hive.openBox(''vault'', encryptionCipher: HiveAesCipher(const [12, 45, 99, 3]));'
+  examples_safe:
+    - 'final key = Key.fromSecureRandom(32);'
+    - 'final key = Key.fromBase64(await secureStorage.read(key: ''enc_key'') ?? '''');'
+    - 'final hmac = Hmac(sha256, keyBytes);'
+
+- id: DART-CRYPTO-005
+  title: Constant, all-zero or reused IV
+  languages: [dart]
+  cwe: CWE-1204
+  severity: medium
+  confidence: 0.6
+  pattern: '\bIV\.from(?:Utf8|Base64|Base16)\s*\(\s*r?[''"]|\bIV\.allZerosOfLength\s*\(|\bIV\s*\(\s*Uint8List(?:\s*\(\s*\d|\.fromList\s*\(\s*(?:const\s*)?\[)|\bIV\.fromLength\s*\('
+  message: The IV is a constant or all zeros. With CBC equal messages give equal ciphertext; with CTR (the package:encrypt default) and GCM a repeated nonce reveals the plaintext. IV.fromLength gave zero bytes up to encrypt 5.0.1, and an IV made once and reused is constant either way.
+  fix: Create a new random IV for every message (IV.fromSecureRandom(16)) and store it with the ciphertext.
+  examples_vulnerable:
+    - 'final iv = IV.fromUtf8(''1234567890123456'');'
+    - 'final iv = IV.fromLength(16);'
+    - 'final iv = IV(Uint8List(16));'
+    - 'final iv = IV.allZerosOfLength(16);'
+  examples_safe:
+    - 'final iv = IV.fromSecureRandom(16);'
+    - 'final iv = IV.fromBase64(message.ivBase64);'
+
+- id: DART-CRYPTO-006
+  title: RSA encryption with PKCS#1 v1.5 padding
+  languages: [dart]
+  cwe: CWE-780
+  severity: medium
+  confidence: 0.6
+  pattern: '\bRSAEncoding\.PKCS1\b|\bRSA\s*\(\s*(?:publicKey|privateKey)\s*:|\bPKCS1Encoding\s*\('
+  exclude: '\bRSAEncoding\.OAEP\b'
+  message: RSA encryption with PKCS#1 v1.5 padding, the default of package:encrypt's RSA() and pointycastle's PKCS1Encoding, is open to padding-oracle attacks that recover the plaintext.
+  fix: 'Ask for OAEP: RSA(publicKey: key, encoding: RSAEncoding.OAEP, digest: RSADigest.SHA256), or OAEPEncoding(RSAEngine()) in pointycastle.'
+  examples_vulnerable:
+    - 'final encrypter = Encrypter(RSA(publicKey: publicKey, privateKey: privateKey));'
+    - 'Encrypter(RSA(publicKey: pub, encoding: RSAEncoding.PKCS1))'
+    - 'final cipher = PKCS1Encoding(RSAEngine())..init(true, PublicKeyParameter<RSAPublicKey>(pub));'
+  examples_safe:
+    - 'final encrypter = Encrypter(RSA(publicKey: pub, encoding: RSAEncoding.OAEP));'
+    - 'final cipher = OAEPEncoding(RSAEngine())..init(true, PublicKeyParameter<RSAPublicKey>(pub));'
+
+- id: DART-CRYPTO-007
+  title: dart:math Random() used for a code, token, nonce or password
+  languages: [dart]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.55
+  pattern: '\bRandom\s*\([^()]*\)'
+  exclude: '^\s*(?:\w+\s*:\s*)?r?[''"]'
+  near: '(?i:\botp\b|token(?!iz)|nonce|salt|passw|passcode|secret|session_?id|verification_?code|captcha|\bpin\b|\biv\b|api_?key|uuid)|Pin(?:Code)?\b'
+  within: 4
+  message: 'dart:math Random() is not made for security: its numbers can be predicted, and Random(seed) repeats the same sequence. A code, token, nonce, salt or password made with it can be guessed.'
+  fix: Use Random.secure() for every value that protects something.
+  examples_vulnerable:
+    - 'final otp = (Random().nextInt(900000) + 100000).toString();'
+    - 'final token = String.fromCharCodes(List.generate(32, (_) => Random().nextInt(26) + 97));'
+    - 'final rng = Random(seed);'
+  examples_safe:
+    - 'final rng = Random.secure();'
+    - 'final otp = (Random.secure().nextInt(900000) + 100000).toString();'
+
+- id: DART-CRYPTO-008
+  title: Password or PIN hashed with one fast SHA-2 call
+  languages: [dart]
+  cwe: CWE-916
+  severity: medium
+  confidence: 0.55
+  pattern: '\bsha(?:224|256|384|512)\.convert\s*\(.*(?i:passw|pwd\b|passcode|\bpin\b)'
+  message: One fast hash of a password or PIN can be reversed by trying candidates offline, and a PIN of 4 to 6 digits falls at once. A salt does not change that.
+  fix: Use a slow password hashing function with a salt (Argon2id, or PBKDF2 with 600,000 iterations, from package:cryptography), or check the password on the server.
+  examples_vulnerable:
+    - 'final hash = sha256.convert(utf8.encode(password)).toString();'
+    - 'final pinHash = sha512.convert(utf8.encode(pin));'
+  examples_safe:
+    - 'final checksum = sha256.convert(fileBytes);'
+    - 'final key = await Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: 600000, bits: 256).deriveKeyFromPassword(password: password, nonce: salt);'
+
+- id: DART-CRYPTO-009
+  title: PBKDF2 with fewer than 10,000 iterations
+  languages: [dart]
+  cwe: CWE-916
+  severity: medium
+  confidence: 0.7
+  pattern: '\biterations\s*(?::|=)\s*\d{1,4}\b(?!\s*\*)|\bPbkdf2Parameters\s*\(\s*[\w.]+\s*,\s*\d{1,4}\s*,'
+  near: '(?i:pbkdf2)'
+  within: 10
+  message: PBKDF2 with fewer than 10,000 iterations makes keys derived from a password cheap to guess.
+  fix: Raise the iteration count (OWASP suggests 600,000 for PBKDF2-HMAC-SHA256) or use Argon2id.
+  examples_vulnerable:
+    - 'final algorithm = Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: 1000, bits: 256);'
+    - 'derivator.init(Pbkdf2Parameters(salt, 1000, 32));'
+    - '  static const int iterations = 1;'
+  examples_safe:
+    - 'final algorithm = Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: 600000, bits: 256);'
+    - 'derivator.init(Pbkdf2Parameters(salt, 310000, 32));'
+
+- id: DART-CRYPTO-010
+  title: dart:math Random with a fixed or time-based seed used for a security value
+  languages: [dart]
+  cwe: CWE-338
+  severity: medium
+  confidence: 0.5
+  pattern: '\bRandom\s*\(\s*(?:-?\d+|0x[0-9A-Fa-f]+|[A-Z][A-Z0-9_]*|_?k[A-Z]\w*|DateTime\.now\(\)\.(?:millisecondsSinceEpoch|microsecondsSinceEpoch))\s*\)'
+  exclude: '^\s*(?:\w+\s*:\s*)?r?[''"]'
+  near: '(?i:\botp\b|token(?!iz)|nonce|salt|passw|passcode|secret|session_?id|verification_?code|captcha|\bpin\b|\biv\b|api_?key|private_?key|uuid|crypt)|Pin(?:Code)?\b|\bUint8List\b|nextInt\s*\(\s*256\s*\)'
+  within: 8
+  message: 'Random(seed) with a constant or the current time gives the same sequence for everyone who knows (or guesses) the seed, so the bytes, codes or keys made with it next to this line can be computed by an attacker.'
+  fix: Use Random.secure() (or package:cryptography) for every value that protects something; keep seeded generators for tests and visual effects.
+  examples_vulnerable:
+    - '    final gen1 = Random(SEED);'
+    - 'final rng = Random(42);'
+    - 'final rnd = math.Random(DateTime.now().millisecondsSinceEpoch);'
+  examples_safe:
+    - 'final rng = Random.secure();'
+    - 'final rng = Random();'
+    - 'final rng = Random(seed);'
+
+# ---- Logs, clipboard, links and processes
+- id: DART-LOG-001
+  title: Secret written to the log (print, debugPrint, log, logger)
+  languages: [dart]
+  cwe: CWE-532
+  severity: medium
+  confidence: 0.6
+  pattern: '(?:\b(?:print|debugPrint|debugPrintSynchronously|log|developer\.log)\s*\(|\b(?:logger|_logger|log|_log)\.(?:t|d|i|w|e|f|v|wtf|trace|debug|info|warning|error|fatal|fine|finer|finest|config|severe|shout)\s*\()(?:\s*(?![\w.]*\b(?:is|has|should|can|was|did|needs?)[A-Z_])[\w.]*(?i:passw|pwd\b|secret|token(?!iz)|api_?key|apikey|credential|private_?key|\bpin(?:_?code)?\b|\botp\b|session_?(?:id|key|token)|jwt|bearer|card_?(?:number|no)\b|cvv|authorization|cookie|headers|decrypted|plaintext)\w*(?:\.(?:text|value)|\.toString\(\)|\[[^\]]*\])?\s*[,)]|(?=.*(?:\$(?![\w.]*\b(?:is|has|should|can|was|did|needs?)[A-Z_])\w*(?i:passw|pwd\b|secret|token(?!iz)|api_?key|apikey|credential|private_?key|\bpin(?:_?code)?\b|\botp\b|session_?(?:id|key|token)|jwt|bearer|card_?(?:number|no)\b|cvv|authorization|cookie|headers|decrypted|plaintext)|\$\{(?![\w.]*\b(?:is|has|should|can|was|did|needs?)[A-Z_])[\w.]*(?i:passw|pwd\b|secret|token(?!iz)|api_?key|apikey|credential|private_?key|\bpin(?:_?code)?\b|\botp\b|session_?(?:id|key|token)|jwt|bearer|card_?(?:number|no)\b|cvv|authorization|cookie|headers|decrypted|plaintext)\w*(?:\.(?:text|value)|\.toString\(\)|\[[^\]]*\])?\s*\}|\+\s*(?![\w.]*\b(?:is|has|should|can|was|did|needs?)[A-Z_])[\w.]*(?i:passw|pwd\b|secret|token(?!iz)|api_?key|apikey|credential|private_?key|\bpin(?:_?code)?\b|\botp\b|session_?(?:id|key|token)|jwt|bearer|card_?(?:number|no)\b|cvv|authorization|cookie|headers|decrypted|plaintext)\w*(?:\.(?:text|value)|\.toString\(\)|\[[^\]]*\])?(?![\w.(]))))'
+  exclude: '\bkDebugMode\b|\bassert\s*\('
+  message: A password, token, PIN, key or header is written to the log. print and debugPrint reach the device log in release builds too, and logs end up in crash reports and support tools.
+  fix: Do not log secrets. Log only in debug builds (if (kDebugMode) ...) and leave headers and request bodies out of HTTP logging.
+  examples_vulnerable:
+    - 'print(''User token: $token'');'
+    - 'debugPrint("Login request: email=$email password=${passwordController.text}");'
+    - 'log(''Authorization: Bearer $accessToken'', name: ''api'');'
+    - 'logger.d(''OTP received: $otp'');'
+    - 'print(''token='' + token);'
+    - 'debugPrint(user.password);'
+  examples_safe:
+    - 'print(''Login screen opened'');'
+    - 'if (kDebugMode) debugPrint(''token refreshed: $token'');'
+    - 'debugPrint(''Tokenizer finished in ${sw.elapsedMilliseconds} ms'');'
+    - 'print(token.error);'
+    - 'print(''Payload: ${jwt.payload}'');'
+    - 'debugPrint("Token not found in storage yet. Postponing request.");'
+    - 'print(''Token expired: $isTokenExpired'');'
+    - 'debugPrint(''has token: ${auth.hasToken}'');'
+
+- id: DART-CLIP-001
+  title: Secret copied to the clipboard
+  languages: [dart]
+  cwe: CWE-200
+  severity: medium
+  confidence: 0.55
+  pattern: '\bClipboard\.setData\s*\('
+  near: '(?i:passw|token(?!iz)|secret|\botp\b|\bpin\b|api_?key|private_?key|mnemonic|seed_?phrase|recovery_?(?:code|phrase)|card_?number|cvv)'
+  within: 2
+  message: A secret is copied to the clipboard, which other apps could read on older Android versions, which keyboards and clipboard managers keep in their history, and which iOS shares with the user's other devices.
+  fix: Do not copy secrets. If the user must copy a one-time code, clear the clipboard after a short time.
+  examples_vulnerable:
+    - 'await Clipboard.setData(ClipboardData(text: password));'
+    - 'Clipboard.setData(ClipboardData(text: wallet.mnemonic));'
+  examples_safe:
+    - 'final data = await Clipboard.getData(Clipboard.kTextPlain);'
+    - 'final hasText = await Clipboard.hasStrings();'
+
+- id: DART-URL-001
+  title: url_launcher opens a URL taken from data
+  languages: [dart]
+  cwe: CWE-601
+  severity: low
+  confidence: 0.35
+  pattern: '(?<![\w.])(?:launchUrl|launchUrlString|launch)\s*\(\s*(?:Uri\.parse\s*\(\s*)?(?:[A-Za-z_]\w*(?:\??\.\w+)+\s*[!,)\]]|[A-Za-z_]\w*(?:\.\w+)*\s*\[|[''"](?:https?://)?\$[{A-Za-z_])'
+  exclude: '[''"](?:tel|mailto|sms|smsto|geo):'
+  message: 'The app opens a URL that comes from data: a push message, a server response or a model field. Without a check an attacker can send the user to a phishing page or into another app''s deep link.'
+  fix: Parse the URL and open it only when its scheme is https and its host is on your allowlist.
+  examples_vulnerable:
+    - 'await launchUrl(Uri.parse(message.data[''url'']));'
+    - 'launchUrlString(notification.payload!);'
+    - 'await launchUrl(Uri.parse(widget.article.link), mode: LaunchMode.inAppWebView);'
+  examples_safe:
+    - 'await launchUrl(Uri.parse(''https://flutter.dev''));'
+    - 'await launchUrl(_url);'
+    - 'await launchUrl(Uri.parse(''mailto:${user.email}''));'
+    - 'final task = manager.launch(activity.name);'
+
+- id: DART-DEEPLINK-001
+  title: Deep link or route parameter opened in a WebView or browser
+  languages: [dart]
+  cwe: CWE-939
+  severity: high
+  confidence: 0.65
+  pattern: '^(?=.*\b(?:launchUrl|launchUrlString|launch|loadRequest|loadUrl|initialUrl|initialUrlRequest)\b)(?=.*(?:\bqueryParameters\b|\bpathParameters\b|\bqueryParams\b|\bparams\s*\[|\buriLinkStream\b|\blinkStream\b|\bgetInitial(?:Link|Uri|AppLink)\b))'
+  message: A value from an incoming link or route (go_router queryParameters or pathParameters, app_links uriLinkStream, uni_links getInitialLink) is opened in a WebView or browser. Any app or web page can send such a link, so an attacker chooses the page that opens inside the app.
+  fix: 'Treat link parameters as untrusted: map them to known pages (an allowlist) and never open the raw value.'
+  examples_vulnerable:
+    - 'await launchUrl(Uri.parse(state.uri.queryParameters[''redirect'']!));'
+    - 'controller.loadRequest(Uri.parse(state.pathParameters[''target'']!));'
+    - 'appLinks.uriLinkStream.listen((uri) => controller.loadRequest(uri));'
+  examples_safe:
+    - 'await launchUrl(Uri.parse(''https://example.org/help''));'
+    - 'final id = state.pathParameters[''id'']!;'
+    - 'controller.loadRequest(Uri.parse(kHomeUrl));'
+
+- id: DART-CMD-001
+  title: Command injection risk in Process.run or Process.start
+  languages: [dart]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.7
+  pattern: '\bProcess\.(?:run|runSync|start)\s*\(\s*(?:''[^'']*\$[{A-Za-z_]|"[^"]*\$[{A-Za-z_])|\bProcess\.(?:run|runSync|start)\s*\(\s*[''"](?:/bin/)?(?:sh|bash|zsh|cmd|cmd\.exe|powershell|powershell\.exe|pwsh)[''"]\s*,\s*(?:const\s*)?\[\s*[''"](?:-c|/c|/C|-Command)[''"]\s*,\s*(?:''[^'']*\$[{A-Za-z_]|"[^"]*\$[{A-Za-z_]|[A-Za-z_])|\bProcess\.(?:run|runSync|start)\s*\(.*\brunInShell\s*:\s*true\b'
+  message: 'A process is started with a command built from data: an interpolated program path, a sh -c or cmd /c command string, or runInShell: true. A file name or other input can then add its own commands (Flutter desktop and command-line apps).'
+  fix: 'Run the program directly with a fixed name and a list of arguments, without a shell: Process.run(''tar'', [''-xzf'', archive]).'
+  examples_vulnerable:
+    - 'final result = await Process.run(''sh'', [''-c'', ''tar -xzf $archivePath -C $outDir'']);'
+    - 'await Process.start(''$toolPath/convert'', [input, output]);'
+    - 'final r = await Process.run(''ping'', [''-c'', ''1'', host], runInShell: true);'
+  examples_safe:
+    - 'final result = await Process.run(''tar'', [''-xzf'', archivePath, ''-C'', outDir]);'
+    - 'final r = await Process.run(''git'', [''rev-parse'', ''HEAD'']);'
+
+- id: DART-CMD-002
+  title: Process started with user input
+  languages: [dart]
+  cwe: CWE-78
+  severity: high
+  confidence: 0.6
+  pattern: '\bProcess\.(?:run|runSync|start)\s*\('
+  requires_taint: true
+  message: A program is started with a name or arguments that come from user input (a text field, a link, the command line), so the input decides what runs or adds its own options.
+  fix: Allow only known programs and values (an allowlist) and pass the arguments as a list, without a shell.
+  examples_vulnerable:
+    - 'await Process.run(command, []);'
+    - 'final r = Process.runSync(''git'', [''clone'', repoController.text]);'
+  examples_safe:
+    - 'final result = await Isolate.run(() => parseJson(body));'
+    - 'final home = Platform.environment[''HOME''];'
+
+- id: DART-CMD-003
+  title: Process started with a program name taken from a variable
+  languages: [dart]
+  cwe: CWE-78
+  severity: medium
+  confidence: 0.4
+  pattern: '\bProcess\.(?:run|runSync|start)\s*\(\s*(?!(?:const\s+)?r?[''"]|Platform\.(?:resolvedExecutable|executable)\b|_?k[A-Z]|[A-Z][A-Z0-9_]*\b)(?![\w$.]*(?i:path|executable|exe|binary|bin)\s*[,?)])[A-Za-z_$][\w$]*(?:\.[\w$]+)*\s*,'
+  exclude: '\?\?\s*[''"]'
+  message: 'Process.run, runSync or start runs a program whose name comes from a variable, not from a fixed string. When the value can be influenced (a parameter, a setting, a downloaded file, a path on shared storage), another program runs with the app''s rights.'
+  fix: Run only known programs, named by a constant or picked from an allowlist, and pass user values as list arguments.
+  examples_vulnerable:
+    - '    await Process.run(command, []);'
+    - '      var process = Process.runSync(command, [], workingDirectory: file?.path);'
+    - 'final p = await Process.start(job.program, job.args);'
+  examples_safe:
+    - 'final r = await Process.run(''git'', [''rev-parse'', ''HEAD'']);'
+    - 'final r = await Process.run(Platform.resolvedExecutable, [''--version'']);'
+    - 'final r = await Process.run(adbPath ?? ''adb'', [''devices'']);'
+    - 'final r = await Process.run(flutterExecutable, [''build'', ''apk'']);'
+
+- id: DART-CODE-001
+  title: Code loaded at run time with Isolate.spawnUri
+  languages: [dart]
+  cwe: CWE-94
+  severity: medium
+  confidence: 0.5
+  pattern: '\bIsolate\.spawnUri\s*\('
+  message: Isolate.spawnUri runs the Dart program found at a URI. If the URI or the file can be influenced (a download, a link, a writable folder), foreign code runs inside the app.
+  fix: Run only code compiled into the app, with Isolate.spawn or Isolate.run.
+  examples_vulnerable:
+    - 'final isolate = await Isolate.spawnUri(Uri.parse(pluginUrl), [], receivePort.sendPort);'
+    - 'await Isolate.spawnUri(downloadedScript.uri, args, port.sendPort);'
+  examples_safe:
+    - 'final isolate = await Isolate.spawn(_worker, receivePort.sendPort);'
+    - 'final result = await Isolate.run(() => parseJson(body));'
+
+- id: DART-CODE-002
+  title: Method chosen at run time by name (reflectable or dart:mirrors invoke)
+  languages: [dart]
+  cwe: CWE-470
+  severity: medium
+  confidence: 0.5
+  pattern: '\.invoke\s*\(\s*(?:(?!r?[''"#]|const\b)[A-Za-z_$][\w$]*(?:\.[\w$]+)*|(?:new\s+)?Symbol\s*\(\s*(?!r?[''"])[A-Za-z_$][\w$.]*\s*\)|MirrorSystem\.getSymbol\s*\(\s*(?!r?[''"])[A-Za-z_$][\w$.]*\s*\))\s*,'
+  near: '\breflect(?:Type|Class)?\s*\(|\bReflectable\b|\b(?:Instance|Class|Library|Object)Mirror\b|package:reflectable|dart:mirrors'
+  within: 15
+  message: A method is called by a name held in a variable (reflectable's or dart:mirrors' invoke). If the name comes from input, a link or a server, the caller chooses which method of the object runs, including ones never meant to be reachable.
+  fix: Map the allowed names to functions in a fixed table (a switch or a Map of closures) and reject every other name.
+  examples_vulnerable:
+    - '    instanceMirror.invoke(input, [10]);'
+    - 'final result = mirror.invoke(Symbol(methodName), args);'
+    - 'im.invoke(MirrorSystem.getSymbol(action), [payload]);'
+  examples_safe:
+    - '    instanceMirror.invoke(''reflecteeMethod'', [10]);'
+    - 'final result = mirror.invoke(#refresh, []);'
+    - 'final value = await channel.invokeMethod(method, args);'
+
+# ---- Authentication
+- id: DART-AUTH-001
+  title: JWT decoded without checking its signature and used for a permission
+  languages: [dart]
+  cwe: CWE-347
+  severity: medium
+  confidence: 0.5
+  pattern: '\bJwtDecoder\.(?:decode|tryDecode)\s*\(|\bJWT\.decode\s*\('
+  near: '(?i:\brole|admin|permission|\bscope|is_?staff|premium|subscription|entitle|\btier\b|\bplan\b|\bgroups?\b|is_?verified|is_?paid)'
+  within: 4
+  message: JwtDecoder.decode and JWT.decode only decode the token; they do not check its signature. A role or plan read this way can be changed by editing the stored token.
+  fix: Let the server decide what a user may do. If the app must trust a claim, verify the token with the issuer's public key (JWT.verify).
+  examples_vulnerable:
+    - 'final isAdmin = JwtDecoder.decode(token)[''role''] == ''admin'';'
+    - 'final claims = JWT.decode(token).payload; if (claims[''premium''] == true) unlockPro();'
+  examples_safe:
+    - 'final jwt = JWT.verify(token, RSAPublicKey(publicPem));'
+    - 'final expired = JwtDecoder.isExpired(token);'
+
+- id: DART-AUTH-002
+  title: Biometric check that only returns true or false (local_auth)
+  languages: [dart]
+  cwe: CWE-287
+  severity: low
+  confidence: 0.5
+  pattern: '\.authenticate\s*\('
+  near: '\blocalizedReason\s*:'
+  within: 3
+  message: local_auth authenticate() only returns true or false, which can be faked on a rooted or jailbroken device. If that result alone unlocks secrets, the check can be skipped.
+  fix: Bind the secret to the biometric check in the keystore (for example flutter_secure_storage with biometric protection) and keep the server-side authentication.
+  examples_vulnerable:
+    - 'final didAuthenticate = await auth.authenticate(localizedReason: ''Show the balance'');'
+    - 'if (await _localAuth.authenticate(localizedReason: ''Unlock vault'')) {'
+  examples_safe:
+    - 'final canCheck = await auth.canCheckBiometrics;'
+    - 'final user = await FirebaseAuth.instance.signInWithEmailAndPassword(email: e, password: p);'
+
+- id: DART-AUTH-003
+  title: Firebase protection switched to test or debug mode
+  languages: [dart]
+  cwe: CWE-489
+  severity: medium
+  confidence: 0.7
+  pattern: '\bappVerificationDisabledForTesting\s*:\s*true\b|\b(?:AndroidProvider|AppleProvider)\.debug\b|\b(?:Android|Apple|Web)DebugProvider\s*\('
+  exclude: '\bkDebugMode\b|\bkProfileMode\b|!\s*kReleaseMode'
+  message: Phone sign-in app verification (appVerificationDisabledForTesting) or Firebase App Check (a debug provider) is in test mode. Left in a release build, the protection is off.
+  fix: 'Choose the test settings only in debug builds, for example providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider().'
+  examples_vulnerable:
+    - 'await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);'
+    - 'await FirebaseAppCheck.instance.activate(androidProvider: AndroidProvider.debug);'
+    - 'await FirebaseAppCheck.instance.activate(providerAndroid: const AndroidDebugProvider());'
+  examples_safe:
+    - 'await FirebaseAppCheck.instance.activate(providerAndroid: const AndroidPlayIntegrityProvider());'
+    - '  providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider(),'
+
+# ---- Secrets
+- id: DART-SECRET-001
+  kind: secret
+  title: Hard-coded HTTP Basic credentials
+  languages: [dart]
+  cwe: CWE-798
+  severity: high
+  confidence: 0.8
+  pattern: '\bbase64(?:Encode|\.encode)\s*\(\s*utf8\.encode\s*\(\s*[''"]([^''"$:\s]+:[^''"$\s]+)[''"]'
+  message: 'A user name and password for an Authorization: Basic header are written in the source. They ship inside the app and are the same for every installation, so anyone who unpacks the app can call the API as that account.'
+  fix: Sign the user in (OAuth 2, OpenID Connect, Firebase Auth) and send a per-user token; never put service credentials in the app.
+  keywords: [utf8.encode]
+  examples_vulnerable:
+    - 'final auth = ''Basic '' + base64Encode(utf8.encode(''admin:Winter2024''));'
+    - 'headers: {''Authorization'': ''Basic ${base64.encode(utf8.encode(''api_user:p4ssw0rd''))}''},'
+  examples_safe:
+    - 'final auth = ''Basic '' + base64Encode(utf8.encode(''$username:$password''));'
+    - 'final encoded = base64Encode(utf8.encode(jsonBody));'
+
+- id: DART-SECRET-002
+  title: Secret given to the app with --dart-define, a bundled .env file or envied
+  languages: [dart]
+  cwe: CWE-798
+  severity: medium
+  confidence: 0.6
+  pattern: '\bString\.fromEnvironment\s*\(\s*[''"][A-Za-z0-9_]*(?i:key|secret|token|passw|private)|\bdotenv\.(?:env\s*\[\s*|get\s*\(\s*|maybeGet\s*\(\s*)[''"][A-Za-z0-9_]*(?i:key|secret|token|passw|private)|@EnviedField\s*\([^)]*\bobfuscate\s*:\s*true'
+  message: Values from String.fromEnvironment (--dart-define), a bundled .env file (flutter_dotenv) or envied are compiled or packed into the app, where anyone can read them; envied's obfuscation only slows this down. A key, secret or token given this way is public.
+  fix: Keep secrets on a server you control and give the app short-lived tokens after the user signs in.
+  examples_vulnerable:
+    - 'const apiKey = String.fromEnvironment(''OPENAI_API_KEY'');'
+    - 'final secret = dotenv.env[''STRIPE_SECRET_KEY''];'
+    - '  @EnviedField(varName: ''OPENAI_KEY'', obfuscate: true)'
+  examples_safe:
+    - 'const flavor = String.fromEnvironment(''FLAVOR'', defaultValue: ''dev'');'
+    - 'final baseUrl = dotenv.env[''API_BASE_URL''];'
+
+- id: DART-SECRET-003
+  kind: secret
+  title: Supabase secret key (sb_secret_) in the app
+  languages: [dart]
+  cwe: CWE-798
+  severity: critical
+  confidence: 0.85
+  pattern: '\bsb_secret_[A-Za-z0-9_-]{8,}'
+  message: A Supabase secret key bypasses Row Level Security and gives full access to the database. Only the publishable key belongs in an app. (The older service_role key is a JWT and is reported as a hard-coded token.)
+  fix: Rotate the key now, ship only the publishable key with Row Level Security, and move privileged work to an Edge Function.
+  keywords: [sb_secret_]
+  entropy: 3.0
+  examples_vulnerable:
+    - 'const supabaseSecret = ''sb_secret_FAKE0000example'';'
+    - 'final client = SupabaseClient(url, ''sb_secret_TEST1234dummy'');'
+  examples_safe:
+    - 'const supabasePublishableKey = ''sb_publishable_FAKE0000example'';'
+    - 'final key = Platform.environment[''SUPABASE_SECRET_KEY''];'
+
+# ---- Flutter web and files
+- id: DART-WEB-001
+  title: 'Flutter web: HTML inserted without sanitizing, or eval'
+  languages: [dart]
+  cwe: CWE-79
+  severity: medium
+  confidence: 0.6
+  pattern: '\bNodeTreeSanitizer\.trusted\b|\.innerHTML\s*=\s*(?!\s*[''"][^''"$]*[''"]\s*(?:\.toJS\s*)?;)|\bcallMethod\s*\(\s*[''"]eval[''"]'
+  exclude: '\bsanitize\w*\s*\(|\bDOMPurify\b'
+  message: In a Flutter web build, NodeTreeSanitizer.trusted turns off dart:html's HTML sanitizer, and package:web's innerHTML and JavaScript eval have none. Dynamic content there is cross-site scripting in the app's origin.
+  fix: 'Insert text instead of HTML (element.text = value), or sanitize with setInnerHtml(html, validator: NodeValidatorBuilder.common()).'
+  examples_vulnerable:
+    - 'div.setInnerHtml(html, treeSanitizer: NodeTreeSanitizer.trusted);'
+    - 'container.innerHTML = message.body.toJS;'
+    - 'js.context.callMethod(''eval'', [script]);'
+  examples_safe:
+    - 'div.setInnerHtml(html, validator: NodeValidatorBuilder.common());'
+    - 'container.innerHTML = ''<b>Static</b>''.toJS;'
+
+- id: DART-PATH-001
+  title: 'Path traversal (Zip Slip): an archive entry name used in a file path'
+  languages: [dart]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.6
+  pattern: '\b(?:File|Directory)\s*\(\s*(?:(?:p|path)\.join\s*\([^)]*\b(?:entry|file|archiveFile|zipEntry|archiveEntry|item|f|e)\.name\b|[''"][^''"]*\$\{(?:entry|file|archiveFile|zipEntry|archiveEntry|item|f|e)\.name\}|[''"][^''"]*[''"]\s*\+\s*(?:entry|file|archiveFile|zipEntry|archiveEntry|item|f|e)\.name\b)'
+  exclude: '\bbasename\s*\(|\bisWithin\s*\(|\bnormalize\s*\('
+  message: A file name taken from an archive (package:archive ArchiveFile.name) or a picked file is joined into a path. A name such as ../../shared_prefs/x.xml writes outside the target folder and can overwrite the app's data.
+  fix: Join with p.basename(name), or normalize the path and check p.isWithin(target, path) before writing.
+  examples_vulnerable:
+    - '    File(''out/${entry.name}'')'
+    - 'final outFile = File(p.join(targetDir.path, file.name));'
+    - 'final f = File(''${dir.path}/'' + archiveFile.name);'
+  examples_safe:
+    - 'final outFile = File(p.join(targetDir.path, p.basename(entry.name)));'
+    - 'final f = File(''${dir.path}/avatar.png'');'
+
+- id: DART-PATH-002
+  title: File opened with a path that comes from user input
+  languages: [dart]
+  cwe: CWE-22
+  severity: high
+  confidence: 0.6
+  pattern: '\b(?:File|Directory|Link)(?:\.fromUri)?\s*\('
+  requires_taint: true
+  message: A file path is built from user input (a link parameter, a push message, a text field), so a value such as ../../shared_prefs/app.xml reaches files outside the intended folder.
+  fix: Keep only the file name (p.basename), or normalize the path and check p.isWithin(base, path) before opening it.
+  examples_vulnerable:
+    - 'final file = File(targetPath);'
+    - 'final dir = Directory(''${base.path}/${uri.pathSegments.last}'');'
+  examples_safe:
+    - 'final picked = await FilePicker.platform.pickFiles();'
+    - 'final dir = await getApplicationSupportDirectory();'

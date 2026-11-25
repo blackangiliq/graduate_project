@@ -1,0 +1,6823 @@
+{
+ "version": "1.5.0",
+ "date": "2026-11-24",
+ "samples": {
+  "truth": {
+   "weaknesses": 60,
+   "hard": 2,
+   "decoys": 5
+  },
+  "configs": [
+   {
+    "tp": 33,
+    "fp": 0,
+    "fn": 27,
+    "precision": 1.0,
+    "recall": 0.55,
+    "f1": 0.71,
+    "missed": [
+     {
+      "tag": "M12",
+      "file": "android/app/build.gradle.kts",
+      "line": 42,
+      "cwe": "CWE-1188",
+      "hard": false,
+      "note": "ANDROID-GRADLE-001: release build signed with the debug key"
+     },
+     {
+      "tag": "M13",
+      "file": "android/app/build.gradle.kts",
+      "line": 43,
+      "cwe": "CWE-693",
+      "hard": false,
+      "note": "ANDROID-GRADLE-002: code shrinking off for the release build"
+     },
+     {
+      "tag": "M04",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 8,
+      "cwe": "CWE-250",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-009: dangerous permission READ_CONTACTS"
+     },
+     {
+      "tag": "M05",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 11,
+      "cwe": "CWE-250",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-009: dangerous permission WRITE_EXTERNAL_STORAGE"
+     },
+     {
+      "tag": "M01",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 17,
+      "cwe": "CWE-530",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-003: android:allowBackup=\"true\" without backup rules"
+     },
+     {
+      "tag": "M02",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 18,
+      "cwe": "CWE-319",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-004: android:usesCleartextTraffic=\"true\""
+     },
+     {
+      "tag": "M03",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 19,
+      "cwe": "CWE-922",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-010: android:requestLegacyExternalStorage=\"true\""
+     },
+     {
+      "tag": "M06",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 48,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-007: deep link with the custom scheme pocketshop://"
+     },
+     {
+      "tag": "M07",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 52,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-008: https deep link without android:autoVerify=\"true\" (line of the intent-filter start tag)"
+     },
+     {
+      "tag": "M08",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 68,
+      "cwe": "CWE-926",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-005: receiver exported without a permission"
+     },
+     {
+      "tag": "M11",
+      "file": "android/app/src/main/res/xml/file_paths.xml",
+      "line": 7,
+      "cwe": "CWE-552",
+      "hard": false,
+      "note": "ANDROID-FILEPROVIDER-001: FileProvider shares the filesystem root (root-path)"
+     },
+     {
+      "tag": "M09",
+      "file": "android/app/src/main/res/xml/network_security_config.xml",
+      "line": 5,
+      "cwe": "CWE-319",
+      "hard": false,
+      "note": "ANDROID-NSC-001: base-config permits cleartext traffic"
+     },
+     {
+      "tag": "M10",
+      "file": "android/app/src/main/res/xml/network_security_config.xml",
+      "line": 10,
+      "cwe": "CWE-295",
+      "hard": false,
+      "note": "ANDROID-NSC-003: user-installed CAs trusted outside debug-overrides"
+     },
+     {
+      "tag": "M16",
+      "file": "android/key.properties",
+      "line": 1,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "ANDROID-SIGN-010: keystore password in key.properties inside the project"
+     },
+     {
+      "tag": "M17",
+      "file": "android/key.properties",
+      "line": 4,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "ANDROID-SIGN-010: key password in key.properties inside the project"
+     },
+     {
+      "tag": "M21",
+      "file": "ios/Runner/Info.plist",
+      "line": 30,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "IOS-PLIST-004: custom URL scheme pocketshop://"
+     },
+     {
+      "tag": "M18",
+      "file": "ios/Runner/Info.plist",
+      "line": 42,
+      "cwe": "CWE-319",
+      "hard": false,
+      "note": "IOS-PLIST-001: NSAllowsArbitraryLoads turns App Transport Security off"
+     },
+     {
+      "tag": "M19",
+      "file": "ios/Runner/Info.plist",
+      "line": 48,
+      "cwe": "CWE-327",
+      "hard": false,
+      "note": "IOS-PLIST-003 (CWE-326): exception domain accepts TLS 1.0"
+     },
+     {
+      "tag": "M20",
+      "file": "ios/Runner/Info.plist",
+      "line": 59,
+      "cwe": "CWE-552",
+      "hard": false,
+      "note": "IOS-PLIST-005: UIFileSharingEnabled exposes the Documents folder"
+     },
+     {
+      "tag": "D30",
+      "file": "lib/services/auth_service.dart",
+      "line": 47,
+      "cwe": "CWE-598",
+      "hard": true,
+      "note": "no rule: access token in the query string of a URL opened in the browser, so it lands in server logs and history"
+     },
+     {
+      "tag": "G03",
+      "file": "pubspec.lock",
+      "line": 11,
+      "cwe": "CWE-1395",
+      "hard": false,
+      "note": "FLUTTER-PUB-001: archive 3.3.7 (GHSA-9v85-q87q-g4vg, GHSA-r285-q736-9v95, fixed in 3.3.8)"
+     },
+     {
+      "tag": "G02",
+      "file": "pubspec.lock",
+      "line": 81,
+      "cwe": "CWE-1395",
+      "hard": false,
+      "note": "FLUTTER-PUB-001: dio 4.0.6 (GHSA-9324-jv53-9cc8, fixed in 5.0.0)"
+     },
+     {
+      "tag": "G01",
+      "file": "pubspec.lock",
+      "line": 194,
+      "cwe": "CWE-1395",
+      "hard": false,
+      "note": "FLUTTER-PUB-001: http 0.13.1 (GHSA-4rgh-jx4f-qfcq, fixed in 0.13.3)"
+     },
+     {
+      "tag": "G06",
+      "file": "pubspec.lock",
+      "line": 208,
+      "cwe": "CWE-1357",
+      "hard": false,
+      "note": "FLUTTER-PUB-004: dependency_overrides forces intl (reported on its pubspec.lock entry)"
+     },
+     {
+      "tag": "G05",
+      "file": "pubspec.lock",
+      "line": 306,
+      "cwe": "CWE-494",
+      "hard": false,
+      "note": "FLUTTER-PUB-003: dependency fetched over git:// (FLUTTER-PUB-006 also reports the unpinned branch, same CWE)"
+     },
+     {
+      "tag": "G04",
+      "file": "pubspec.lock",
+      "line": 467,
+      "cwe": "CWE-1104",
+      "hard": false,
+      "note": "FLUTTER-PUB-002: uni_links is discontinued (replaced by app_links)"
+     },
+     {
+      "tag": "M23",
+      "file": "pubspec.yaml",
+      "line": 48,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "FLUTTER-APP-006: .env file with a secret bundled as a Flutter asset"
+     }
+    ],
+    "false_positives": [],
+    "name": "Pattern rules + secrets (no Flutter checks)",
+    "seconds": 1.0
+   },
+   {
+    "tp": 59,
+    "fp": 0,
+    "fn": 1,
+    "precision": 1.0,
+    "recall": 0.983,
+    "f1": 0.992,
+    "missed": [
+     {
+      "tag": "D30",
+      "file": "lib/services/auth_service.dart",
+      "line": 47,
+      "cwe": "CWE-598",
+      "hard": true,
+      "note": "no rule: access token in the query string of a URL opened in the browser, so it lands in server logs and history"
+     }
+    ],
+    "false_positives": [],
+    "name": "All static engines",
+    "seconds": 0.5
+   },
+   {
+    "tp": 14,
+    "fp": 0,
+    "fn": 46,
+    "precision": 1.0,
+    "recall": 0.233,
+    "f1": 0.378,
+    "missed": [
+     {
+      "tag": "M26",
+      "file": ".github/workflows/release.yml",
+      "line": 23,
+      "cwe": "CWE-693",
+      "hard": false,
+      "note": "FLUTTER-BUILD-001: release build without --obfuscate"
+     },
+     {
+      "tag": "M25",
+      "file": ".github/workflows/release.yml",
+      "line": 25,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "FLUTTER-BUILD-002: secret passed to the app with --dart-define"
+     },
+     {
+      "tag": "M12",
+      "file": "android/app/build.gradle.kts",
+      "line": 42,
+      "cwe": "CWE-1188",
+      "hard": false,
+      "note": "ANDROID-GRADLE-001: release build signed with the debug key"
+     },
+     {
+      "tag": "M13",
+      "file": "android/app/build.gradle.kts",
+      "line": 43,
+      "cwe": "CWE-693",
+      "hard": false,
+      "note": "ANDROID-GRADLE-002: code shrinking off for the release build"
+     },
+     {
+      "tag": "M01",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 17,
+      "cwe": "CWE-530",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-003: android:allowBackup=\"true\" without backup rules"
+     },
+     {
+      "tag": "M03",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 19,
+      "cwe": "CWE-922",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-010: android:requestLegacyExternalStorage=\"true\""
+     },
+     {
+      "tag": "M06",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 48,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-007: deep link with the custom scheme pocketshop://"
+     },
+     {
+      "tag": "M07",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 52,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-008: https deep link without android:autoVerify=\"true\" (line of the intent-filter start tag)"
+     },
+     {
+      "tag": "M08",
+      "file": "android/app/src/main/AndroidManifest.xml",
+      "line": 68,
+      "cwe": "CWE-926",
+      "hard": false,
+      "note": "ANDROID-MANIFEST-005: receiver exported without a permission"
+     },
+     {
+      "tag": "M11",
+      "file": "android/app/src/main/res/xml/file_paths.xml",
+      "line": 7,
+      "cwe": "CWE-552",
+      "hard": false,
+      "note": "ANDROID-FILEPROVIDER-001: FileProvider shares the filesystem root (root-path)"
+     },
+     {
+      "tag": "M10",
+      "file": "android/app/src/main/res/xml/network_security_config.xml",
+      "line": 10,
+      "cwe": "CWE-295",
+      "hard": false,
+      "note": "ANDROID-NSC-003: user-installed CAs trusted outside debug-overrides"
+     },
+     {
+      "tag": "M16",
+      "file": "android/key.properties",
+      "line": 1,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "ANDROID-SIGN-010: keystore password in key.properties inside the project"
+     },
+     {
+      "tag": "M17",
+      "file": "android/key.properties",
+      "line": 4,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "ANDROID-SIGN-010: key password in key.properties inside the project"
+     },
+     {
+      "tag": "M27",
+      "file": "assets/.env",
+      "line": 2,
+      "cwe": "CWE-798",
+      "hard": true,
+      "note": "SECRET-HARDCODED-001 (the secrets engine reads the unquoted NAME=value lines of .env files): payment secret key in the .env file that the app bundles (FLUTTER-APP-006 reports the asset on its pubspec.yaml line, M23)"
+     },
+     {
+      "tag": "M22",
+      "file": "firestore.rules",
+      "line": 7,
+      "cwe": "CWE-284",
+      "hard": false,
+      "note": "FLUTTER-FIREBASE-001: Firestore rules left in test mode, open to everyone"
+     },
+     {
+      "tag": "M21",
+      "file": "ios/Runner/Info.plist",
+      "line": 30,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "IOS-PLIST-004: custom URL scheme pocketshop://"
+     },
+     {
+      "tag": "M18",
+      "file": "ios/Runner/Info.plist",
+      "line": 42,
+      "cwe": "CWE-319",
+      "hard": false,
+      "note": "IOS-PLIST-001: NSAllowsArbitraryLoads turns App Transport Security off"
+     },
+     {
+      "tag": "M19",
+      "file": "ios/Runner/Info.plist",
+      "line": 48,
+      "cwe": "CWE-327",
+      "hard": false,
+      "note": "IOS-PLIST-003 (CWE-326): exception domain accepts TLS 1.0"
+     },
+     {
+      "tag": "M20",
+      "file": "ios/Runner/Info.plist",
+      "line": 59,
+      "cwe": "CWE-552",
+      "hard": false,
+      "note": "IOS-PLIST-005: UIFileSharingEnabled exposes the Documents folder"
+     },
+     {
+      "tag": "D01",
+      "file": "lib/config/app_config.dart",
+      "line": 5,
+      "cwe": "CWE-319",
+      "hard": false,
+      "note": "DART-NET-001: API base URL over cleartext http://"
+     },
+     {
+      "tag": "D03",
+      "file": "lib/config/app_config.dart",
+      "line": 17,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "secrets SECRET-HARDCODED-001: API key of the shipping partner in the app"
+     },
+     {
+      "tag": "D04",
+      "file": "lib/config/app_config.dart",
+      "line": 21,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "DART-SECRET-003 and the JWT secret rules: Supabase service_role key in client code"
+     },
+     {
+      "tag": "D23",
+      "file": "lib/main.dart",
+      "line": 19,
+      "cwe": "CWE-489",
+      "hard": false,
+      "note": "DART-AUTH-003: Firebase app verification disabled (test setting) in release code"
+     },
+     {
+      "tag": "D17",
+      "file": "lib/routing/deep_links.dart",
+      "line": 26,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "DART-DEEPLINK-001: deep-link parameter opened in the WebView"
+     },
+     {
+      "tag": "D18",
+      "file": "lib/routing/deep_links.dart",
+      "line": 30,
+      "cwe": "CWE-939",
+      "hard": false,
+      "note": "DART-DEEPLINK-001: deep-link parameter opened with url_launcher (DART-URL-001 may add CWE-601)"
+     },
+     {
+      "tag": "D32",
+      "file": "lib/screens/help_center_screen.dart",
+      "line": 27,
+      "cwe": "CWE-79",
+      "hard": false,
+      "note": "DART-WEBVIEW-001: JavaScript enabled for the help center page that gets the bridge"
+     },
+     {
+      "tag": "D15",
+      "file": "lib/screens/help_center_screen.dart",
+      "line": 28,
+      "cwe": "CWE-749",
+      "hard": false,
+      "note": "DART-WEBVIEW-002: JavaScript channel that hands the session to any page in the WebView"
+     },
+     {
+      "tag": "D16",
+      "file": "lib/screens/help_center_screen.dart",
+      "line": 33,
+      "cwe": "CWE-200",
+      "hard": false,
+      "note": "DART-WEBVIEW-005: WebView file access enabled"
+     },
+     {
+      "tag": "D31",
+      "file": "lib/screens/wallet_screen.dart",
+      "line": 26,
+      "cwe": "CWE-200",
+      "hard": false,
+      "note": "DART-CLIP-001: wallet recovery phrase copied to the clipboard"
+     },
+     {
+      "tag": "D08",
+      "file": "lib/services/auth_service.dart",
+      "line": 15,
+      "cwe": "CWE-327",
+      "hard": false,
+      "note": "DART-CRYPTO-001 (CWE-328): MD5 of the password"
+     },
+     {
+      "tag": "D06",
+      "file": "lib/services/auth_service.dart",
+      "line": 24,
+      "cwe": "CWE-532",
+      "hard": false,
+      "note": "DART-LOG-001: access token written to the log"
+     },
+     {
+      "tag": "D07",
+      "file": "lib/services/auth_service.dart",
+      "line": 26,
+      "cwe": "CWE-312",
+      "hard": false,
+      "note": "DART-STORAGE-001: access token stored in plain shared_preferences"
+     },
+     {
+      "tag": "D09",
+      "file": "lib/services/auth_service.dart",
+      "line": 41,
+      "cwe": "CWE-347",
+      "hard": false,
+      "note": "DART-AUTH-001: JWT decoded without signature check, its role claim unlocks the admin tools"
+     },
+     {
+      "tag": "D30",
+      "file": "lib/services/auth_service.dart",
+      "line": 47,
+      "cwe": "CWE-598",
+      "hard": true,
+      "note": "no rule: access token in the query string of a URL opened in the browser, so it lands in server logs and history"
+     },
+     {
+      "tag": "D20",
+      "file": "lib/services/backup_service.dart",
+      "line": 17,
+      "cwe": "CWE-22",
+      "hard": false,
+      "note": "DART-PATH-001: Zip Slip, archive entry name used in the output path"
+     },
+     {
+      "tag": "D22",
+      "file": "lib/services/backup_service.dart",
+      "line": 27,
+      "cwe": "CWE-922",
+      "hard": false,
+      "note": "DART-STORAGE-003: receipts exported to external storage"
+     },
+     {
+      "tag": "D19",
+      "file": "lib/services/backup_service.dart",
+      "line": 38,
+      "cwe": "CWE-78",
+      "hard": false,
+      "note": "DART-CMD-001: sh -c with interpolated arguments"
+     },
+     {
+      "tag": "D11",
+      "file": "lib/services/crypto_service.dart",
+      "line": 9,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "DART-CRYPTO-004 (CWE-321): hard-coded AES key"
+     },
+     {
+      "tag": "D12",
+      "file": "lib/services/crypto_service.dart",
+      "line": 10,
+      "cwe": "CWE-327",
+      "hard": false,
+      "note": "DART-CRYPTO-005 (CWE-1204): constant IV"
+     },
+     {
+      "tag": "D13",
+      "file": "lib/services/crypto_service.dart",
+      "line": 26,
+      "cwe": "CWE-338",
+      "hard": false,
+      "note": "DART-CRYPTO-007: one-time code from dart:math Random"
+     },
+     {
+      "tag": "D24",
+      "file": "lib/services/payment_service.dart",
+      "line": 6,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "DART-SECRET-002: payment secret key read from the .env file bundled with the app"
+     },
+     {
+      "tag": "D14",
+      "file": "lib/storage/order_database.dart",
+      "line": 20,
+      "cwe": "CWE-89",
+      "hard": false,
+      "note": "DART-SQLI-001: sqflite rawQuery built with interpolation"
+     },
+     {
+      "tag": "D21",
+      "file": "lib/storage/session_store.dart",
+      "line": 8,
+      "cwe": "CWE-311",
+      "hard": false,
+      "note": "DART-STORAGE-002: session kept in a Hive box without encryptionCipher"
+     },
+     {
+      "tag": "G06",
+      "file": "pubspec.lock",
+      "line": 208,
+      "cwe": "CWE-1357",
+      "hard": false,
+      "note": "FLUTTER-PUB-004: dependency_overrides forces intl (reported on its pubspec.lock entry)"
+     },
+     {
+      "tag": "G04",
+      "file": "pubspec.lock",
+      "line": 467,
+      "cwe": "CWE-1104",
+      "hard": false,
+      "note": "FLUTTER-PUB-002: uni_links is discontinued (replaced by app_links)"
+     },
+     {
+      "tag": "M23",
+      "file": "pubspec.yaml",
+      "line": 48,
+      "cwe": "CWE-798",
+      "hard": false,
+      "note": "FLUTTER-APP-006: .env file with a secret bundled as a Flutter asset"
+     }
+    ],
+    "false_positives": [],
+    "name": "All static, strict mode (confirmed only)",
+    "seconds": 0.5
+   }
+  ],
+  "main": "All static engines",
+  "groups": [
+   {
+    "group": "D",
+    "name": "Dart code",
+    "expected": 27,
+    "found": 26,
+    "recall": 0.963
+   },
+   {
+    "group": "M",
+    "name": "Android, iOS, Firebase, web and build configuration",
+    "expected": 27,
+    "found": 27,
+    "recall": 1.0
+   },
+   {
+    "group": "G",
+    "name": "Dependencies (pubspec.lock)",
+    "expected": 6,
+    "found": 6,
+    "recall": 1.0
+   }
+  ]
+ },
+ "labs": {
+  "DVMA": {
+   "total": {
+    "name": "all",
+    "modules": 218,
+    "found": 26,
+    "any": 75,
+    "recall": 0.119
+   },
+   "categories": [
+    {
+     "name": "storage",
+     "modules": 17,
+     "found": 4,
+     "any": 9,
+     "recall": 0.235,
+     "kind": "code"
+    },
+    {
+     "name": "crypto",
+     "modules": 10,
+     "found": 5,
+     "any": 7,
+     "recall": 0.5,
+     "kind": "code"
+    },
+    {
+     "name": "auth",
+     "modules": 27,
+     "found": 2,
+     "any": 8,
+     "recall": 0.074,
+     "kind": "design"
+    },
+    {
+     "name": "network",
+     "modules": 5,
+     "found": 2,
+     "any": 4,
+     "recall": 0.4,
+     "kind": "code"
+    },
+    {
+     "name": "platform",
+     "modules": 68,
+     "found": 4,
+     "any": 20,
+     "recall": 0.059,
+     "kind": "design"
+    },
+    {
+     "name": "code_quality",
+     "modules": 5,
+     "found": 0,
+     "any": 1,
+     "recall": 0.0,
+     "kind": "code"
+    },
+    {
+     "name": "resilience",
+     "modules": 10,
+     "found": 0,
+     "any": 0,
+     "recall": 0.0,
+     "kind": "runtime"
+    },
+    {
+     "name": "supply_chain",
+     "modules": 8,
+     "found": 1,
+     "any": 3,
+     "recall": 0.125,
+     "kind": "design"
+    },
+    {
+     "name": "privacy",
+     "modules": 9,
+     "found": 0,
+     "any": 0,
+     "recall": 0.0,
+     "kind": "runtime"
+    },
+    {
+     "name": "input_validation",
+     "modules": 5,
+     "found": 0,
+     "any": 1,
+     "recall": 0.0,
+     "kind": "code"
+    },
+    {
+     "name": "ai_ml",
+     "modules": 13,
+     "found": 1,
+     "any": 2,
+     "recall": 0.077,
+     "kind": "runtime"
+    },
+    {
+     "name": "agentic",
+     "modules": 9,
+     "found": 0,
+     "any": 2,
+     "recall": 0.0,
+     "kind": "runtime"
+    },
+    {
+     "name": "ai_mobile",
+     "modules": 5,
+     "found": 1,
+     "any": 2,
+     "recall": 0.2,
+     "kind": "runtime"
+    },
+    {
+     "name": "native_bridge",
+     "modules": 15,
+     "found": 6,
+     "any": 13,
+     "recall": 0.4,
+     "kind": "design"
+    },
+    {
+     "name": "system_provider",
+     "modules": 12,
+     "found": 0,
+     "any": 3,
+     "recall": 0.0,
+     "kind": "design"
+    }
+   ],
+   "kinds": [
+    {
+     "name": "code",
+     "modules": 42,
+     "found": 11,
+     "any": 22,
+     "recall": 0.262
+    },
+    {
+     "name": "design",
+     "modules": 130,
+     "found": 13,
+     "any": 47,
+     "recall": 0.1
+    },
+    {
+     "name": "runtime",
+     "modules": 46,
+     "found": 2,
+     "any": 6,
+     "recall": 0.043
+    }
+   ],
+   "outside": {
+    "ANDROID-MANIFEST-005": 18,
+    "ANDROID-MANIFEST-009": 15,
+    "SECRET-HARDCODED-001": 10,
+    "DEVSKIM-DS106863": 7,
+    "FLUTTER-BUILD-001": 5,
+    "C-BOF-002": 4,
+    "DART-SECRET-002": 2,
+    "DART-WEBVIEW-007": 2,
+    "DART-STORAGE-003": 2,
+    "ANDROID-NSC-001": 1,
+    "ANDROID-MANIFEST-001": 1,
+    "IOS-PLIST-001": 1,
+    "C-MEM-UAF": 1,
+    "ANDROID-MANIFEST-004": 1,
+    "ANDROID-MANIFEST-003": 1,
+    "ANDROID-NSC-003": 1,
+    "ANDROID-GRADLE-001": 1,
+    "BANDIT-B104": 1,
+    "IOS-PLIST-005": 1,
+    "DART-NET-001": 1,
+    "ANDROID-MANIFEST-012": 1,
+    "ANDROID-GRADLE-002": 1,
+    "ANDROID-MANIFEST-006": 1,
+    "ANDROID-MANIFEST-011": 1,
+    "IOS-PLIST-004": 1
+   },
+   "modules": [
+    {
+     "category": "storage",
+     "id": "insecure_local_storage",
+     "title": "Insecure Local Storage (Plaintext SharedPreferences/UserDefaults)",
+     "cwe": [
+      "CWE-312",
+      "CWE-922"
+     ],
+     "folder": "lib/modules/storage/insecure_local_storage/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/storage/insecure_local_storage/insecure_storage.dart",
+       "line": 29,
+       "cwe": "CWE-312",
+       "rules": [
+        "DART-STORAGE-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "storage",
+     "id": "keychain_keystore_misuse",
+     "title": "Keychain/Keystore Misuse",
+     "cwe": [
+      "CWE-312",
+      "CWE-522"
+     ],
+     "folder": "lib/modules/storage/keychain_keystore_misuse/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/storage/keychain_keystore_misuse/keychain_store.dart",
+       "line": 49,
+       "cwe": "CWE-312",
+       "rules": [
+        "DART-STORAGE-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "storage",
+     "id": "insecure_backups",
+     "title": "Insecure Backups (allowBackup / unencrypted iOS backups)",
+     "cwe": [
+      "CWE-530"
+     ],
+     "folder": "lib/modules/storage/insecure_backups/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "clipboard_leakage",
+     "title": "Clipboard Leakage of Sensitive Fields",
+     "cwe": [
+      "CWE-200"
+     ],
+     "folder": "lib/modules/storage/clipboard_leakage/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/storage/clipboard_leakage/clipboard_leakage_screen.dart",
+       "line": 29,
+       "cwe": "CWE-200",
+       "rules": [
+        "DART-CLIP-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "storage",
+     "id": "screenshot_taskswitcher_leakage",
+     "title": "Screenshot / Task-Switcher Leakage",
+     "cwe": [
+      "CWE-200"
+     ],
+     "folder": "lib/modules/storage/screenshot_taskswitcher_leakage/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "sensitive_data_in_logs",
+     "title": "Sensitive Data in Logs",
+     "cwe": [
+      "CWE-532"
+     ],
+     "folder": "lib/modules/storage/sensitive_data_in_logs/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "keyboard_cache_autofill_leakage",
+     "title": "Keyboard Cache & Autofill Leakage",
+     "cwe": [
+      "CWE-524"
+     ],
+     "folder": "lib/modules/storage/keyboard_cache_autofill_leakage/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "temp_file_leftovers",
+     "title": "Temp / Cache File Leftovers",
+     "cwe": [
+      "CWE-312",
+      "CWE-459"
+     ],
+     "folder": "lib/modules/storage/temp_file_leftovers/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "third_party_sdk_data_leakage",
+     "title": "Third-Party SDK Data Leakage",
+     "cwe": [
+      "CWE-200",
+      "CWE-359"
+     ],
+     "folder": "lib/modules/storage/third_party_sdk_data_leakage/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "sensitive_data_in_memory",
+     "title": "Sensitive Data in Memory",
+     "cwe": [
+      "CWE-226",
+      "CWE-316"
+     ],
+     "folder": "lib/modules/storage/sensitive_data_in_memory/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "insecure_sdcard_external_storage",
+     "title": "Insecure SD-Card / External Storage",
+     "cwe": [
+      "CWE-312",
+      "CWE-921"
+     ],
+     "folder": "lib/modules/storage/insecure_sdcard_external_storage/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/storage/insecure_sdcard_external_storage/external_storage_leak.dart",
+       "line": 46,
+       "cwe": "CWE-312",
+       "rules": [
+        "DART-STORAGE-004"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "storage",
+     "id": "keychain_state_integrity_manipulation",
+     "title": "Keychain State Integrity Manipulation",
+     "cwe": [
+      "CWE-345",
+      "CWE-472",
+      "CWE-565"
+     ],
+     "folder": "lib/modules/storage/keychain_state_integrity_manipulation/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "keychain_access_group_authorization_confusion",
+     "title": "Keychain Access-Group Authorization Confusion",
+     "cwe": [
+      "CWE-284",
+      "CWE-522",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/storage/keychain_access_group_authorization_confusion/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "backup_archive_integrity_tampering",
+     "title": "Backup Archive Integrity Tampering",
+     "cwe": [
+      "CWE-345",
+      "CWE-494",
+      "CWE-565"
+     ],
+     "folder": "lib/modules/storage/backup_archive_integrity_tampering/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "local_security_state_integrity_tampering",
+     "title": "Local Security-State Integrity Tampering",
+     "cwe": [
+      "CWE-345",
+      "CWE-565",
+      "CWE-602"
+     ],
+     "folder": "lib/modules/storage/local_security_state_integrity_tampering/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "auth_state_rollback_restore",
+     "title": "Authentication-State Rollback / Restore",
+     "cwe": [
+      "CWE-384",
+      "CWE-565",
+      "CWE-613"
+     ],
+     "folder": "lib/modules/storage/auth_state_rollback_restore/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "storage",
+     "id": "sensitive_data_in_crash_reports",
+     "title": "Sensitive Data in Crash Reports",
+     "cwe": [
+      "CWE-200",
+      "CWE-201",
+      "CWE-532"
+     ],
+     "folder": "lib/modules/storage/sensitive_data_in_crash_reports/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "crypto",
+     "id": "weak_algorithms",
+     "title": "Weak Cryptographic Algorithms (MD5/SHA1/DES/RC4/ECB)",
+     "cwe": [
+      "CWE-327"
+     ],
+     "folder": "lib/modules/crypto/weak_algorithms/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/crypto/weak_algorithms/weak_crypto.dart",
+       "line": 23,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-001"
+       ]
+      },
+      {
+       "file": "lib/modules/crypto/weak_algorithms/weak_crypto.dart",
+       "line": 27,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-001"
+       ]
+      },
+      {
+       "file": "lib/modules/crypto/weak_algorithms/weak_crypto.dart",
+       "line": 36,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-003"
+       ]
+      },
+      {
+       "file": "lib/modules/crypto/weak_algorithms/weak_crypto.dart",
+       "line": 38,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-005"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "crypto",
+     "id": "hardcoded_keys_ivs",
+     "title": "Hardcoded Keys & Static IVs",
+     "cwe": [
+      "CWE-329",
+      "CWE-798"
+     ],
+     "folder": "lib/modules/crypto/hardcoded_keys_ivs/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/crypto/hardcoded_keys_ivs/hardcoded_crypto.dart",
+       "line": 17,
+       "cwe": "CWE-798",
+       "rules": [
+        "DART-CRYPTO-004"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "crypto",
+     "id": "insecure_random",
+     "title": "Insecure Randomness (predictable tokens/session IDs)",
+     "cwe": [
+      "CWE-338"
+     ],
+     "folder": "lib/modules/crypto/insecure_random/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/crypto/insecure_random/insecure_random.dart",
+       "line": 24,
+       "cwe": "CWE-338",
+       "rules": [
+        "DART-CRYPTO-007"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "crypto",
+     "id": "weak_key_derivation",
+     "title": "Weak Key Derivation (no/low PBKDF2 iterations)",
+     "cwe": [
+      "CWE-327"
+     ],
+     "folder": "lib/modules/crypto/weak_key_derivation/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/crypto/weak_key_derivation/weak_kdf.dart",
+       "line": 20,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-009"
+       ]
+      },
+      {
+       "file": "lib/modules/crypto/weak_key_derivation/weak_kdf.dart",
+       "line": 38,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-008"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "crypto",
+     "id": "custom_crypto_implementation",
+     "title": "Custom / Homegrown Crypto",
+     "cwe": [
+      "CWE-327"
+     ],
+     "folder": "lib/modules/crypto/custom_crypto_implementation/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "crypto",
+     "id": "improper_mac_verification",
+     "title": "Improper MAC Verification (non-constant-time / unauthenticated)",
+     "cwe": [
+      "CWE-208",
+      "CWE-347"
+     ],
+     "folder": "lib/modules/crypto/improper_mac_verification/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "crypto",
+     "id": "improper_signature_verification",
+     "title": "Improper Signature Verification (payload not bound)",
+     "cwe": [
+      "CWE-347"
+     ],
+     "folder": "lib/modules/crypto/improper_signature_verification/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "crypto",
+     "id": "device_secure_lock_not_enforced",
+     "title": "Device Secure Lock Not Enforced for Sensitive Storage",
+     "cwe": [
+      "CWE-311",
+      "CWE-522"
+     ],
+     "folder": "lib/modules/crypto/device_secure_lock_not_enforced/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "crypto",
+     "id": "unauthenticated_encryption_malleable_ciphertext",
+     "title": "Unauthenticated Encryption (malleable ciphertext / bit-flipping)",
+     "cwe": [
+      "CWE-327",
+      "CWE-353"
+     ],
+     "folder": "lib/modules/crypto/unauthenticated_encryption_malleable_ciphertext/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "crypto",
+     "id": "rsa_no_oaep_padding",
+     "title": "RSA Without OAEP Padding",
+     "cwe": [
+      "CWE-327"
+     ],
+     "folder": "lib/modules/crypto/rsa_no_oaep_padding/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/crypto/rsa_no_oaep_padding/rsa_padding_crypto.dart",
+       "line": 57,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-006"
+       ]
+      },
+      {
+       "file": "lib/modules/crypto/rsa_no_oaep_padding/rsa_padding_crypto.dart",
+       "line": 59,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-006"
+       ]
+      },
+      {
+       "file": "lib/modules/crypto/rsa_no_oaep_padding/rsa_padding_crypto.dart",
+       "line": 65,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-006"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "auth",
+     "id": "weak_session_management",
+     "title": "Weak Session Management",
+     "cwe": [
+      "CWE-338",
+      "CWE-613"
+     ],
+     "folder": "lib/modules/auth/weak_session_management/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "insecure_biometric_prompt",
+     "title": "Insecure / Bypassable Biometric Prompt",
+     "cwe": [
+      "CWE-287",
+      "CWE-603"
+     ],
+     "folder": "lib/modules/auth/insecure_biometric_prompt/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "weak_password_policy",
+     "title": "Weak / No Password Policy",
+     "cwe": [
+      "CWE-521"
+     ],
+     "folder": "lib/modules/auth/weak_password_policy/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "client_side_only_authorization",
+     "title": "Client-Side-Only Authorization",
+     "cwe": [
+      "CWE-602",
+      "CWE-639"
+     ],
+     "folder": "lib/modules/auth/client_side_only_authorization/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "jwt_vulnerabilities",
+     "title": "JWT Vulnerabilities (alg:none, weak secret)",
+     "cwe": [
+      "CWE-345",
+      "CWE-347"
+     ],
+     "folder": "lib/modules/auth/jwt_vulnerabilities/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "oauth_misconfiguration",
+     "title": "OAuth Misconfiguration (implicit flow token leakage)",
+     "cwe": [
+      "CWE-200",
+      "CWE-598"
+     ],
+     "folder": "lib/modules/auth/oauth_misconfiguration/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_weak_attestation",
+     "title": "Passkey Weak / No Attestation Verification",
+     "cwe": [
+      "CWE-345",
+      "CWE-347"
+     ],
+     "folder": "lib/modules/auth/passkey_weak_attestation/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_origin_binding_bypass",
+     "title": "Passkey Origin / RP-ID Binding Bypass",
+     "cwe": [
+      "CWE-287",
+      "CWE-346"
+     ],
+     "folder": "lib/modules/auth/passkey_origin_binding_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_credential_exfiltration",
+     "title": "Passkey Credential Exfiltration",
+     "cwe": [
+      "CWE-312",
+      "CWE-522"
+     ],
+     "folder": "lib/modules/auth/passkey_credential_exfiltration/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_fallback_downgrade",
+     "title": "Passkey Fallback / Downgrade Attack",
+     "cwe": [
+      "CWE-287",
+      "CWE-757"
+     ],
+     "folder": "lib/modules/auth/passkey_fallback_downgrade/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_assertion_replay_signcount",
+     "title": "Passkey Assertion Replay (Sign-Count Not Enforced)",
+     "cwe": [
+      "CWE-294",
+      "CWE-304"
+     ],
+     "folder": "lib/modules/auth/passkey_assertion_replay_signcount/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_challenge_reuse",
+     "title": "Passkey Challenge Reuse / Not Bound",
+     "cwe": [
+      "CWE-287",
+      "CWE-294",
+      "CWE-338"
+     ],
+     "folder": "lib/modules/auth/passkey_challenge_reuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_user_verification_bypass",
+     "title": "Passkey User-Verification (UV) Enforcement Bypass",
+     "cwe": [
+      "CWE-287",
+      "CWE-306"
+     ],
+     "folder": "lib/modules/auth/passkey_user_verification_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_stepup_auth_bypass",
+     "title": "Passkey Step-Up Authentication Bypass",
+     "cwe": [
+      "CWE-287",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/auth/passkey_stepup_auth_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_credential_management_authz",
+     "title": "Passkey Registration/Deletion Authorization Missing",
+     "cwe": [
+      "CWE-639",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/auth/passkey_credential_management_authz/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_session_fixation",
+     "title": "Session Fixation After WebAuthn Assertion",
+     "cwe": [
+      "CWE-384"
+     ],
+     "folder": "lib/modules/auth/passkey_session_fixation/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "passkey_thirdparty_pairing_authz",
+     "title": "Third-Party Authenticator / Cross-Device Pairing Authorization Missing",
+     "cwe": [
+      "CWE-306",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/auth/passkey_thirdparty_pairing_authz/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "insecure_credential_manager",
+     "title": "Insecure Credential Manager / Autofill Integration",
+     "cwe": [
+      "CWE-522",
+      "CWE-524"
+     ],
+     "folder": "lib/modules/auth/insecure_credential_manager/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "username_enumeration",
+     "title": "Username Enumeration",
+     "cwe": [
+      "CWE-203",
+      "CWE-204"
+     ],
+     "folder": "lib/modules/auth/username_enumeration/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "insecure_password_reset_token",
+     "title": "Insecure Password Reset Token / Magic Link",
+     "cwe": [
+      "CWE-338",
+      "CWE-640"
+     ],
+     "folder": "lib/modules/auth/insecure_password_reset_token/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/auth/insecure_password_reset_token/insecure_reset_token.dart",
+       "line": 41,
+       "cwe": "CWE-338",
+       "rules": [
+        "DART-CRYPTO-007"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "auth",
+     "id": "developer_backdoor",
+     "title": "Developer Backdoor",
+     "cwe": [
+      "CWE-489",
+      "CWE-798",
+      "CWE-912"
+     ],
+     "folder": "lib/modules/auth/developer_backdoor/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/auth/developer_backdoor/backdoor_auth.dart",
+       "line": 31,
+       "cwe": "CWE-798",
+       "rules": [
+        "SECRET-HARDCODED-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "auth",
+     "id": "cross_app_otp_credential_leak",
+     "title": "Cross-App OTP / Credential Leak",
+     "cwe": [
+      "CWE-200",
+      "CWE-926",
+      "CWE-927"
+     ],
+     "folder": "lib/modules/auth/cross_app_otp_credential_leak/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "deeplink_authentication_bypass",
+     "title": "Deep Link Authentication Bypass",
+     "cwe": [
+      "CWE-288",
+      "CWE-306",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/auth/deeplink_authentication_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "biometric_authorization_not_bound",
+     "title": "Biometric Result Not Bound to Operation",
+     "cwe": [
+      "CWE-1021",
+      "CWE-287",
+      "CWE-306"
+     ],
+     "folder": "lib/modules/auth/biometric_authorization_not_bound/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "credential_provider_release_authorization",
+     "title": "Credential Provider Release Authorization Failure",
+     "cwe": [
+      "CWE-284",
+      "CWE-346",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/auth/credential_provider_release_authorization/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "multi_account_isolation_failure",
+     "title": "Multi-Account Isolation Failure",
+     "cwe": [
+      "CWE-200",
+      "CWE-459",
+      "CWE-613"
+     ],
+     "folder": "lib/modules/auth/multi_account_isolation_failure/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "auth",
+     "id": "identity_credential_presentation_binding",
+     "title": "Identity Credential / mDL Presentation Not Bound",
+     "cwe": [
+      "CWE-290",
+      "CWE-345",
+      "CWE-384"
+     ],
+     "folder": "lib/modules/auth/identity_credential_presentation_binding/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "network",
+     "id": "cleartext_traffic_allowed",
+     "title": "Cleartext Traffic Allowed",
+     "cwe": [
+      "CWE-319"
+     ],
+     "folder": "lib/modules/network/cleartext_traffic_allowed/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "network",
+     "id": "weak_tls_config",
+     "title": "Weak / Outdated TLS Config",
+     "cwe": [
+      "CWE-327"
+     ],
+     "folder": "lib/modules/network/weak_tls_config/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "network",
+     "id": "ssl_pinning_bypass",
+     "title": "SSL Pinning (Trivially Bypassable)",
+     "cwe": [
+      "CWE-295"
+     ],
+     "folder": "lib/modules/network/ssl_pinning_bypass/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "network",
+     "id": "accept_all_trust_manager",
+     "title": "Accept-All TrustManager",
+     "cwe": [
+      "CWE-295"
+     ],
+     "folder": "lib/modules/network/accept_all_trust_manager/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/network/accept_all_trust_manager/accept_all_trust.dart",
+       "line": 17,
+       "cwe": "CWE-295",
+       "rules": [
+        "DART-TLS-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "network",
+     "id": "insecure_webview_networking",
+     "title": "Insecure WebView Networking",
+     "cwe": [
+      "CWE-295",
+      "CWE-319"
+     ],
+     "folder": "lib/modules/network/insecure_webview_networking/",
+     "kind": "code",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/network/insecure_webview_networking/insecure_webview_networking_screen.dart",
+       "line": 52,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-WEBVIEW-006"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "platform",
+     "id": "insecure_webview",
+     "title": "Insecure WebView (JS Bridge RCE, file:// access)",
+     "cwe": [
+      "CWE-749",
+      "CWE-79"
+     ],
+     "folder": "lib/modules/platform/insecure_webview/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/platform/insecure_webview/insecure_webview_screen.dart",
+       "line": 51,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      },
+      {
+       "file": "lib/modules/platform/insecure_webview/insecure_webview_screen.dart",
+       "line": 55,
+       "cwe": "CWE-749",
+       "rules": [
+        "DART-WEBVIEW-002"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "platform",
+     "id": "deeplink_url_scheme_hijack",
+     "title": "Deep Link / URL Scheme Hijack",
+     "cwe": [
+      "CWE-20",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/platform/deeplink_url_scheme_hijack/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "exported_android_components",
+     "title": "Exported Android Components",
+     "cwe": [
+      "CWE-284",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/exported_android_components/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "content_provider_sql_injection",
+     "title": "Content Provider SQL Injection",
+     "cwe": [
+      "CWE-89"
+     ],
+     "folder": "lib/modules/platform/content_provider_sql_injection/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/platform/content_provider_sql_injection/vulnerable_content_provider.dart",
+       "line": 21,
+       "cwe": "CWE-89",
+       "rules": [
+        "DART-SQLI-004"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "platform",
+     "id": "pending_intent_hijacking",
+     "title": "Pending Intent Hijacking",
+     "cwe": [
+      "CWE-927"
+     ],
+     "folder": "lib/modules/platform/pending_intent_hijacking/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "tapjacking",
+     "title": "Tapjacking",
+     "cwe": [
+      "CWE-1021"
+     ],
+     "folder": "lib/modules/platform/tapjacking/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "over_privileged_permissions",
+     "title": "Over-Privileged Permissions",
+     "cwe": [
+      "CWE-250",
+      "CWE-272"
+     ],
+     "folder": "lib/modules/platform/over_privileged_permissions/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "push_notification_leakage",
+     "title": "Push Notification Leakage",
+     "cwe": [
+      "CWE-200"
+     ],
+     "folder": "lib/modules/platform/push_notification_leakage/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "qr_code_injection",
+     "title": "QR Code Injection",
+     "cwe": [
+      "CWE-20"
+     ],
+     "folder": "lib/modules/platform/qr_code_injection/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "zip_path_traversal",
+     "title": "Zip Path Traversal (Zip-Slip)",
+     "cwe": [
+      "CWE-22"
+     ],
+     "folder": "lib/modules/platform/zip_path_traversal/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "missing_flag_secure",
+     "title": "Missing FLAG_SECURE (screen recording exposure)",
+     "cwe": [
+      "CWE-200"
+     ],
+     "folder": "lib/modules/platform/missing_flag_secure/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "intent_redirection",
+     "title": "Intent Redirection / Task Hijack (StrandHogg-style)",
+     "cwe": [
+      "CWE-926",
+      "CWE-940"
+     ],
+     "folder": "lib/modules/platform/intent_redirection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "predictive_back_leakage",
+     "title": "Predictive Back / Recents Snapshot Leakage",
+     "cwe": [
+      "CWE-200"
+     ],
+     "folder": "lib/modules/platform/predictive_back_leakage/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "photo_picker_over_access",
+     "title": "Over-Broad Media Access (no scoped photo picker)",
+     "cwe": [
+      "CWE-250",
+      "CWE-359"
+     ],
+     "folder": "lib/modules/platform/photo_picker_over_access/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "fileprovider_path_traversal",
+     "title": "FileProvider Path Traversal / Arbitrary File Sharing",
+     "cwe": [
+      "CWE-22",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/fileprovider_path_traversal/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "dynamic_code_loading_rce",
+     "title": "Dynamic Code Loading (Arbitrary Code Execution)",
+     "cwe": [
+      "CWE-494",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/platform/dynamic_code_loading_rce/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "overlay_phishing",
+     "title": "Overlay Phishing",
+     "cwe": [
+      "CWE-1021",
+      "CWE-290"
+     ],
+     "folder": "lib/modules/platform/overlay_phishing/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "intent_arg_injection_rce",
+     "title": "Intent Argument Injection -> Local Code Execution",
+     "cwe": [
+      "CWE-78",
+      "CWE-829",
+      "CWE-94"
+     ],
+     "folder": "lib/modules/platform/intent_arg_injection_rce/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "deeplink_to_webview_navigation",
+     "title": "Deep Link -> Trusted WebView Navigation",
+     "cwe": [
+      "CWE-601",
+      "CWE-749",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/platform/deeplink_to_webview_navigation/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "exported_component_arbitrary_url_activity",
+     "title": "Exported Component -> Arbitrary URL / Activity Launch",
+     "cwe": [
+      "CWE-601",
+      "CWE-749",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/exported_component_arbitrary_url_activity/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "implicit_intent_sensitive_data",
+     "title": "Implicit Intent Leaks Sensitive Data",
+     "cwe": [
+      "CWE-200",
+      "CWE-927"
+     ],
+     "folder": "lib/modules/platform/implicit_intent_sensitive_data/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "pendingintent_provenance_confusion",
+     "title": "PendingIntent Provenance Confusion",
+     "cwe": [
+      "CWE-290",
+      "CWE-441",
+      "CWE-923"
+     ],
+     "folder": "lib/modules/platform/pendingintent_provenance_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "inapp_browser_ui_spoofing",
+     "title": "In-App Browser UI / Address-Bar Spoofing",
+     "cwe": [
+      "CWE-1021",
+      "CWE-451"
+     ],
+     "folder": "lib/modules/platform/inapp_browser_ui_spoofing/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "cross_app_scripting",
+     "title": "Cross-App Scripting (Untrusted Intent -> Exported Activity -> WebView JS)",
+     "cwe": [
+      "CWE-749",
+      "CWE-79",
+      "CWE-940"
+     ],
+     "folder": "lib/modules/platform/cross_app_scripting/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/platform/cross_app_scripting/cross_app_scripting_screen.dart",
+       "line": 48,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "platform",
+     "id": "grant_uri_permission_abuse",
+     "title": "URI Permission / GRANT_URI_PERMISSIONS Abuse",
+     "cwe": [
+      "CWE-266",
+      "CWE-668",
+      "CWE-927"
+     ],
+     "folder": "lib/modules/platform/grant_uri_permission_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "custom_url_scheme_authorization",
+     "title": "Custom URL Scheme Authorization (arbitrary URL load)",
+     "cwe": [
+      "CWE-601",
+      "CWE-862",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/platform/custom_url_scheme_authorization/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "wkwebview_untrusted_url_local_file",
+     "title": "WebView Untrusted URL -> Local File Read (iOS WKWebView)",
+     "cwe": [
+      "CWE-200",
+      "CWE-22",
+      "CWE-79"
+     ],
+     "folder": "lib/modules/platform/wkwebview_untrusted_url_local_file/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/platform/wkwebview_untrusted_url_local_file/wkwebview_untrusted_url_local_file_screen.dart",
+       "line": 105,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      },
+      {
+       "file": "lib/modules/platform/wkwebview_untrusted_url_local_file/wkwebview_untrusted_url_local_file_screen.dart",
+       "line": 124,
+       "cwe": "CWE-200",
+       "rules": [
+        "DART-WEBVIEW-005"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "platform",
+     "id": "confused_deputy_intent_validation",
+     "title": "Confused-Deputy Intent Validation Bypass",
+     "cwe": [
+      "CWE-441",
+      "CWE-862",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/platform/confused_deputy_intent_validation/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "ssrf_url_media_handler",
+     "title": "SSRF via URL / Media Handler",
+     "cwe": [
+      "CWE-601",
+      "CWE-918"
+     ],
+     "folder": "lib/modules/platform/ssrf_url_media_handler/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "qr_url_no_validation",
+     "title": "QR Scanner -> URL With No Validation",
+     "cwe": [
+      "CWE-20",
+      "CWE-601"
+     ],
+     "folder": "lib/modules/platform/qr_url_no_validation/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "proximity_transfer_unsafe_parsing",
+     "title": "Proximity Transfer Unsafe Parsing (AirDrop / Quick Share)",
+     "cwe": [
+      "CWE-20",
+      "CWE-674",
+      "CWE-776"
+     ],
+     "folder": "lib/modules/platform/proximity_transfer_unsafe_parsing/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "shortcuts_path_symlink_sandbox_escape",
+     "title": "Shortcuts / App Intents Path + Symlink Sandbox Escape",
+     "cwe": [
+      "CWE-22",
+      "CWE-367",
+      "CWE-59"
+     ],
+     "folder": "lib/modules/platform/shortcuts_path_symlink_sandbox_escape/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "exported_component_state_manipulation",
+     "title": "Exported Component -> Unauthorized State Manipulation",
+     "cwe": [
+      "CWE-284",
+      "CWE-639",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/exported_component_state_manipulation/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "contentprovider_filename_path_traversal",
+     "title": "ContentProvider File-Import Filename Path Traversal",
+     "cwe": [
+      "CWE-22",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/contentprovider_filename_path_traversal/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "app_intent_parameter_authorization",
+     "title": "App Intent / Siri Parameter -> Privileged Action (No Authz)",
+     "cwe": [
+      "CWE-20",
+      "CWE-639",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/app_intent_parameter_authorization/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "content_uri_resolver_confused_deputy",
+     "title": "content:// URI -> ContentResolver Confused Deputy",
+     "cwe": [
+      "CWE-441",
+      "CWE-639",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/content_uri_resolver_confused_deputy/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "accessibility_service_privilege_abuse",
+     "title": "AccessibilityService Privilege Abuse",
+     "cwe": [
+      "CWE-284",
+      "CWE-441",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/accessibility_service_privilege_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "notification_listener_authorization_bypass",
+     "title": "Notification Listener Authorization Bypass",
+     "cwe": [
+      "CWE-284",
+      "CWE-306",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/notification_listener_authorization_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "background_activity_launch_abuse",
+     "title": "Background Activity Launch Abuse",
+     "cwe": [
+      "CWE-1021",
+      "CWE-284",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/background_activity_launch_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "clipboard_unauthorized_write_integrity",
+     "title": "Clipboard Unauthorized Write / Integrity Tampering",
+     "cwe": [
+      "CWE-345",
+      "CWE-471",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/platform/clipboard_unauthorized_write_integrity/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "clipboard_to_privileged_action_injection",
+     "title": "Clipboard -> Privileged Action Injection",
+     "cwe": [
+      "CWE-20",
+      "CWE-441",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/platform/clipboard_to_privileged_action_injection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "authorization_by_mutable_resource_state",
+     "title": "Authorization Based on Mutable Resource State",
+     "cwe": [
+      "CWE-367",
+      "CWE-708",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/platform/authorization_by_mutable_resource_state/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "telephony_capability_abuse",
+     "title": "Telephony / Phone-Account Capability Abuse",
+     "cwe": [
+      "CWE-284",
+      "CWE-441",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/telephony_capability_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "document_picker_trusted_file_confusion",
+     "title": "Document Picker -> Trusted-File Confusion",
+     "cwe": [
+      "CWE-20",
+      "CWE-22",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/platform/document_picker_trusted_file_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "system_surface_privileged_appintent_exposure",
+     "title": "System-Surface -> Privileged App Intent Exposure",
+     "cwe": [
+      "CWE-267",
+      "CWE-284",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/system_surface_privileged_appintent_exposure/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "cross_profile_data_capability_leakage",
+     "title": "Cross-Profile (Work/Personal) Data & Capability Leakage",
+     "cwe": [
+      "CWE-200",
+      "CWE-668",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/platform/cross_profile_data_capability_leakage/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "unauthenticated_local_loopback_service",
+     "title": "Unauthenticated Local / Loopback Service",
+     "cwe": [
+      "CWE-306",
+      "CWE-350",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/platform/unauthenticated_local_loopback_service/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "contacts_provider_blind_sqli_oracle",
+     "title": "Blind SQLi Boolean-Oracle Extraction (Contacts-Provider class)",
+     "cwe": [
+      "CWE-862",
+      "CWE-89"
+     ],
+     "folder": "lib/modules/platform/contacts_provider_blind_sqli_oracle/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "incoming_call_metadata_missing_authorization",
+     "title": "Incoming-Call Metadata Read (Missing Authorization class)",
+     "cwe": [
+      "CWE-200",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/incoming_call_metadata_missing_authorization/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "zero_click_call_media_parse_sink",
+     "title": "Zero-Click Media Parse Before User Accept (VoIP-ring class)",
+     "cwe": [
+      "CWE-125",
+      "CWE-20"
+     ],
+     "folder": "lib/modules/platform/zero_click_call_media_parse_sink/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "dynamic_broadcast_receiver_exposure",
+     "title": "Dynamic BroadcastReceiver Exposure",
+     "cwe": [
+      "CWE-200",
+      "CWE-925",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/dynamic_broadcast_receiver_exposure/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "privileged_service_binding_exposure",
+     "title": "Privileged Service Binding / Binder Interface Exposure",
+     "cwe": [
+      "CWE-284",
+      "CWE-749",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/privileged_service_binding_exposure/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "activity_task_stack_hijacking",
+     "title": "Activity Task-Stack / Affinity Hijacking",
+     "cwe": [
+      "CWE-1021",
+      "CWE-346",
+      "CWE-451"
+     ],
+     "folder": "lib/modules/platform/activity_task_stack_hijacking/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "activity_alias_exposure",
+     "title": "Activity-Alias Exposure",
+     "cwe": [
+      "CWE-200",
+      "CWE-284",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/activity_alias_exposure/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "platform_version_security_fallback",
+     "title": "Platform-Version Security Fallback",
+     "cwe": [
+      "CWE-1188",
+      "CWE-636",
+      "CWE-693"
+     ],
+     "folder": "lib/modules/platform/platform_version_security_fallback/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "default_role_holder_confusion",
+     "title": "Default-Role / Role-Holder Confusion",
+     "cwe": [
+      "CWE-284",
+      "CWE-346",
+      "CWE-940"
+     ],
+     "folder": "lib/modules/platform/default_role_holder_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "persistable_uri_grant_abuse",
+     "title": "Persistent URI-Grant Capability Abuse",
+     "cwe": [
+      "CWE-266",
+      "CWE-284",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/platform/persistable_uri_grant_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "clipdata_uri_grant_leakage",
+     "title": "ClipData URI-Grant Leakage",
+     "cwe": [
+      "CWE-200",
+      "CWE-668",
+      "CWE-927"
+     ],
+     "folder": "lib/modules/platform/clipdata_uri_grant_leakage/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "file_descriptor_capability_leakage",
+     "title": "File-Descriptor Capability Leakage",
+     "cwe": [
+      "CWE-200",
+      "CWE-402",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/platform/file_descriptor_capability_leakage/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "ordered_broadcast_result_injection",
+     "title": "Ordered-Broadcast Result Injection",
+     "cwe": [
+      "CWE-348",
+      "CWE-349",
+      "CWE-925"
+     ],
+     "folder": "lib/modules/platform/ordered_broadcast_result_injection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "remoteviews_widget_action_injection",
+     "title": "App-Widget / RemoteViews Action Injection",
+     "cwe": [
+      "CWE-862",
+      "CWE-863",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/platform/remoteviews_widget_action_injection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "notification_action_authorization_bypass",
+     "title": "Notification-Action / Trampoline Authorization Bypass",
+     "cwe": [
+      "CWE-306",
+      "CWE-862",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/platform/notification_action_authorization_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "custom_signature_permission_squatting",
+     "title": "Custom / Signature Permission Squatting",
+     "cwe": [
+      "CWE-280",
+      "CWE-284",
+      "CWE-732"
+     ],
+     "folder": "lib/modules/platform/custom_signature_permission_squatting/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "handoff_useractivity_injection",
+     "title": "Handoff / NSUserActivity Injection",
+     "cwe": [
+      "CWE-20",
+      "CWE-345",
+      "CWE-501"
+     ],
+     "folder": "lib/modules/platform/handoff_useractivity_injection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "universal_link_aasa_confusion",
+     "title": "Universal Link / AASA Associated-Domain Confusion",
+     "cwe": [
+      "CWE-20",
+      "CWE-601",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/platform/universal_link_aasa_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "app_clip_invocation_injection",
+     "title": "App Clip Invocation Injection",
+     "cwe": [
+      "CWE-20",
+      "CWE-501",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/app_clip_invocation_injection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "android_capability_composition_chain",
+     "title": "Android Capability-Composition Chain",
+     "cwe": [
+      "CWE-441",
+      "CWE-668",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/android_capability_composition_chain/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "platform",
+     "id": "ios_capability_composition_chain",
+     "title": "iOS Capability-Composition Chain",
+     "cwe": [
+      "CWE-441",
+      "CWE-668",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/platform/ios_capability_composition_chain/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "code_quality",
+     "id": "debuggable_release_build",
+     "title": "Debuggable Release Build",
+     "cwe": [
+      "CWE-489"
+     ],
+     "folder": "lib/modules/code_quality/debuggable_release_build/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "code_quality",
+     "id": "no_obfuscation",
+     "title": "No Obfuscation / Symbol Stripping",
+     "cwe": [
+      "CWE-656"
+     ],
+     "folder": "lib/modules/code_quality/no_obfuscation/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "code_quality",
+     "id": "verbose_error_handling",
+     "title": "Verbose Error Handling (leaked stack traces)",
+     "cwe": [
+      "CWE-209",
+      "CWE-497"
+     ],
+     "folder": "lib/modules/code_quality/verbose_error_handling/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "code_quality",
+     "id": "vulnerable_dependencies",
+     "title": "Vulnerable Dependencies (known CVE)",
+     "cwe": [
+      "CWE-1104",
+      "CWE-937"
+     ],
+     "folder": "lib/modules/code_quality/vulnerable_dependencies/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "code_quality",
+     "id": "native_code_memory_bugs",
+     "title": "Native Code Memory Bugs (JNI buffer overflow)",
+     "cwe": [
+      "CWE-120"
+     ],
+     "folder": "lib/modules/code_quality/native_code_memory_bugs/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "root_jailbreak_detection_bypass",
+     "title": "Root/Jailbreak Detection Bypass",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/root_jailbreak_detection_bypass/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "anti_debugging_bypass",
+     "title": "Anti-Debugging Bypass",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/anti_debugging_bypass/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "anti_tampering_integrity_bypass",
+     "title": "Anti-Tampering / Integrity Bypass",
+     "cwe": [
+      "CWE-354"
+     ],
+     "folder": "lib/modules/resilience/anti_tampering_integrity_bypass/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "emulator_detection_bypass",
+     "title": "Emulator Detection Bypass",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/emulator_detection_bypass/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "frida_detection_bypass",
+     "title": "Frida Detection Bypass",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/frida_detection_bypass/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "toctou_race_condition",
+     "title": "TOCTOU Race Condition in Auth Check",
+     "cwe": [
+      "CWE-367"
+     ],
+     "folder": "lib/modules/resilience/toctou_race_condition/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "malware_detection_absent",
+     "title": "Malware / Overlay Co-Resident Detection Not Implemented",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/malware_detection_absent/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "device_attestation_absent",
+     "title": "Device Attestation Not Implemented (Play Integrity / App Attest)",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/device_attestation_absent/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "app_attestation_absent",
+     "title": "App Attestation Not Implemented (server never verifies client)",
+     "cwe": [
+      "CWE-345",
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/app_attestation_absent/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "resilience",
+     "id": "virtualization_detection_absent",
+     "title": "App Virtualization / Cloning Detection Not Implemented",
+     "cwe": [
+      "CWE-693"
+     ],
+     "folder": "lib/modules/resilience/virtualization_detection_absent/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "malicious_third_party_sdk",
+     "title": "Malicious Third-Party SDK",
+     "cwe": [
+      "CWE-506",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/supply_chain/malicious_third_party_sdk/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "typosquatted_dependency",
+     "title": "Typosquatted Dependency",
+     "cwe": [
+      "CWE-427",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/supply_chain/typosquatted_dependency/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "unsigned_unverified_build_artifact",
+     "title": "Unsigned / Unverified Build Artifact",
+     "cwe": [
+      "CWE-347",
+      "CWE-494"
+     ],
+     "folder": "lib/modules/supply_chain/unsigned_unverified_build_artifact/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "insecure_firebase_cloud_config",
+     "title": "Insecure Firebase / Cloud Backend Config",
+     "cwe": [
+      "CWE-1188",
+      "CWE-668",
+      "CWE-798"
+     ],
+     "folder": "lib/modules/supply_chain/insecure_firebase_cloud_config/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/supply_chain/insecure_firebase_cloud_config/firebase_cloud_config.dart",
+       "line": 23,
+       "cwe": "CWE-798",
+       "rules": [
+        "SECRET-HARDCODED-001"
+       ]
+      },
+      {
+       "file": "lib/modules/supply_chain/insecure_firebase_cloud_config/firebase_cloud_config.dart",
+       "line": 24,
+       "cwe": "CWE-798",
+       "rules": [
+        "SECRET-HARDCODED-001"
+       ]
+      },
+      {
+       "file": "lib/modules/supply_chain/insecure_firebase_cloud_config/insecure_firebase_cloud_config_screen.dart",
+       "line": 37,
+       "cwe": "CWE-798",
+       "rules": [
+        "SECRET-HARDCODED-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "supply_chain",
+     "id": "sbom_missing_or_stale",
+     "title": "Missing / Stale SBOM (No Component Inventory)",
+     "cwe": [
+      "CWE-1035",
+      "CWE-1104"
+     ],
+     "folder": "lib/modules/supply_chain/sbom_missing_or_stale/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "silent_sdk_auto_update",
+     "title": "Silent SDK Auto-Update (Post-Deploy Behavior Change)",
+     "cwe": [
+      "CWE-494",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/supply_chain/silent_sdk_auto_update/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "dependency_confusion",
+     "title": "Dependency Confusion / Substitution",
+     "cwe": [
+      "CWE-1357",
+      "CWE-427",
+      "CWE-494"
+     ],
+     "folder": "lib/modules/supply_chain/dependency_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "supply_chain",
+     "id": "sdk_exported_component_redirection",
+     "title": "Bundled SDK Ships a Vulnerable Exported Component",
+     "cwe": [
+      "CWE-749",
+      "CWE-829",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/supply_chain/sdk_exported_component_redirection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "missing_consent_before_data_access",
+     "title": "Missing Consent Before Data Access",
+     "cwe": [
+      "CWE-359"
+     ],
+     "folder": "lib/modules/privacy/missing_consent_before_data_access/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "no_tracking_transparency_prompt",
+     "title": "No Tracking Transparency Prompt",
+     "cwe": [
+      "CWE-359"
+     ],
+     "folder": "lib/modules/privacy/no_tracking_transparency_prompt/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "pii_in_analytics_events",
+     "title": "PII in Analytics Events",
+     "cwe": [
+      "CWE-200",
+      "CWE-359"
+     ],
+     "folder": "lib/modules/privacy/pii_in_analytics_events/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "installed_app_enumeration",
+     "title": "Installed-App Enumeration (Privacy Fingerprint)",
+     "cwe": [
+      "CWE-200",
+      "CWE-359"
+     ],
+     "folder": "lib/modules/privacy/installed_app_enumeration/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "cross_app_browser_history_access",
+     "title": "Cross-App Browser History Access",
+     "cwe": [
+      "CWE-200",
+      "CWE-359"
+     ],
+     "folder": "lib/modules/privacy/cross_app_browser_history_access/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "notification_alternate_surface_disclosure",
+     "title": "Notification Content Disclosure via Alternate Surface",
+     "cwe": [
+      "CWE-200",
+      "CWE-284",
+      "CWE-359"
+     ],
+     "folder": "lib/modules/privacy/notification_alternate_surface_disclosure/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "lock_state_confusion_data_exposure",
+     "title": "Lock-State Confusion Data Exposure",
+     "cwe": [
+      "CWE-200",
+      "CWE-284",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/privacy/lock_state_confusion_data_exposure/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "privacy_control_alternate_path_bypass",
+     "title": "Privacy Control Alternate-Path Bypass",
+     "cwe": [
+      "CWE-200",
+      "CWE-284",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/privacy/privacy_control_alternate_path_bypass/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "privacy",
+     "id": "assistant_locked_device_capability_abuse",
+     "title": "System Assistant -> Locked-Device Capability Abuse",
+     "cwe": [
+      "CWE-200",
+      "CWE-284",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/privacy/assistant_locked_device_capability_abuse/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "input_validation",
+     "id": "unsafe_deserialization",
+     "title": "Unsafe Deserialization",
+     "cwe": [
+      "CWE-502"
+     ],
+     "folder": "lib/modules/input_validation/unsafe_deserialization/",
+     "kind": "code",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "input_validation",
+     "id": "unvalidated_intent_extras",
+     "title": "Unvalidated Intent Extras",
+     "cwe": [
+      "CWE-20",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/input_validation/unvalidated_intent_extras/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "input_validation",
+     "id": "unsafe_media_decoding",
+     "title": "Unsafe Media / Image Decoding",
+     "cwe": [
+      "CWE-1284",
+      "CWE-20",
+      "CWE-409"
+     ],
+     "folder": "lib/modules/input_validation/unsafe_media_decoding/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "input_validation",
+     "id": "deeplink_regex_dos",
+     "title": "Deep Link Regex DoS (ReDoS)",
+     "cwe": [
+      "CWE-1333",
+      "CWE-20",
+      "CWE-400"
+     ],
+     "folder": "lib/modules/input_validation/deeplink_regex_dos/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "input_validation",
+     "id": "protected_data_access_via_input_validation",
+     "title": "Protected-Data Access via Input-Validation Confusion",
+     "cwe": [
+      "CWE-180",
+      "CWE-20",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/input_validation/protected_data_access_via_input_validation/",
+     "kind": "code",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "prompt_injection_direct",
+     "title": "Direct Prompt Injection",
+     "cwe": [
+      "CWE-20",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/ai_ml/prompt_injection_direct/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "prompt_injection_indirect",
+     "title": "Indirect Prompt Injection (scanned QR/image/file)",
+     "cwe": [
+      "CWE-20",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/ai_ml/prompt_injection_indirect/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "insecure_output_handling",
+     "title": "Insecure Output Handling",
+     "cwe": [
+      "CWE-79",
+      "CWE-89"
+     ],
+     "folder": "lib/modules/ai_ml/insecure_output_handling/",
+     "kind": "runtime",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/ai_ml/insecure_output_handling/insecure_output_handler.dart",
+       "line": 29,
+       "cwe": "CWE-89",
+       "rules": [
+        "DART-SQLI-004"
+       ]
+      },
+      {
+       "file": "lib/modules/ai_ml/insecure_output_handling/insecure_output_handling_screen.dart",
+       "line": 46,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "ai_ml",
+     "id": "excessive_agent_agency",
+     "title": "Excessive Agent Agency",
+     "cwe": [
+      "CWE-306",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/ai_ml/excessive_agent_agency/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "system_prompt_leakage",
+     "title": "System Prompt Leakage",
+     "cwe": [
+      "CWE-200"
+     ],
+     "folder": "lib/modules/ai_ml/system_prompt_leakage/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "hardcoded_llm_api_keys",
+     "title": "Hardcoded LLM API Keys",
+     "cwe": [
+      "CWE-798"
+     ],
+     "folder": "lib/modules/ai_ml/hardcoded_llm_api_keys/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "insecure_ondevice_model_storage",
+     "title": "Insecure On-Device Model Storage",
+     "cwe": [
+      "CWE-312",
+      "CWE-353"
+     ],
+     "folder": "lib/modules/ai_ml/insecure_ondevice_model_storage/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "unverified_model_supply_chain",
+     "title": "Unverified Model Supply Chain",
+     "cwe": [
+      "CWE-345",
+      "CWE-494"
+     ],
+     "folder": "lib/modules/ai_ml/unverified_model_supply_chain/",
+     "kind": "runtime",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "unbounded_ai_resource_consumption",
+     "title": "Unbounded AI Resource Consumption",
+     "cwe": [
+      "CWE-400",
+      "CWE-770"
+     ],
+     "folder": "lib/modules/ai_ml/unbounded_ai_resource_consumption/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "rag_vector_store_poisoning",
+     "title": "RAG Vector Store Poisoning",
+     "cwe": [
+      "CWE-345",
+      "CWE-349"
+     ],
+     "folder": "lib/modules/ai_ml/rag_vector_store_poisoning/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "hidden_context_exposure",
+     "title": "Hidden Context Exposure",
+     "cwe": [
+      "CWE-200",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/ai_ml/hidden_context_exposure/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "ondevice_model_extraction",
+     "title": "On-Device Model Extraction / Theft",
+     "cwe": [
+      "CWE-200",
+      "CWE-312"
+     ],
+     "folder": "lib/modules/ai_ml/ondevice_model_extraction/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_ml",
+     "id": "unicode_invisible_prompt_injection",
+     "title": "Invisible / Unicode Prompt Injection",
+     "cwe": [
+      "CWE-176",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/ai_ml/unicode_invisible_prompt_injection/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "agent_memory_poisoning",
+     "title": "Agent Memory & Context Poisoning",
+     "cwe": [
+      "CWE-349",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/agentic/agent_memory_poisoning/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "mcp_tool_poisoning",
+     "title": "MCP / Tool Description Poisoning",
+     "cwe": [
+      "CWE-78",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/agentic/mcp_tool_poisoning/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "mcp_capability_attestation_absent",
+     "title": "MCP Connector Capability Attestation Absent",
+     "cwe": [
+      "CWE-290",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/agentic/mcp_capability_attestation_absent/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "agent_tool_confused_deputy",
+     "title": "Agent Tool Misuse / Confused Deputy",
+     "cwe": [
+      "CWE-441",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/agentic/agent_tool_confused_deputy/",
+     "kind": "runtime",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "insecure_inter_agent_comms",
+     "title": "Insecure Inter-Agent Communication",
+     "cwe": [
+      "CWE-290",
+      "CWE-345"
+     ],
+     "folder": "lib/modules/agentic/insecure_inter_agent_comms/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "mcp_open_url_arbitrary_intent",
+     "title": "MCP open_url -> Arbitrary Android Intent",
+     "cwe": [
+      "CWE-78",
+      "CWE-862",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/agentic/mcp_open_url_arbitrary_intent/",
+     "kind": "runtime",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "gui_agent_action_rebinding",
+     "title": "GUI Agent Action Rebinding (Observation-Action Gap)",
+     "cwe": [
+      "CWE-367",
+      "CWE-441",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/agentic/gui_agent_action_rebinding/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "agent_recovery_loop_weaponization",
+     "title": "Agent Task-Recovery Loop Weaponization",
+     "cwe": [
+      "CWE-441",
+      "CWE-693"
+     ],
+     "folder": "lib/modules/agentic/agent_recovery_loop_weaponization/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "agentic",
+     "id": "agent_state_toctou_swap",
+     "title": "Agent External-State TOCTOU Swap",
+     "cwe": [
+      "CWE-345",
+      "CWE-367"
+     ],
+     "folder": "lib/modules/agentic/agent_state_toctou_swap/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_mobile",
+     "id": "untrusted_mobile_input_to_llm",
+     "title": "Untrusted Mobile Input -> LLM Prompt (deep link / clipboard / QR)",
+     "cwe": [
+      "CWE-20",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/ai_mobile/untrusted_mobile_input_to_llm/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_mobile",
+     "id": "ai_output_to_webview_xss",
+     "title": "AI Output Rendered in WebView (XSS / local-file read)",
+     "cwe": [
+      "CWE-22",
+      "CWE-79"
+     ],
+     "folder": "lib/modules/ai_mobile/ai_output_to_webview_xss/",
+     "kind": "runtime",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/ai_mobile/ai_output_to_webview_xss/ai_output_to_webview_xss_screen.dart",
+       "line": 50,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "ai_mobile",
+     "id": "ai_output_to_intent_url",
+     "title": "AI Output Used as Intent / URL (navigation & redirection)",
+     "cwe": [
+      "CWE-20",
+      "CWE-441",
+      "CWE-601"
+     ],
+     "folder": "lib/modules/ai_mobile/ai_output_to_intent_url/",
+     "kind": "runtime",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "ai_mobile",
+     "id": "ai_output_command_tool_injection",
+     "title": "AI Output -> Tool / Command Injection",
+     "cwe": [
+      "CWE-78",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/ai_mobile/ai_output_command_tool_injection/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "ai_mobile",
+     "id": "accessibility_tree_prompt_injection",
+     "title": "Accessibility Tree -> Indirect Prompt Injection",
+     "cwe": [
+      "CWE-20",
+      "CWE-441",
+      "CWE-78"
+     ],
+     "folder": "lib/modules/ai_mobile/accessibility_tree_prompt_injection/",
+     "kind": "runtime",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "js_bridge_callback_id_injection",
+     "title": "JS Bridge Callback-ID Injection",
+     "cwe": [
+      "CWE-20",
+      "CWE-345",
+      "CWE-441"
+     ],
+     "folder": "lib/modules/native_bridge/js_bridge_callback_id_injection/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "crossorigin_iframe_to_native_bridge",
+     "title": "Cross-Origin Iframe -> Native Bridge (No Main-Frame/Origin Check)",
+     "cwe": [
+      "CWE-1021",
+      "CWE-346",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/native_bridge/crossorigin_iframe_to_native_bridge/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "js_bridge_exposes_privileged_api",
+     "title": "JS Bridge Exposes a Privileged Native API",
+     "cwe": [
+      "CWE-749",
+      "CWE-862",
+      "CWE-926"
+     ],
+     "folder": "lib/modules/native_bridge/js_bridge_exposes_privileged_api/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/native_bridge/js_bridge_exposes_privileged_api/js_bridge_exposes_privileged_api_screen.dart",
+       "line": 51,
+       "cwe": "CWE-749",
+       "rules": [
+        "DART-WEBVIEW-002"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "native_bridge",
+     "id": "qr_nfc_to_privileged_action",
+     "title": "QR / NFC Scan -> Privileged Action Without Confirmation",
+     "cwe": [
+      "CWE-306",
+      "CWE-346",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/native_bridge/qr_nfc_to_privileged_action/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "exported_broadcast_receiver_spoof",
+     "title": "Exported BroadcastReceiver Data Spoofing",
+     "cwe": [
+      "CWE-346",
+      "CWE-862",
+      "CWE-925"
+     ],
+     "folder": "lib/modules/native_bridge/exported_broadcast_receiver_spoof/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_origin_confusion_ipc",
+     "title": "WebView Origin Confusion -> Local-Only IPC",
+     "cwe": [
+      "CWE-346",
+      "CWE-441",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/native_bridge/webview_origin_confusion_ipc/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_js_injection_ssl_bypass",
+     "title": "WebView JS Injection + SSL-Validation Bypass",
+     "cwe": [
+      "CWE-295",
+      "CWE-749",
+      "CWE-79"
+     ],
+     "folder": "lib/modules/native_bridge/webview_js_injection_ssl_bypass/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/native_bridge/webview_js_injection_ssl_bypass/webview_js_injection_ssl_bypass_screen.dart",
+       "line": 51,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_js_injection_ssl_bypass/webview_js_injection_ssl_bypass_screen.dart",
+       "line": 52,
+       "cwe": "CWE-749",
+       "rules": [
+        "DART-WEBVIEW-002"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_js_injection_ssl_bypass/webview_loader.dart",
+       "line": 191,
+       "cwe": "CWE-295",
+       "rules": [
+        "DART-TLS-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "native_bridge",
+     "id": "embedded_miniapp_secret_exposure",
+     "title": "Embedded Mini-App Secret Exposure",
+     "cwe": [
+      "CWE-294",
+      "CWE-312",
+      "CWE-522"
+     ],
+     "folder": "lib/modules/native_bridge/embedded_miniapp_secret_exposure/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/native_bridge/embedded_miniapp_secret_exposure/embedded_miniapp_secret_exposure_screen.dart",
+       "line": 72,
+       "cwe": "CWE-312",
+       "rules": [
+        "DART-STORAGE-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_sop_csp_disabled",
+     "title": "WebView SOP / CSP Disabled (Cross-Origin & Inline Script)",
+     "cwe": [
+      "CWE-346",
+      "CWE-79",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/native_bridge/webview_sop_csp_disabled/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/native_bridge/webview_sop_csp_disabled/webview_sop_csp_disabled_screen.dart",
+       "line": 74,
+       "cwe": "CWE-79",
+       "rules": [
+        "DART-WEBVIEW-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "native_bridge",
+     "id": "shared_webview_miniapp_isolation",
+     "title": "Shared WebView Mini-App Isolation Failure (Cross-Tenant Cookies)",
+     "cwe": [
+      "CWE-200",
+      "CWE-346",
+      "CWE-668"
+     ],
+     "folder": "lib/modules/native_bridge/shared_webview_miniapp_isolation/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "provider_metadata_to_filesystem_traversal",
+     "title": "Provider-Controlled Metadata -> Plugin Filesystem Traversal",
+     "cwe": [
+      "CWE-20",
+      "CWE-22"
+     ],
+     "folder": "lib/modules/native_bridge/provider_metadata_to_filesystem_traversal/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_cleartext_mixed_content_downgrade",
+     "title": "WebView Cleartext / Mixed-Content Transport Downgrade",
+     "cwe": [
+      "CWE-311",
+      "CWE-319",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/native_bridge/webview_cleartext_mixed_content_downgrade/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/native_bridge/webview_cleartext_mixed_content_downgrade/webview_cleartext_mixed_content_downgrade_screen.dart",
+       "line": 77,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-WEBVIEW-006"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_cleartext_mixed_content_downgrade/webview_transport_loader.dart",
+       "line": 77,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-WEBVIEW-006"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_cleartext_mixed_content_downgrade/webview_transport_loader.dart",
+       "line": 87,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-NET-001"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_cleartext_mixed_content_downgrade/webview_transport_loader.dart",
+       "line": 97,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-NET-001"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_safe_browsing_disabled",
+     "title": "WebView Safe Browsing Disabled",
+     "cwe": [
+      "CWE-1188",
+      "CWE-693",
+      "CWE-829"
+     ],
+     "folder": "lib/modules/native_bridge/webview_safe_browsing_disabled/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_remote_debugging_enabled",
+     "title": "WebView Remote Debugging Enabled",
+     "cwe": [
+      "CWE-200",
+      "CWE-215",
+      "CWE-489"
+     ],
+     "folder": "lib/modules/native_bridge/webview_remote_debugging_enabled/",
+     "kind": "design",
+     "found": true,
+     "any": true,
+     "by": [
+      {
+       "file": "lib/modules/native_bridge/webview_remote_debugging_enabled/debuggable_webview.dart",
+       "line": 76,
+       "cwe": "CWE-489",
+       "rules": [
+        "DART-WEBVIEW-007"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_remote_debugging_enabled/debuggable_webview.dart",
+       "line": 115,
+       "cwe": "CWE-489",
+       "rules": [
+        "DART-WEBVIEW-007"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_remote_debugging_enabled/webview_remote_debugging_enabled_screen.dart",
+       "line": 48,
+       "cwe": "CWE-489",
+       "rules": [
+        "DART-WEBVIEW-007"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_remote_debugging_enabled/webview_remote_debugging_enabled_screen.dart",
+       "line": 103,
+       "cwe": "CWE-489",
+       "rules": [
+        "DART-WEBVIEW-007"
+       ]
+      },
+      {
+       "file": "lib/modules/native_bridge/webview_remote_debugging_enabled/webview_remote_debugging_enabled_screen.dart",
+       "line": 110,
+       "cwe": "CWE-489",
+       "rules": [
+        "DART-WEBVIEW-007"
+       ]
+      }
+     ]
+    },
+    {
+     "category": "native_bridge",
+     "id": "webview_url_loading_policy_confusion",
+     "title": "WebView URL-Loading Policy Confusion",
+     "cwe": [
+      "CWE-20",
+      "CWE-441",
+      "CWE-939"
+     ],
+     "folder": "lib/modules/native_bridge/webview_url_loading_policy_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "privileged_provider_activation_abuse",
+     "title": "Privileged Provider Activation Abuse",
+     "cwe": [
+      "CWE-1021",
+      "CWE-441",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/system_provider/privileged_provider_activation_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "mediaprojection_screencapture_authorization_bypass",
+     "title": "MediaProjection / Screen-Capture Authorization Bypass",
+     "cwe": [
+      "CWE-20",
+      "CWE-200",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/system_provider/mediaprojection_screencapture_authorization_bypass/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "custom_keyboard_input_interception",
+     "title": "Custom Keyboard / IME Input Interception",
+     "cwe": [
+      "CWE-200",
+      "CWE-359",
+      "CWE-522"
+     ],
+     "folder": "lib/modules/system_provider/custom_keyboard_input_interception/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "privileged_input_provider_injection",
+     "title": "Privileged Input-Provider (IME) Event Injection",
+     "cwe": [
+      "CWE-284",
+      "CWE-862",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/system_provider/privileged_input_provider_injection/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "companion_device_pairing_confusion",
+     "title": "Companion Device Pairing / Capability Confusion",
+     "cwe": [
+      "CWE-1188",
+      "CWE-284",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/system_provider/companion_device_pairing_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "device_policy_mdm_capability_abuse",
+     "title": "Device Policy / MDM Capability Abuse",
+     "cwe": [
+      "CWE-269",
+      "CWE-841",
+      "CWE-862"
+     ],
+     "folder": "lib/modules/system_provider/device_policy_mdm_capability_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "vpn_provider_trust_anchor_abuse",
+     "title": "VPN Provider Trust-Anchor / Tunnel MITM",
+     "cwe": [
+      "CWE-295",
+      "CWE-940"
+     ],
+     "folder": "lib/modules/system_provider/vpn_provider_trust_anchor_abuse/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "notification_intelligence_ai_processing",
+     "title": "Sensitive Notification -> Privileged AI Processing",
+     "cwe": [
+      "CWE-1230",
+      "CWE-200",
+      "CWE-79"
+     ],
+     "folder": "lib/modules/system_provider/notification_intelligence_ai_processing/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "assist_screen_context_ai_exposure",
+     "title": "Assist / Screen-Context -> AI Action Exposure",
+     "cwe": [
+      "CWE-200",
+      "CWE-668",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/system_provider/assist_screen_context_ai_exposure/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "app_group_shared_container_amplification",
+     "title": "App Group Shared-Container Privilege Amplification",
+     "cwe": [
+      "CWE-200",
+      "CWE-668",
+      "CWE-732"
+     ],
+     "folder": "lib/modules/system_provider/app_group_shared_container_amplification/",
+     "kind": "design",
+     "found": false,
+     "any": true,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "extension_activation_input_confusion",
+     "title": "App Extension Activation != Input Authorization",
+     "cwe": [
+      "CWE-20",
+      "CWE-345",
+      "CWE-441"
+     ],
+     "folder": "lib/modules/system_provider/extension_activation_input_confusion/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    },
+    {
+     "category": "system_provider",
+     "id": "lockscreen_control_action_authorization",
+     "title": "Lock-Screen Control / Widget Action Authorization",
+     "cwe": [
+      "CWE-284",
+      "CWE-862",
+      "CWE-863"
+     ],
+     "folder": "lib/modules/system_provider/lockscreen_control_action_authorization/",
+     "kind": "design",
+     "found": false,
+     "any": false,
+     "by": []
+    }
+   ],
+   "scan": {
+    "files": 658,
+    "lines": 102911,
+    "open": 229,
+    "seconds": 10.2
+   },
+   "kinds_text": {
+    "code": "property of code or configuration lines",
+    "design": "authorization, IPC and trust decisions (needs the intended behaviour)",
+    "runtime": "AI behaviour, consent and runtime defences (not visible in the source)"
+   },
+   "why": {
+    "network": "cleartext URLs, TLS settings and certificate callbacks are written in the code and the manifest",
+    "crypto": "weak algorithms, fixed keys and IVs, insecure random calls",
+    "storage": "plain key-value storage, logs, clipboard and external files are calls in the code (some modules, such as data kept in memory, are behaviour)",
+    "code_quality": "build settings, error handling and native code",
+    "input_validation": "deserialization, decoders and regular expressions applied to untrusted input",
+    "platform": "exported components, intents, deep links and providers: most modules are chains of IPC trust decisions",
+    "native_bridge": "WebView to native bridges whose flaw is a missing origin or permission check",
+    "auth": "session, passkey, biometric and authorization logic",
+    "system_provider": "privileged system roles (accessibility, IME, VPN, device policy) and who may drive them",
+    "supply_chain": "trust in SDKs, package names and update artifacts; static rules see versions and sources, not what an SDK does",
+    "privacy": "consent screens, tracking and what data reaches analytics at run time",
+    "resilience": "root, debugger, emulator and tamper checks that are missing or bypassable at run time",
+    "agentic": "behaviour of an AI agent: memory and tool poisoning, confused deputy",
+    "ai_ml": "behaviour of an LLM assistant: prompt injection, output handling, model supply chain",
+    "ai_mobile": "untrusted mobile input flowing into an LLM prompt and model output flowing back into the app"
+   }
+  },
+  "Ostorlab-Insecure-Flutter": {
+   "unit": "file",
+   "all": {
+    "items": 16,
+    "found": 15,
+    "recall": 0.938
+   },
+   "not_hard": {
+    "items": 16,
+    "found": 15,
+    "recall": 0.938
+   },
+   "matched_findings": 20,
+   "items": [
+    {
+     "id": "O01",
+     "title": "Biometric authentication without a CryptoObject",
+     "cwe": [
+      "CWE-287"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/biometric_none_cryptobject.dart",
+       "line": 16
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/biometric_none_cryptobject.dart",
+       "line": 16,
+       "cwe": "CWE-287",
+       "rules": [
+        "DART-AUTH-002"
+       ]
+      }
+     ],
+     "note": "local_auth authenticate() only returns a boolean; no key is bound to the biometric check"
+    },
+    {
+     "id": "O02",
+     "title": "Cleartext HTTP traffic",
+     "cwe": [
+      "CWE-319"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/clear_text_traffic.dart",
+       "line": 17
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/clear_text_traffic.dart",
+       "line": 17,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-NET-001"
+       ]
+      }
+     ],
+     "note": "http.Request('GET', Uri.parse('http://$input'))"
+    },
+    {
+     "id": "O03",
+     "title": "Command execution (chmod 777 on shared storage)",
+     "cwe": [
+      "CWE-78",
+      "CWE-732"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/command_exec.dart",
+       "line": 18
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/command_exec.dart",
+       "line": 29
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/command_exec.dart",
+       "line": 29,
+       "cwe": "CWE-78",
+       "rules": [
+        "DART-CMD-003"
+       ]
+      }
+     ],
+     "note": "Process.runSync(command) runs 'chmod 777 /sdcard/document.pdf'"
+    },
+    {
+     "id": "O04",
+     "title": "AES in ECB mode",
+     "cwe": [
+      "CWE-327"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/ecb_cipher_mode.dart",
+       "line": 22
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/ecb_cipher_mode.dart",
+       "line": 21,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-005"
+       ]
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/ecb_cipher_mode.dart",
+       "line": 22,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-003"
+       ]
+      }
+     ],
+     "note": "Encrypter(AES(key, mode: AESMode.ecb))"
+    },
+    {
+     "id": "O05",
+     "title": "Hard-coded credentials in a URL",
+     "cwe": [
+      "CWE-798"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/hardcoded_creds_in_url.dart",
+       "line": 23
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/hardcoded_creds_in_url.dart",
+       "line": 23,
+       "cwe": "CWE-798",
+       "rules": [
+        "SECRET-URL-001"
+       ]
+      }
+     ],
+     "note": "https://user:password@host/... loaded in a WebView"
+    },
+    {
+     "id": "O06",
+     "title": "Hash without salt or iterations (SHA-1)",
+     "cwe": [
+      "CWE-327"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/hash_call.dart",
+       "line": 22
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/hash_call.dart",
+       "line": 22,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-001"
+       ]
+      }
+     ],
+     "note": "sha1.convert(...) of a message (CWE-328 and CWE-916 fold into CWE-327)"
+    },
+    {
+     "id": "O07",
+     "title": "Command taken from input",
+     "cwe": [
+      "CWE-78"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_commands.dart",
+       "line": 22
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_commands.dart",
+       "line": 22,
+       "cwe": "CWE-78",
+       "rules": [
+        "DART-CMD-003"
+       ]
+      }
+     ],
+     "note": "Process.run(command, []) where command is the rule's input"
+    },
+    {
+     "id": "O08",
+     "title": "Insecure random number generator with a fixed seed",
+     "cwe": [
+      "CWE-338"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_random.dart",
+       "line": 25
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_random.dart",
+       "line": 33
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_random.dart",
+       "line": 25,
+       "cwe": "CWE-338",
+       "rules": [
+        "DART-CRYPTO-010"
+       ]
+      }
+     ],
+     "note": "Random(SEED) with SEED = 12345 fills a byte buffer (CWE-330 folds into CWE-338)"
+    },
+    {
+     "id": "O09",
+     "title": "World-readable shared preferences",
+     "cwe": [
+      "CWE-732",
+      "CWE-276"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_shared_preferences.dart",
+       "line": 23
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_shared_preferences.dart",
+       "line": 24
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_shared_preferences.dart",
+       "line": 25
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_shared_preferences.dart",
+       "line": 23,
+       "cwe": "CWE-732",
+       "rules": [
+        "DART-STORAGE-006"
+       ]
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_shared_preferences.dart",
+       "line": 24,
+       "cwe": "CWE-732",
+       "rules": [
+        "DART-STORAGE-006"
+       ]
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/insecure_shared_preferences.dart",
+       "line": 25,
+       "cwe": "CWE-732",
+       "rules": [
+        "DART-STORAGE-006"
+       ]
+      }
+     ],
+     "note": "getSharedPreferences(..., MODE_WORLD_READABLE | MODE_WORLD_WRITEABLE)"
+    },
+    {
+     "id": "O10",
+     "title": "Padding oracle: AES-CBC with PKCS7 and no MAC decrypts input",
+     "cwe": [
+      "CWE-327"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/oracle_padding.dart",
+       "line": 17
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/oracle_padding.dart",
+       "line": 20
+      }
+     ],
+     "found": false,
+     "by": [],
+     "note": "Encrypter(AES(key, mode: AESMode.cbc, padding: 'PKCS7')) then decrypt64(input)"
+    },
+    {
+     "id": "O11",
+     "title": "Path traversal through the last path segment of a URI",
+     "cwe": [
+      "CWE-22"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/path_traversal.dart",
+       "line": 20
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/path_traversal.dart",
+       "line": 21,
+       "cwe": "CWE-22",
+       "rules": [
+        "DART-PATH-002"
+       ]
+      }
+     ],
+     "note": "path.join(directory.path, uri.pathSegments.last) with a path from input"
+    },
+    {
+     "id": "O12",
+     "title": "Reflection invokes a method named by input",
+     "cwe": [
+      "CWE-470"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/reflection_api.dart",
+       "line": 23
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/reflection_api.dart",
+       "line": 23,
+       "cwe": "CWE-470",
+       "rules": [
+        "DART-CODE-002"
+       ]
+      }
+     ],
+     "note": "instanceMirror.invoke(input, [10]) with package:reflectable"
+    },
+    {
+     "id": "O13",
+     "title": "SQL built from input (sqflite rawInsert)",
+     "cwe": [
+      "CWE-89"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/sqlite_database_call.dart",
+       "line": 14
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/sqlite_database_call.dart",
+       "line": 14,
+       "cwe": "CWE-89",
+       "rules": [
+        "DART-SQLI-004"
+       ]
+      }
+     ],
+     "note": "\"INSERT ... VALUES($input, 10)\" passed to rawInsert"
+    },
+    {
+     "id": "O14",
+     "title": "Static IV",
+     "cwe": [
+      "CWE-327",
+      "CWE-329"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/static_iv.dart",
+       "line": 22
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/static_iv.dart",
+       "line": 22,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-005"
+       ]
+      }
+     ],
+     "note": "IV.fromUtf8(\"0123456789abcdef\") (CWE-1204 folds into CWE-327)"
+    },
+    {
+     "id": "O15",
+     "title": "TLS certificate validation switched off",
+     "cwe": [
+      "CWE-295"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/tls_traffic.dart",
+       "line": 22
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/tls_traffic.dart",
+       "line": 23,
+       "cwe": "CWE-295",
+       "rules": [
+        "DART-TLS-002"
+       ]
+      }
+     ],
+     "note": "badCertificateCallback that returns true"
+    },
+    {
+     "id": "O16",
+     "title": "Insecure WebView settings",
+     "cwe": [
+      "CWE-200",
+      "CWE-489"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/webview_insecure_settings.dart",
+       "line": 13
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/webview_insecure_settings.dart",
+       "line": 19
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/webview_insecure_settings.dart",
+       "line": 20
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/webview_insecure_settings.dart",
+       "line": 13,
+       "cwe": "CWE-489",
+       "rules": [
+        "DART-WEBVIEW-007"
+       ]
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/webview_insecure_settings.dart",
+       "line": 19,
+       "cwe": "CWE-200",
+       "rules": [
+        "DART-WEBVIEW-004"
+       ]
+      },
+      {
+       "file": "ostorlab_insecure_flutter_app/lib/bugs/webview_insecure_settings.dart",
+       "line": 20,
+       "cwe": "CWE-200",
+       "rules": [
+        "DART-WEBVIEW-004"
+       ]
+      }
+     ],
+     "note": "setWebContentsDebuggingEnabled(true), allowFileAccessFromFileURLs and allowUniversalAccessFromFileURLs"
+    }
+   ],
+   "scan": {
+    "files": 72,
+    "lines": 3507,
+    "open": 37,
+    "seconds": 0.4
+   }
+  },
+  "DVFA": {
+   "unit": "challenge",
+   "all": {
+    "items": 10,
+    "found": 5,
+    "recall": 0.5
+   },
+   "not_hard": {
+    "items": 7,
+    "found": 5,
+    "recall": 0.714
+   },
+   "matched_findings": 6,
+   "items": [
+    {
+     "id": "C1",
+     "title": "Insecure authentication: 4-digit PIN without an attempt limit",
+     "cwe": [
+      "CWE-307"
+     ],
+     "hard": true,
+     "where": [
+      {
+       "file": "lib/login_screen.dart",
+       "line": 42
+      }
+     ],
+     "found": false,
+     "by": [],
+     "note": "the PIN check has no lockout or delay, so 10,000 guesses brute-force it"
+    },
+    {
+     "id": "C2",
+     "title": "Insecure local storage: account ID and PIN in SharedPreferences",
+     "cwe": [
+      "CWE-312",
+      "CWE-922"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/login_screen.dart",
+       "line": 45
+      },
+      {
+       "file": "lib/login_screen.dart",
+       "line": 46
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "lib/login_screen.dart",
+       "line": 46,
+       "cwe": "CWE-312",
+       "rules": [
+        "DART-STORAGE-001"
+       ]
+      }
+     ],
+     "note": "prefs.setString('pin', pin) stores the PIN in plain text"
+    },
+    {
+     "id": "C3",
+     "title": "Insecure communication: balance requested over HTTP",
+     "cwe": [
+      "CWE-319"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 29
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 29,
+       "cwe": "CWE-319",
+       "rules": [
+        "DART-NET-001"
+       ]
+      }
+     ],
+     "note": "http.get(Uri.parse('http://api.dvfa.local/v1/balance'))"
+    },
+    {
+     "id": "C4",
+     "title": "Client-side SQL injection in the notes search",
+     "cwe": [
+      "CWE-89"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/notes_screen.dart",
+       "line": 76
+      },
+      {
+       "file": "lib/notes_screen.dart",
+       "line": 77
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "lib/notes_screen.dart",
+       "line": 77,
+       "cwe": "CWE-89",
+       "rules": [
+        "DART-SQLI-004"
+       ]
+      }
+     ],
+     "note": "rawQuery(\"... title LIKE '%$query%'\") with the search text"
+    },
+    {
+     "id": "C5",
+     "title": "Deep link runs a fund transfer without confirmation",
+     "cwe": [
+      "CWE-939"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/main.dart",
+       "line": 38
+      },
+      {
+       "file": "lib/main.dart",
+       "line": 39
+      },
+      {
+       "file": "lib/main.dart",
+       "line": 46
+      }
+     ],
+     "found": false,
+     "by": [],
+     "note": "dvfa://app/transfer?to=...&amount=... opens TransferScreen with autoExecute: true; the entry point is the dvfa scheme in android/app/src/main/AndroidManifest.xml:32"
+    },
+    {
+     "id": "C6",
+     "title": "Hidden developer menu with a staging API key",
+     "cwe": [
+      "CWE-798",
+      "CWE-489"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/dev_menu_screen.dart",
+       "line": 35
+      },
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 47
+      }
+     ],
+     "found": false,
+     "by": [],
+     "note": "five taps on the balance open DevMenuScreen, which shows the key 'AKIA-MOCK-DEV-9982' (not a real key format)"
+    },
+    {
+     "id": "C7",
+     "title": "Insufficient cryptography: hard-coded AES key and IV",
+     "cwe": [
+      "CWE-798",
+      "CWE-327",
+      "CWE-329"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 58
+      },
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 59
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 58,
+       "cwe": "CWE-798",
+       "rules": [
+        "DART-CRYPTO-004"
+       ]
+      },
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 59,
+       "cwe": "CWE-327",
+       "rules": [
+        "DART-CRYPTO-005"
+       ]
+      }
+     ],
+     "note": "enc.Key.fromUtf8('DVFA_STATIC_KEY_...') and enc.IV.fromUtf8('DVFA_STATIC_IV__') (CWE-321 folds into CWE-798, CWE-1204 into CWE-327)"
+    },
+    {
+     "id": "C8",
+     "title": "Inadequate privacy controls: PIN and transfers written to the log",
+     "cwe": [
+      "CWE-532"
+     ],
+     "hard": false,
+     "where": [
+      {
+       "file": "lib/login_screen.dart",
+       "line": 36
+      },
+      {
+       "file": "lib/transfer_screen.dart",
+       "line": 40
+      }
+     ],
+     "found": true,
+     "by": [
+      {
+       "file": "lib/login_screen.dart",
+       "line": 36,
+       "cwe": "CWE-532",
+       "rules": [
+        "DART-LOG-001"
+       ]
+      }
+     ],
+     "note": "print(\"DEBUG [Auth]: ... PIN: $pin\") and the transfer details"
+    },
+    {
+     "id": "C9",
+     "title": "Insecure authorization: VIP access from a local flag",
+     "cwe": [
+      "CWE-602"
+     ],
+     "hard": true,
+     "where": [
+      {
+       "file": "lib/dashboard_screen.dart",
+       "line": 81
+      }
+     ],
+     "found": false,
+     "by": [],
+     "note": "prefs.getBool('is_vip') decides access on the client, so editing the preferences file grants it"
+    },
+    {
+     "id": "C10",
+     "title": "Data leakage: sensitive screen in the app-switcher snapshot",
+     "cwe": [
+      "CWE-200"
+     ],
+     "hard": true,
+     "where": [],
+     "found": false,
+     "by": [],
+     "note": "no FLAG_SECURE and no lifecycle handling; SOLUTIONS.md: there is no vulnerable code to point to"
+    }
+   ],
+   "scan": {
+    "files": 35,
+    "lines": 2086,
+    "open": 11,
+    "seconds": 0.7
+   }
+  }
+ },
+ "probe": {
+  "items": [
+   {
+    "id": "P01",
+    "what": "AWS access key in the Dart code",
+    "cwe": "CWE-798"
+   },
+   {
+    "id": "P02",
+    "what": "Cleartext http:// endpoint in the Dart code",
+    "cwe": "CWE-319"
+   },
+   {
+    "id": "P03",
+    "what": "SQL text built by string concatenation",
+    "cwe": "CWE-89"
+   },
+   {
+    "id": "P04",
+    "what": "TLS certificate check switched off (badCertificateCallback)",
+    "cwe": "CWE-295"
+   },
+   {
+    "id": "P05",
+    "what": "Token written to the log",
+    "cwe": "CWE-532"
+   },
+   {
+    "id": "P06",
+    "what": ".env file bundled as a Flutter asset",
+    "cwe": "CWE-798"
+   },
+   {
+    "id": "P07",
+    "what": "AWS access key in the bundled .env file",
+    "cwe": "CWE-798"
+   },
+   {
+    "id": "P08",
+    "what": "Backup allowed (android:allowBackup=\"true\")",
+    "cwe": "CWE-530"
+   },
+   {
+    "id": "P09",
+    "what": "Cleartext traffic allowed (android:usesCleartextTraffic)",
+    "cwe": "CWE-319"
+   },
+   {
+    "id": "P10",
+    "what": "Broadcast receiver exported without a permission",
+    "cwe": "CWE-926"
+   },
+   {
+    "id": "P11",
+    "what": "Deep link with the custom scheme probe://",
+    "cwe": "CWE-939"
+   },
+   {
+    "id": "P12",
+    "what": "https link without android:autoVerify",
+    "cwe": "CWE-939"
+   },
+   {
+    "id": "P13",
+    "what": "Network security config allows cleartext (base-config)",
+    "cwe": "CWE-319"
+   },
+   {
+    "id": "P14",
+    "what": "Network security config trusts user CAs",
+    "cwe": "CWE-295"
+   },
+   {
+    "id": "P15",
+    "what": "FileProvider shares the file system root (root-path)",
+    "cwe": "CWE-552"
+   },
+   {
+    "id": "P16",
+    "what": "Release build signed with the debug key",
+    "cwe": "CWE-1188"
+   },
+   {
+    "id": "B01",
+    "what": "App is debuggable (android:debuggable)",
+    "cwe": "CWE-489"
+   },
+   {
+    "id": "B02",
+    "what": "Debug build: Dart source in kernel_blob.bin",
+    "cwe": "CWE-489"
+   },
+   {
+    "id": "B04",
+    "what": "Release build without Dart obfuscation",
+    "cwe": "CWE-693"
+   },
+   {
+    "id": "B05",
+    "what": "Paths of the build machine in the app",
+    "cwe": "CWE-200"
+   }
+  ],
+  "planted": 16,
+  "found": {
+   "source": 16,
+   "debug": 16,
+   "release": 14,
+   "release_obf": 14,
+   "aab": 14
+  },
+  "runs": [
+   {
+    "items": {
+     "P01": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/main.dart",
+        "line": 12,
+        "cwe": "CWE-798",
+        "rules": [
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P02": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/main.dart",
+        "line": 15,
+        "cwe": "CWE-319",
+        "rules": [
+         "DART-NET-001"
+        ]
+       }
+      ]
+     },
+     "P03": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/main.dart",
+        "line": 25,
+        "cwe": "CWE-89",
+        "rules": [
+         "DART-SQLI-004"
+        ]
+       }
+      ]
+     },
+     "P04": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/main.dart",
+        "line": 30,
+        "cwe": "CWE-295",
+        "rules": [
+         "DART-TLS-001"
+        ]
+       }
+      ]
+     },
+     "P05": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/main.dart",
+        "line": 35,
+        "cwe": "CWE-532",
+        "rules": [
+         "DART-LOG-001"
+        ]
+       }
+      ]
+     },
+     "P06": {
+      "state": "found",
+      "by": [
+       {
+        "file": "pubspec.yaml",
+        "line": 17,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006"
+        ]
+       }
+      ]
+     },
+     "P07": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P08": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/AndroidManifest.xml",
+        "line": 11,
+        "cwe": "CWE-530",
+        "rules": [
+         "ANDROID-MANIFEST-003"
+        ]
+       }
+      ]
+     },
+     "P09": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/AndroidManifest.xml",
+        "line": 12,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-MANIFEST-004"
+        ]
+       }
+      ]
+     },
+     "P10": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/AndroidManifest.xml",
+        "line": 61,
+        "cwe": "CWE-926",
+        "rules": [
+         "ANDROID-MANIFEST-005"
+        ]
+       }
+      ]
+     },
+     "P11": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/AndroidManifest.xml",
+        "line": 41,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-007"
+        ]
+       }
+      ]
+     },
+     "P12": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/AndroidManifest.xml",
+        "line": 45,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-008"
+        ]
+       }
+      ]
+     },
+     "P13": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/res/xml/network_security_config.xml",
+        "line": 4,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-NSC-001"
+        ]
+       }
+      ]
+     },
+     "P14": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/res/xml/network_security_config.xml",
+        "line": 9,
+        "cwe": "CWE-295",
+        "rules": [
+         "ANDROID-NSC-003"
+        ]
+       }
+      ]
+     },
+     "P15": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/src/main/res/xml/file_paths.xml",
+        "line": 3,
+        "cwe": "CWE-552",
+        "rules": [
+         "ANDROID-FILEPROVIDER-001"
+        ]
+       }
+      ]
+     },
+     "P16": {
+      "state": "found",
+      "by": [
+       {
+        "file": "android/app/build.gradle.kts",
+        "line": 29,
+        "cwe": "CWE-1188",
+        "rules": [
+         "ANDROID-GRADLE-001"
+        ]
+       }
+      ]
+     },
+     "B01": {
+      "state": "n/a",
+      "by": []
+     },
+     "B02": {
+      "state": "n/a",
+      "by": []
+     },
+     "B03": {
+      "state": "n/a",
+      "by": []
+     },
+     "B04": {
+      "state": "n/a",
+      "by": []
+     },
+     "B05": {
+      "state": "n/a",
+      "by": []
+     }
+    },
+    "others": [
+     {
+      "file": "pubspec.yaml",
+      "line": 1,
+      "cwe": "CWE-1357",
+      "rules": [
+       "FLUTTER-PUB-005"
+      ],
+      "severity": "info",
+      "title": "Flutter app without pubspec.lock"
+     }
+    ],
+    "mode": "source",
+    "target": "samples/flutter_apk_probe",
+    "scan": {
+     "files": 8,
+     "lines": 303,
+     "open": 17,
+     "seconds": 0.1
+    }
+   },
+   {
+    "items": {
+     "P01": {
+      "state": "found",
+      "by": [
+       {
+        "file": "dart/lib/main.dart",
+        "line": 12,
+        "cwe": "CWE-798",
+        "rules": [
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P02": {
+      "state": "found",
+      "by": [
+       {
+        "file": "dart/lib/main.dart",
+        "line": 15,
+        "cwe": "CWE-319",
+        "rules": [
+         "DART-NET-001"
+        ]
+       }
+      ]
+     },
+     "P03": {
+      "state": "found",
+      "by": [
+       {
+        "file": "dart/lib/main.dart",
+        "line": 25,
+        "cwe": "CWE-89",
+        "rules": [
+         "DART-SQLI-004"
+        ]
+       }
+      ]
+     },
+     "P04": {
+      "state": "found",
+      "by": [
+       {
+        "file": "dart/lib/main.dart",
+        "line": 30,
+        "cwe": "CWE-295",
+        "rules": [
+         "DART-TLS-001"
+        ]
+       }
+      ]
+     },
+     "P05": {
+      "state": "found",
+      "by": [
+       {
+        "file": "dart/lib/main.dart",
+        "line": 35,
+        "cwe": "CWE-532",
+        "rules": [
+         "DART-LOG-001"
+        ]
+       }
+      ]
+     },
+     "P06": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P07": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P08": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 34,
+        "cwe": "CWE-530",
+        "rules": [
+         "ANDROID-MANIFEST-003"
+        ]
+       }
+      ]
+     },
+     "P09": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 36,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-MANIFEST-004"
+        ]
+       }
+      ]
+     },
+     "P10": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 83,
+        "cwe": "CWE-926",
+        "rules": [
+         "ANDROID-MANIFEST-005"
+        ]
+       }
+      ]
+     },
+     "P11": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 65,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-007"
+        ]
+       }
+      ]
+     },
+     "P12": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 68,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-008"
+        ]
+       }
+      ]
+     },
+     "P13": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 4,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-NSC-001"
+        ]
+       }
+      ]
+     },
+     "P14": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 9,
+        "cwe": "CWE-295",
+        "rules": [
+         "ANDROID-NSC-003"
+        ]
+       }
+      ]
+     },
+     "P15": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/file_paths.xml",
+        "line": 3,
+        "cwe": "CWE-552",
+        "rules": [
+         "ANDROID-FILEPROVIDER-001"
+        ]
+       }
+      ]
+     },
+     "P16": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/signing.txt",
+        "line": 6,
+        "cwe": "CWE-1188",
+        "rules": [
+         "ANDROID-SIGN-001"
+        ]
+       }
+      ]
+     },
+     "B01": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 33,
+        "cwe": "CWE-489",
+        "rules": [
+         "ANDROID-MANIFEST-001"
+        ]
+       }
+      ]
+     },
+     "B02": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/build.txt",
+        "line": 11,
+        "cwe": "CWE-489",
+        "rules": [
+         "FLUTTER-APP-001"
+        ]
+       }
+      ]
+     },
+     "B03": {
+      "state": "n/a",
+      "by": []
+     },
+     "B04": {
+      "state": "n/a",
+      "by": []
+     },
+     "B05": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/build.txt",
+        "line": 13,
+        "cwe": "CWE-200",
+        "rules": [
+         "FLUTTER-APP-005"
+        ]
+       }
+      ]
+     }
+    },
+    "others": [],
+    "mode": "debug",
+    "target": "debug.apk",
+    "scan": {
+     "files": 14,
+     "lines": 290,
+     "open": 18,
+     "seconds": 3.0
+    },
+    "package": {
+     "size_bytes": 75292965,
+     "sha256": "8c9d0ec76b5ddb6df308e94fefb3ca1db16d36fd953aecdd94f04888e1109c5f",
+     "build_mode": "debug",
+     "obfuscated": false,
+     "dart_version": "3.12.2"
+    }
+   },
+   {
+    "items": {
+     "P01": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 2156,
+        "cwe": "CWE-798",
+        "rules": [
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P02": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 8166,
+        "cwe": "CWE-319",
+        "rules": [
+         "FLUTTER-APP-007"
+        ]
+       }
+      ]
+     },
+     "P03": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 5077,
+        "cwe": "CWE-89",
+        "rules": [
+         "FLUTTER-APP-008"
+        ]
+       }
+      ]
+     },
+     "P04": {
+      "state": "missed",
+      "by": []
+     },
+     "P05": {
+      "state": "missed",
+      "by": []
+     },
+     "P06": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P07": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P08": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 33,
+        "cwe": "CWE-530",
+        "rules": [
+         "ANDROID-MANIFEST-003"
+        ]
+       }
+      ]
+     },
+     "P09": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 35,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-MANIFEST-004"
+        ]
+       }
+      ]
+     },
+     "P10": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 82,
+        "cwe": "CWE-926",
+        "rules": [
+         "ANDROID-MANIFEST-005"
+        ]
+       }
+      ]
+     },
+     "P11": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 64,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-007"
+        ]
+       }
+      ]
+     },
+     "P12": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 67,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-008"
+        ]
+       }
+      ]
+     },
+     "P13": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 4,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-NSC-001"
+        ]
+       }
+      ]
+     },
+     "P14": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 9,
+        "cwe": "CWE-295",
+        "rules": [
+         "ANDROID-NSC-003"
+        ]
+       }
+      ]
+     },
+     "P15": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/file_paths.xml",
+        "line": 3,
+        "cwe": "CWE-552",
+        "rules": [
+         "ANDROID-FILEPROVIDER-001"
+        ]
+       }
+      ]
+     },
+     "P16": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/signing.txt",
+        "line": 6,
+        "cwe": "CWE-1188",
+        "rules": [
+         "ANDROID-SIGN-001"
+        ]
+       }
+      ]
+     },
+     "B01": {
+      "state": "n/a",
+      "by": []
+     },
+     "B02": {
+      "state": "n/a",
+      "by": []
+     },
+     "B03": {
+      "state": "n/a",
+      "by": []
+     },
+     "B04": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/build.txt",
+        "line": 9,
+        "cwe": "CWE-693",
+        "rules": [
+         "FLUTTER-APP-003"
+        ]
+       }
+      ]
+     },
+     "B05": {
+      "state": "n/a",
+      "by": []
+     }
+    },
+    "others": [],
+    "mode": "release",
+    "target": "release.apk",
+    "scan": {
+     "files": 10,
+     "lines": 165,
+     "open": 14,
+     "seconds": 0.9
+    },
+    "package": {
+     "size_bytes": 16392455,
+     "sha256": "3861fa1b97a052b89db20e42891253752e047676eb6ea936ccb5754febf69e27",
+     "build_mode": "release",
+     "obfuscated": false,
+     "dart_version": "3.12.2"
+    }
+   },
+   {
+    "items": {
+     "P01": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 2538,
+        "cwe": "CWE-798",
+        "rules": [
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P02": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 2644,
+        "cwe": "CWE-319",
+        "rules": [
+         "FLUTTER-APP-007"
+        ]
+       }
+      ]
+     },
+     "P03": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 6433,
+        "cwe": "CWE-89",
+        "rules": [
+         "FLUTTER-APP-008"
+        ]
+       }
+      ]
+     },
+     "P04": {
+      "state": "missed",
+      "by": []
+     },
+     "P05": {
+      "state": "missed",
+      "by": []
+     },
+     "P06": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P07": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P08": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 33,
+        "cwe": "CWE-530",
+        "rules": [
+         "ANDROID-MANIFEST-003"
+        ]
+       }
+      ]
+     },
+     "P09": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 35,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-MANIFEST-004"
+        ]
+       }
+      ]
+     },
+     "P10": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 82,
+        "cwe": "CWE-926",
+        "rules": [
+         "ANDROID-MANIFEST-005"
+        ]
+       }
+      ]
+     },
+     "P11": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 64,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-007"
+        ]
+       }
+      ]
+     },
+     "P12": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 67,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-008"
+        ]
+       }
+      ]
+     },
+     "P13": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 4,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-NSC-001"
+        ]
+       }
+      ]
+     },
+     "P14": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 9,
+        "cwe": "CWE-295",
+        "rules": [
+         "ANDROID-NSC-003"
+        ]
+       }
+      ]
+     },
+     "P15": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/file_paths.xml",
+        "line": 3,
+        "cwe": "CWE-552",
+        "rules": [
+         "ANDROID-FILEPROVIDER-001"
+        ]
+       }
+      ]
+     },
+     "P16": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/signing.txt",
+        "line": 6,
+        "cwe": "CWE-1188",
+        "rules": [
+         "ANDROID-SIGN-001"
+        ]
+       }
+      ]
+     },
+     "B01": {
+      "state": "n/a",
+      "by": []
+     },
+     "B02": {
+      "state": "n/a",
+      "by": []
+     },
+     "B03": {
+      "state": "n/a",
+      "by": []
+     },
+     "B04": {
+      "state": "n/a",
+      "by": []
+     },
+     "B05": {
+      "state": "n/a",
+      "by": []
+     }
+    },
+    "others": [],
+    "mode": "release_obf",
+    "target": "release_obf.apk",
+    "scan": {
+     "files": 10,
+     "lines": 165,
+     "open": 13,
+     "seconds": 0.6
+    },
+    "package": {
+     "size_bytes": 15671559,
+     "sha256": "801cd9aa18794072fcb2acf89474668589242979271ffb6329061ce6c1a0a008",
+     "build_mode": "release",
+     "obfuscated": true,
+     "dart_version": "3.12.2"
+    }
+   },
+   {
+    "items": {
+     "P01": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 2156,
+        "cwe": "CWE-798",
+        "rules": [
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P02": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 8166,
+        "cwe": "CWE-319",
+        "rules": [
+         "FLUTTER-APP-007"
+        ]
+       }
+      ]
+     },
+     "P03": {
+      "state": "found",
+      "by": [
+       {
+        "file": "lib/arm64-v8a/libapp.so",
+        "line": 5077,
+        "cwe": "CWE-89",
+        "rules": [
+         "FLUTTER-APP-008"
+        ]
+       }
+      ]
+     },
+     "P04": {
+      "state": "missed",
+      "by": []
+     },
+     "P05": {
+      "state": "missed",
+      "by": []
+     },
+     "P06": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P07": {
+      "state": "found",
+      "by": [
+       {
+        "file": "assets/flutter_assets/assets/.env",
+        "line": 2,
+        "cwe": "CWE-798",
+        "rules": [
+         "FLUTTER-APP-006",
+         "SECRET-AWS-001"
+        ]
+       }
+      ]
+     },
+     "P08": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 30,
+        "cwe": "CWE-530",
+        "rules": [
+         "ANDROID-MANIFEST-003"
+        ]
+       }
+      ]
+     },
+     "P09": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 37,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-MANIFEST-004"
+        ]
+       }
+      ]
+     },
+     "P10": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 81,
+        "cwe": "CWE-926",
+        "rules": [
+         "ANDROID-MANIFEST-005"
+        ]
+       }
+      ]
+     },
+     "P11": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 65,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-007"
+        ]
+       }
+      ]
+     },
+     "P12": {
+      "state": "found",
+      "by": [
+       {
+        "file": "AndroidManifest.xml",
+        "line": 67,
+        "cwe": "CWE-939",
+        "rules": [
+         "ANDROID-MANIFEST-008"
+        ]
+       }
+      ]
+     },
+     "P13": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 4,
+        "cwe": "CWE-319",
+        "rules": [
+         "ANDROID-NSC-001"
+        ]
+       }
+      ]
+     },
+     "P14": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/network_security_config.xml",
+        "line": 9,
+        "cwe": "CWE-295",
+        "rules": [
+         "ANDROID-NSC-003"
+        ]
+       }
+      ]
+     },
+     "P15": {
+      "state": "found",
+      "by": [
+       {
+        "file": "res/xml/file_paths.xml",
+        "line": 3,
+        "cwe": "CWE-552",
+        "rules": [
+         "ANDROID-FILEPROVIDER-001"
+        ]
+       }
+      ]
+     },
+     "P16": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/signing.txt",
+        "line": 6,
+        "cwe": "CWE-1188",
+        "rules": [
+         "ANDROID-SIGN-001"
+        ]
+       }
+      ]
+     },
+     "B01": {
+      "state": "n/a",
+      "by": []
+     },
+     "B02": {
+      "state": "n/a",
+      "by": []
+     },
+     "B03": {
+      "state": "n/a",
+      "by": []
+     },
+     "B04": {
+      "state": "found",
+      "by": [
+       {
+        "file": "_sca/build.txt",
+        "line": 9,
+        "cwe": "CWE-693",
+        "rules": [
+         "FLUTTER-APP-003"
+        ]
+       }
+      ]
+     },
+     "B05": {
+      "state": "n/a",
+      "by": []
+     }
+    },
+    "others": [],
+    "mode": "aab",
+    "target": "release.aab",
+    "scan": {
+     "files": 10,
+     "lines": 165,
+     "open": 14,
+     "seconds": 0.9
+    },
+    "package": {
+     "size_bytes": 16517802,
+     "sha256": "5d65cd1871b1e422e54ac00dfe723af947a961faa8011fd5ee127c6af79e0574",
+     "build_mode": "release",
+     "obfuscated": false,
+     "dart_version": "3.12.2"
+    }
+   }
+  ],
+  "built_with": {
+   "flutter": "3.44.8",
+   "dart": "3.12.2"
+  },
+  "apk_folder_given": true
+ },
+ "inventory": {
+  "items": [
+   {
+    "id": "I01",
+    "what": "Stripe secret key (joined by the compiler)"
+   },
+   {
+    "id": "I02",
+    "what": "AWS access key ID"
+   },
+   {
+    "id": "I03",
+    "what": "Google Maps key of the manifest (joined by Gradle)"
+   },
+   {
+    "id": "I04",
+    "what": "Firebase API key, public by design (joined by the compiler)"
+   },
+   {
+    "id": "I05",
+    "what": "Supabase anon key (JWT, role anon)"
+   },
+   {
+    "id": "I06",
+    "what": "Key in assets/config.json"
+   },
+   {
+    "id": "I07",
+    "what": "Secret of the bundled .env file"
+   },
+   {
+    "id": "I08",
+    "what": "User name and password in an address"
+   },
+   {
+    "id": "I09",
+    "what": "Slack webhook address"
+   },
+   {
+    "id": "I10",
+    "what": "Telegram bot token in an address (joined by the compiler)"
+   },
+   {
+    "id": "I11",
+    "what": "ngrok tunnel"
+   },
+   {
+    "id": "I12",
+    "what": "Private IP address over http://"
+   },
+   {
+    "id": "I13",
+    "what": "Staging server"
+   },
+   {
+    "id": "I14",
+    "what": "Key in the query of an address (?api_key=)"
+   },
+   {
+    "id": "I15",
+    "what": "Token in the query of an API path (?access_token=)"
+   },
+   {
+    "id": "I16",
+    "what": "Cleartext analytics address in config.json"
+   },
+   {
+    "id": "I17",
+    "what": "GraphQL server"
+   },
+   {
+    "id": "I18",
+    "what": "WebSocket server"
+   },
+   {
+    "id": "I19",
+    "what": "Supabase project"
+   },
+   {
+    "id": "I20",
+    "what": "Firebase project ID, database and storage bucket"
+   },
+   {
+    "id": "I21",
+    "what": "AdMob app ID"
+   },
+   {
+    "id": "I22",
+    "what": "Google OAuth client ID"
+   },
+   {
+    "id": "I23",
+    "what": "Sentry DSN"
+   },
+   {
+    "id": "I24",
+    "what": "API paths of compiled code (/v2/orders, /api/v2/cart/items/)"
+   },
+   {
+    "id": "I25",
+    "what": "HTTP, WebSocket and GraphQL calls with their targets (10 or more)"
+   }
+  ],
+  "runs": [
+   {
+    "mode": "source",
+    "target": "samples/flutter_api_probe",
+    "items": {
+     "I01": "n/a",
+     "I02": "found",
+     "I03": "n/a",
+     "I04": "n/a",
+     "I05": "found",
+     "I06": "found",
+     "I07": "found",
+     "I08": "found",
+     "I09": "found",
+     "I10": "n/a",
+     "I11": "found",
+     "I12": "found",
+     "I13": "found",
+     "I14": "found",
+     "I15": "found",
+     "I16": "found",
+     "I17": "found",
+     "I18": "found",
+     "I19": "found",
+     "I20": "found",
+     "I21": "found",
+     "I22": "found",
+     "I23": "found",
+     "I24": "found",
+     "I25": "found"
+    },
+    "seconds": 0.2,
+    "summary": {
+     "endpoints": 15,
+     "hosts": 15,
+     "keys": 5,
+     "secret_keys": 4,
+     "calls": 12,
+     "paths": 5,
+     "config": 12,
+     "env": 3
+    },
+    "alerts": {
+     "danger": 9,
+     "warning": 5,
+     "info": 4
+    }
+   },
+   {
+    "mode": "debug",
+    "target": "debug.apk",
+    "items": {
+     "I01": "n/a",
+     "I02": "found",
+     "I03": "found",
+     "I04": "n/a",
+     "I05": "found",
+     "I06": "found",
+     "I07": "found",
+     "I08": "found",
+     "I09": "found",
+     "I10": "n/a",
+     "I11": "found",
+     "I12": "found",
+     "I13": "found",
+     "I14": "found",
+     "I15": "found",
+     "I16": "found",
+     "I17": "found",
+     "I18": "found",
+     "I19": "found",
+     "I20": "found",
+     "I21": "found",
+     "I22": "found",
+     "I23": "found",
+     "I24": "found",
+     "I25": "found"
+    },
+    "seconds": 3.1,
+    "summary": {
+     "endpoints": 15,
+     "hosts": 15,
+     "keys": 6,
+     "secret_keys": 5,
+     "calls": 12,
+     "paths": 5,
+     "config": 13,
+     "env": 3
+    },
+    "alerts": {
+     "danger": 12,
+     "warning": 4,
+     "info": 4
+    }
+   },
+   {
+    "mode": "release",
+    "target": "release.apk",
+    "items": {
+     "I01": "found",
+     "I02": "found",
+     "I03": "found",
+     "I04": "found",
+     "I05": "found",
+     "I06": "found",
+     "I07": "found",
+     "I08": "found",
+     "I09": "found",
+     "I10": "found",
+     "I11": "found",
+     "I12": "found",
+     "I13": "found",
+     "I14": "found",
+     "I15": "found",
+     "I16": "found",
+     "I17": "found",
+     "I18": "found",
+     "I19": "found",
+     "I20": "found",
+     "I21": "found",
+     "I22": "found",
+     "I23": "found",
+     "I24": "found",
+     "I25": "n/a"
+    },
+    "seconds": 0.8,
+    "summary": {
+     "endpoints": 18,
+     "hosts": 16,
+     "keys": 10,
+     "secret_keys": 8,
+     "calls": 0,
+     "paths": 3,
+     "config": 13,
+     "env": 3
+    },
+    "alerts": {
+     "danger": 15,
+     "warning": 4,
+     "info": 5
+    }
+   },
+   {
+    "mode": "obfuscated",
+    "target": "release_obf.apk",
+    "items": {
+     "I01": "found",
+     "I02": "found",
+     "I03": "found",
+     "I04": "found",
+     "I05": "found",
+     "I06": "found",
+     "I07": "found",
+     "I08": "found",
+     "I09": "found",
+     "I10": "found",
+     "I11": "found",
+     "I12": "found",
+     "I13": "found",
+     "I14": "found",
+     "I15": "found",
+     "I16": "found",
+     "I17": "found",
+     "I18": "found",
+     "I19": "found",
+     "I20": "found",
+     "I21": "found",
+     "I22": "found",
+     "I23": "found",
+     "I24": "found",
+     "I25": "n/a"
+    },
+    "seconds": 0.5,
+    "summary": {
+     "endpoints": 18,
+     "hosts": 16,
+     "keys": 10,
+     "secret_keys": 8,
+     "calls": 0,
+     "paths": 3,
+     "config": 13,
+     "env": 3
+    },
+    "alerts": {
+     "danger": 15,
+     "warning": 4,
+     "info": 5
+    }
+   }
+  ],
+  "expected": {
+   "source": 21,
+   "debug": 22,
+   "release": 24,
+   "obfuscated": 24
+  },
+  "found": {
+   "source": 21,
+   "debug": 22,
+   "release": 24,
+   "obfuscated": 24
+  },
+  "apk_folder_given": true
+ }
+}

@@ -5,7 +5,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterable, Iterator, List, Optional, Tuple
 
 LANG_BY_EXT = {
     ".py": "python", ".pyw": "python",
@@ -29,6 +29,7 @@ LANG_BY_EXT = {
     ".cfg": "config", ".conf": "config", ".toml": "config", ".xml": "config",
     ".properties": "config", ".env": "config", ".config": "config",
     ".key": "config", ".pem": "config",              # read by the secrets engine
+    ".gradle": "config", ".plist": "config",         # Android build files, iOS Info.plist
     # server pages and templates, checked with the rules of the language they embed
     ".jsp": "java", ".jspf": "java", ".jspx": "java", ".ejs": "javascript",
     ".aspx": "csharp", ".ascx": "csharp", ".master": "csharp", ".ashx": "csharp",
@@ -46,7 +47,11 @@ VENDORED_JS = re.compile(                 # jquery-3.6.0.js, chart.js; not chart
     r"swagger-ui-bundle|marked|showdown)([.-][\w.-]*)?\.js$")
 # A copy of a file under another suffix is scanned as the original: config.inc.php.dist
 BACKUP_SUFFIXES = {".dist", ".bak", ".orig", ".old"}
-LANG_BY_NAME = {".env": "config", "dockerfile": "config"}
+LANG_BY_NAME = {".env": "config", "dockerfile": "config", "pubspec.lock": "config",
+                "firestore.rules": "config", "storage.rules": "config"}
+# Dart files written by code generators (json_serializable, freezed, mockito, auto_route):
+# nobody edits them, and they repeat what the annotated source already says.
+GENERATED_DART = (".g.dart", ".freezed.dart", ".mocks.dart", ".gr.dart")
 
 # Languages that share rules with another language.
 # Kotlin, Scala and Groovy call the same JVM APIs, so the Java API rules apply to them.
@@ -62,13 +67,16 @@ SKIP_DIRS = {
     ".git", ".hg", ".svn", "node_modules", "venv", ".venv", "env", "__pycache__",
     "dist", "build", "target", "vendor", ".idea", ".vscode", ".tox", ".mypy_cache",
     ".pytest_cache", "site-packages", "bower_components", ".next", "coverage",
+    # Flutter and mobile build tools: package caches, generated plugin code, CocoaPods
+    ".dart_tool", ".symlinks", ".fvm", "pods", ".gradle", "ephemeral", ".pub-cache", ".pub",
+    ".cxx",
 }
 SKIP_FILES = {"package-lock.json", "yarn.lock", "poetry.lock", "pnpm-lock.yaml",
               "composer.lock", "cargo.lock", "go.sum"}
 MAX_FILE_BYTES = 1_500_000
 
 TEST_PATH = re.compile(
-    r"(^|/)(tests?|testing|__tests__|specs?|fixtures|mocks?)(/|$)"
+    r"(^|/)(tests?|testing|__tests__|specs?|fixtures|mocks?|integration_test|test_driver)(/|$)"
     r"|(^|/)(test_[^/]+|[^/]+_test|[^/]+\.(test|spec)|tests?)\.[A-Za-z0-9]+$"
     r"|(^|/)src/it/|(^|/)(?-i:[A-Za-z0-9]+(Test|Tests|IT))\.(java|kt|scala|groovy|cs)$"
     r"|(^|/)conftest\.py$", re.IGNORECASE)
@@ -81,7 +89,7 @@ def is_test_path(rel: str) -> bool:
 
 
 COMMENT_PREFIXES = {
-    "python": ("#",), "shell": ("#",), "config": ("#", ";", "//"), "ruby": ("#",),
+    "python": ("#",), "shell": ("#",), "config": ("#", ";", "//", "<!--"), "ruby": ("#",),
     "php": ("//", "#", "*", "/*"),
     "javascript": ("//", "*", "/*"), "typescript": ("//", "*", "/*"),
     "java": ("//", "*", "/*"), "c": ("//", "*", "/*"), "cpp": ("//", "*", "/*"),
@@ -101,6 +109,17 @@ def mask_secret(secret: str) -> str:
     return secret[:4] + "*" * min(len(secret) - 6, 12) + secret[-2:]
 
 
+# Invisible characters that change the order in which text is shown (the bidirectional
+# marks, embeddings, overrides and isolates of Unicode, U+061C ARABIC LETTER MARK included).
+# Text of a scanned app can use them to make a name or a title read differently on screen.
+BIDI_CONTROLS = re.compile("[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]")
+
+
+def strip_bidi(text: str) -> str:
+    """The text without Unicode bidirectional control characters."""
+    return BIDI_CONTROLS.sub("", text)
+
+
 @dataclass
 class SourceFile:
     path: Path
@@ -110,6 +129,12 @@ class SourceFile:
     lines: List[str] = field(default_factory=list)
     # secrets found in this file; line_text() and context() hide them automatically
     secret_values: List[str] = field(default_factory=list)
+    # (line, rule id, secret, title, severity) of each of them, for the API and key inventory
+    secret_hits: List[Tuple[int, str, str, str, str]] = field(default_factory=list)
+    # where the text comes from: "" a file on disk; for an app package (APK) the text is
+    # "decoded" (manifest, resources), "recovered" (Dart source), "decompiled" (Java),
+    # "strings" (dump of a binary) or a "placeholder" that stands for a binary file
+    origin: str = ""
 
     def __post_init__(self) -> None:
         if not self.lines:
@@ -167,6 +192,8 @@ def detect_language(path: Path) -> Optional[str]:
         return "config"
     if name.endswith(".min.js") or name.endswith(".min.css") or VENDORED_JS.match(name):
         return None
+    if name.endswith(GENERATED_DART):
+        return None
     if path.suffix.lower() in BACKUP_SUFFIXES and "." in path.stem:
         return detect_language(path.with_name(path.stem))
     return LANG_BY_EXT.get(path.suffix.lower())
@@ -191,10 +218,41 @@ def _virtualenv(folder: Path) -> bool:
                for marker in ("pyvenv.cfg", "bin/activate", "Scripts/activate"))
 
 
+def _cocoapods(folder: Path) -> bool:
+    """A folder named Pods is skipped only when CocoaPods made it: in ios/ or macos/, or next
+    to a Podfile. Ember keeps its own code in app/pods/."""
+    parent = folder.parent
+    return parent.name.lower() in ("ios", "macos") or (parent / "Podfile").is_file()
+
+
+def _flutter_ephemeral(folder: Path) -> bool:
+    """A folder named ephemeral is skipped only when Flutter generated it, in the flutter/
+    folder of a platform (ios/Flutter/ephemeral, linux/flutter/ephemeral ...)."""
+    return folder.parent.name.lower() == "flutter"
+
+
+# Folders of SKIP_DIRS whose names are ordinary words: skipped only when the check finds the
+# tool folder that the name stands for; elsewhere they hold code like any folder.
+TOOL_FOLDER_CHECKS = {"env": _virtualenv, "pods": _cocoapods, "ephemeral": _flutter_ephemeral}
+
+
+def skip_folder(folder: Path, extra_skip: Iterable[str] = ()) -> bool:
+    """True when the walk leaves out this folder: a name of SKIP_DIRS (for the ordinary words,
+    only when it is the tool folder, see TOOL_FOLDER_CHECKS) or a name the user excluded.
+    extra_skip holds lower-case names."""
+    name = folder.name.lower()
+    if name in extra_skip:
+        return True
+    if name not in SKIP_DIRS:
+        return False
+    check = TOOL_FOLDER_CHECKS.get(name)
+    return check is None or check(folder)
+
+
 def walk_project(root: str, extra_skip: Optional[List[str]] = None) -> Iterator[SourceFile]:
     """Yield every readable source file under ``root`` (a folder or a single file)."""
     root_path = Path(root).expanduser().resolve()
-    skip = SKIP_DIRS | {s.strip().lower() for s in (extra_skip or []) if s.strip()}
+    extra = {s.strip().lower() for s in (extra_skip or []) if s.strip()}
     if root_path.is_file():
         lang = detect_language(root_path)
         text = _read_text(root_path) if lang else None
@@ -202,8 +260,7 @@ def walk_project(root: str, extra_skip: Optional[List[str]] = None) -> Iterator[
             yield SourceFile(root_path, root_path.name, lang, text)
         return
     for dirpath, dirnames, filenames in os.walk(root_path):
-        dirnames[:] = sorted(d for d in dirnames if d.lower() not in skip
-                             or (d.lower() == "env" and not _virtualenv(Path(dirpath) / d)))
+        dirnames[:] = sorted(d for d in dirnames if not skip_folder(Path(dirpath) / d, extra))
         for name in sorted(filenames):
             if name.lower() in SKIP_FILES:
                 continue

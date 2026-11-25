@@ -16,7 +16,7 @@ from sca.pipeline import ScanOptions, run_scan
 from sca.report import write_reports
 from sca.report.sarif import to_sarif
 from sca.storage import Storage
-from sca.walker import SourceFile
+from sca.walker import SourceFile, walk_project
 
 ROOT = Path(__file__).resolve().parent.parent
 VULN = ROOT / "samples" / "vulnerable_app"
@@ -33,7 +33,7 @@ def finding(**kw):
 # ------------------------------------------------------------------ CWE knowledge base
 def test_cwe_canonical_and_info():
     assert canonical("cwe-089: SQL Injection") == "CWE-89"
-    assert canonical("CWE-94") == "CWE-95"          # folded together
+    assert canonical("CWE-96") == "CWE-95"          # folded together
     assert canonical("") == ""
     assert "Injection" in info("CWE-89")["owasp"]
     assert info("CWE-89", "ar")["description"] != info("CWE-89", "en")["description"]
@@ -259,6 +259,26 @@ def test_scan_single_file_and_missing_path():
     assert result.files_scanned == 1 and result.findings
     with pytest.raises(FileNotFoundError):
         run_scan(str(ROOT / "does-not-exist"), ScanOptions(save=False))
+
+
+def test_folders_with_ordinary_names_are_skipped_only_where_a_tool_made_them(tmp_path):
+    """Pods, ephemeral and env are skipped only as the folders of CocoaPods, Flutter and a
+    Python virtual environment; Ember keeps code in app/pods/, and src/ephemeral/ is code."""
+    files = ["app/pods/login/controller.js", "src/ephemeral/keys.js", "config/env/prod.js",
+             "ios/Pods/Alamofire/a.swift", "macos/Pods/b.swift", "native/Pods/c.swift",
+             "ios/Flutter/ephemeral/d.swift", "linux/flutter/ephemeral/e.cc",
+             "venv_like/env/f.py", ".dart_tool/g.dart", "lib/main.dart"]
+    for rel in files:
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "native" / "Podfile").write_text("platform :ios\n", encoding="utf-8")
+    (tmp_path / "venv_like" / "env" / "pyvenv.cfg").write_text("home = x\n", encoding="utf-8")
+    walked = {sf.rel for sf in walk_project(str(tmp_path))}
+    assert walked == {"app/pods/login/controller.js", "src/ephemeral/keys.js",
+                      "config/env/prod.js", "lib/main.dart"}
+    # a folder name the user excludes is always skipped
+    walked = {sf.rel for sf in walk_project(str(tmp_path), ["pods", "Ephemeral", "env"])}
+    assert walked == {"lib/main.dart"}
 
 
 def test_scan_says_what_it_is_doing_while_it_does_it():

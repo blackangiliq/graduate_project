@@ -1,5 +1,11 @@
 """Runs the Streamlit dashboard headlessly: start page, a full scan of the sample, reviews,
-the Learning tab, and loading a scan from history. Fails if the app raises any exception."""
+the Learning tab, loading a scan from history, a Flutter project and an uploaded app file.
+Fails if the app raises any exception. Also checks that every text has its Arabic version."""
+import ast
+import hashlib
+import os
+import re
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -8,6 +14,28 @@ pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+# a conversion specifier of %-formatting: %s, %d, %.1f, %%
+SPECIFIER = re.compile(r"%[-#0 +]*\d*(?:\.\d+)?[a-zA-Z%]")
+PROPER_NAMES = {"JSON", "SARIF", "APK"}         # shown as they are in both languages
+FLUTTER_MANIFEST = """<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CAMERA" />
+    <application android:label="tiny" android:debuggable="true"
+        android:usesCleartextTraffic="true">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tiny" android:host="open" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+"""
 
 
 @pytest.fixture(autouse=True)
@@ -25,6 +53,50 @@ def button(app: AppTest, label: str):
     return next(b for b in app.button if b.label == label)
 
 
+def checkbox(app: AppTest, label: str):
+    return next(c for c in app.checkbox if c.label.startswith(label))
+
+
+def flutter_project(folder: Path) -> Path:
+    """A tiny Flutter app: pubspec, Dart code and a debuggable Android manifest."""
+    files = {
+        "pubspec.yaml": "name: tiny_app\npublish_to: none\nversion: 1.0.0+3\nenvironment:\n"
+                        "  sdk: '>=3.0.0 <4.0.0'\ndependencies:\n  flutter:\n    sdk: flutter\n",
+        "lib/main.dart": "const api = 'http://api.tiny.example/v1/login';\n\n"
+                         "void main() {\n  print(api);\n}\n",
+        "android/app/build.gradle.kts": 'android {\n    namespace = "com.example.tiny"\n'
+                                        '    defaultConfig {\n'
+                                        '        applicationId = "com.example.tiny"\n'
+                                        '        minSdk = 21\n        targetSdk = 34\n    }\n}\n',
+        "android/app/src/main/AndroidManifest.xml": FLUTTER_MANIFEST,
+    }
+    for rel, text in files.items():
+        (folder / rel).parent.mkdir(parents=True, exist_ok=True)
+        (folder / rel).write_text(text, encoding="utf-8")
+    return folder
+
+
+def dashboard_texts():
+    """(file, line, text) of every t("...") call with a literal text in the dashboard."""
+    for path in [ROOT / "app.py"] + sorted((ROOT / "sca" / "ui").glob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "t" and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                    and isinstance(node.args[0].value, str)):
+                yield path.name, node.lineno, node.args[0].value
+
+
+def untranslated_steps(steps):
+    """Templates and word arguments of scan messages that have no Arabic entry."""
+    from sca.ui.i18n import AR
+    missing = [s.template for s in steps
+               if SPECIFIER.sub("", s.template).strip(" :-,") and s.template not in AR]
+    missing += [s.args[1] for s in steps if s.template == "%s: skipped - %s"
+                and s.args[1] not in AR]
+    return missing
+
+
 def test_splash_and_introduction_pages(monkeypatch):
     monkeypatch.delenv("SCA_SKIP_INTRO")
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
@@ -38,7 +110,12 @@ def test_splash_and_introduction_pages(monkeypatch):
         button(app, "Next →").click().run()
         assert not app.exception
         assert any(title in h.value for h in app.header), title
+        if title == "22 programming languages":           # the language cards and the app card
+            cards = " ".join(m.value for m in app.markdown)
+            assert "<b>Dart</b>" in cards and "Rules + input tracing + app checks" in cards
+            assert "<b>Android apps</b>" in cards and ">.apk<" in cards
     assert "sca-splash" not in " ".join(m.value for m in app.markdown)   # once per session
+    assert any(b.key == "intro_flutter_sample" for b in app.button)
 
     next(b for b in app.button if b.key == "intro_ar").click().run()      # language switch
     assert any("ابدأ الفحص" in h.value for h in app.header)
@@ -96,8 +173,8 @@ def test_dashboard_scan_flow():
     # carry the file count away from its word
     css = next(m.value for m in app.markdown if "<style>" in m.value)
     assert "direction: ltr" in css.split('[data-testid="stMetricValue"]', 1)[1]
-    assert any(c.value.startswith("\u2066") and "vulnerable_app\u2069 - " in c.value
-               for c in app.caption)
+    assert any(c.value.startswith("\u2066") and "vulnerable\\_app\u2069 - " in c.value
+               for c in app.caption)                  # the path is escaped for Markdown
     assert any(e.label == "\u0645\u0627\u0630\u0627 \u0641\u0639\u0644 \u0627\u0644\u0641\u062d\u0635\u060c \u062e\u0637\u0648\u0629 \u0628\u062e\u0637\u0648\u0629" for e in app.expander)
     assert any("\u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0623\u0646\u0645\u0627\u0637: \u0645\u0637\u0627\u0628\u0642\u0629 \u0643\u0644 \u0633\u0637\u0631" in m.value for m in app.markdown)
 
@@ -270,18 +347,283 @@ def test_guide_tab_shows_every_setting_diagram_and_reference_in_both_languages()
         assert item["text_en"] and item["text_ar"]
     for key, item in texts.SETTINGS.items():                # each setting is explained twice
         assert all(item["label"]) and all(item["help"]), key
-    for english, arabic in AR.items():                      # placeholders survive translation
-        assert english.count("%") == arabic.count("%"), english
+    assert all(english in AR for english in ("Flutter and APK", "Dart and Flutter rules (%d)"))
+    assert any("يُبلَّغ عن الثغرة" in limit[1] for limit in texts.LIMITS)
 
+    from sca.flutter.checks import CHECKS
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120)
     app.run()
     assert not app.exception
     shown = " ".join(m.value for m in app.markdown)
     assert "Choose the project." in shown and "What a rule is" in shown
-    assert "owasp.org/Top10" in shown and "python -m sca rules catalog" in " ".join(
-        c.value for c in app.code)
+    assert "What is analysed" in shown and "kernel_blob.bin" in shown      # Flutter and APK
+    assert "owasp.org/Top10" in shown and "mas.owasp.org" in shown
+    assert "python -m sca rules catalog" in " ".join(c.value for c in app.code)
+    checks = next(d.value for d in app.dataframe if "Runs on" in d.value.columns)
+    assert list(checks["Check"]) == [check.id for check in CHECKS]
+    dart = next(d.value for d in app.dataframe if list(d.value.columns)[:3] == [
+        "Rule", "Title", "Kind"])
+    kinds = dict(zip(dart["Rule"], dart["Kind"]))
+    assert len(dart) >= 45 and set(dart["Rule"].str.split("-").str[0]) == {"DART", "FLUTTER"}
+    assert kinds["DART-SECRET-001"] == kinds["DART-SECRET-003"] == "credential format"
+    assert kinds["DART-TLS-001"] == "Dart code"
+    assert kinds["FLUTTER-WEB-001"] == kinds["FLUTTER-FIREBASE-001"] == "Files around the app"
+    counted = Counter(kinds.values())
+    assert any(c.value.startswith("%d pattern rules for Dart code, %d pattern rules for the "
+                                  "files around a Flutter app" % (counted["Dart code"],
+                                                                  counted["Files around the app"]))
+               and "and %d credential formats" % counted["credential format"] in c.value
+               for c in app.caption)
     app.radio[0].set_value("العربية").run()
     assert not app.exception
     shown = " ".join(m.value for m in app.markdown)
     assert "اختر المشروع." in shown and "ما هي القاعدة؟" in shown and "حلقة التعلّم" in " ".join(
         h.value for h in app.subheader)
+    assert "ما الذي يُحلَّل؟" in shown
+    checks = next(d.value for d in app.dataframe if "يعمل على" in d.value.columns)
+    assert list(checks["العنوان"]) == [check.title_ar for check in CHECKS]
+
+
+def test_arabic_texts_keep_their_placeholders():
+    """The same conversion specifiers in the same order: otherwise formatting an Arabic
+    message raises, and a scan fails in Arabic only."""
+    from sca.ui.i18n import AR
+    for english, arabic in AR.items():
+        assert SPECIFIER.findall(english) == SPECIFIER.findall(arabic), english
+
+
+def test_every_dashboard_text_has_an_arabic_entry():
+    from sca.flutter.checks import CHECKS
+    from sca.pipeline import ENGINE_TEXT
+    from sca.ui import app_panel
+    from sca.ui.i18n import AR
+    texts = list(dashboard_texts())
+    assert len(texts) > 400                          # the scan of the code found the calls
+    assert [item for item in texts if item[2] not in AR and item[2] not in PROPER_NAMES] == []
+    # values of the app facts that the panel shows translated, and the Flutter stage
+    words = (list(app_panel.KINDS.values()) + list(app_panel.COMPONENTS.values())
+             + list(app_panel.FOUND_IN.values()) + list(app_panel.DEPENDENCIES.values())
+             + list(app_panel.BUILD_MODES) + list(app_panel.FLAG_WORDS)
+             + list(ENGINE_TEXT["flutter"]))
+    assert [word for word in words if word not in AR] == []
+    assert all(check.title and check.title_ar for check in CHECKS)
+
+
+def test_app_panel_flag_texts():
+    from sca.ui import app_panel
+    from sca.ui.i18n import AR
+
+    def arabic(text):
+        return AR.get(text, text)
+
+    assert app_panel.flag_text("allowed (network security config)", arabic) \
+        == "مسموح (إعدادات أمان الشبكة)"
+    assert app_panel.flag_text("allowed (default for targetSdk 27)", arabic) \
+        == "مسموح (القيمة الافتراضية مع targetSdk 27)"
+    assert app_panel.flag_text("yes (default), with backup rules", arabic) \
+        == "نعم (القيمة الافتراضية)، مع قواعد للنسخ الاحتياطي"
+    assert app_panel.flag_text("not allowed (android:usesCleartextTraffic)", arabic) \
+        == "غير مسموح (android:usesCleartextTraffic)"
+    assert app_panel.flag_text("@xml/network_security_config", arabic) \
+        == "@xml/network_security_config"
+    assert app_panel.flag_text("a, b (c", str) == "a, b (c"          # kept as it is
+
+
+def test_dashboard_scans_a_flutter_project(tmp_path):
+    folder = flutter_project(tmp_path / "tiny_app")
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=180)
+    app.run()
+    assert checkbox(app, "Flutter / Android checks").value
+    tools = checkbox(app, "Decompile and verify app files (jadx, apksigner)")
+    assert not tools.value                                  # optional tools stay off
+    app.sidebar.text_input[0].set_value(str(folder)).run()
+    assert any("A Flutter project" in c.value for c in app.sidebar.caption)
+    button(app, "Run scan").click().run()
+    assert not app.exception
+    result = app.session_state["result"]
+    assert result.app["kind"] == "flutter-project" and result.app["package"] == "com.example.tiny"
+    assert {"ANDROID-MANIFEST-001", "ANDROID-MANIFEST-007"} <= {f.rule_id for f in result.findings}
+    assert untranslated_steps(result.steps) == []
+    # the app panel, the OWASP Mobile charts and the tags of each finding
+    assert any(e.label.startswith("Flutter project: tiny") for e in app.expander)
+    metrics = {m.label: m.value for m in app.metric}
+    assert "**Package:** com.example.tiny" in [m.value for m in app.markdown]
+    assert metrics["Min / target SDK"] == "21 / 34"
+    assert metrics["Version"] == "1.0.0 (3)" and metrics["Platforms"] == "android"
+    assert any(s.value == "By OWASP Mobile Top 10 (2024)" for s in app.subheader)
+    assert any("M5 Insecure Communication" in m.value and "MASVS-NETWORK" in m.value
+               for m in app.markdown)
+    permissions = next(d.value for d in app.dataframe if "Dangerous" in d.value.columns)
+    assert permissions.to_dict("records") == [{"Permission": "android.permission.CAMERA",
+                                               "Dangerous": "yes"}]
+
+    app.radio[0].set_value("العربية").run()
+    assert not app.exception
+    assert any(e.label.startswith("مشروع Flutter: ") for e in app.expander)
+    labels = {m.label for m in app.metric}
+    assert {"الإصدار", "المنصّات", "SDK الأدنى / المستهدف"} <= labels
+    assert any(m.value.startswith("**الحزمة:**") for m in app.markdown)
+    assert any(s.value == "حسب فئات OWASP Mobile Top 10 (2024)" for s in app.subheader)
+    permissions = next(d.value for d in app.dataframe if "خطرة" in d.value.columns)
+    assert list(permissions["خطرة"]) == ["نعم"]
+
+    checkbox(app, "فحوص Flutter و Android").uncheck().run()    # the switch of the engine
+    button(app, "ابدأ الفحص").click().run()
+    assert not app.exception
+    result = app.session_state["result"]
+    assert result.app == {} and not any(f.rule_id.startswith("ANDROID-") for f in result.findings)
+    assert any(s.args == ("Flutter/Android checks", "switched off") for s in result.steps)
+    assert not any(e.label.startswith("مشروع Flutter") for e in app.expander)
+
+
+def test_dashboard_scans_an_uploaded_app_file(tmp_path):
+    if not hasattr(AppTest, "file_uploader"):
+        pytest.skip("this Streamlit version cannot upload files in AppTest")
+    from flutter_kit import build_apk
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=180)
+    app.run()
+    broken = tmp_path / "broken.apk"
+    broken.write_bytes(b"not a zip archive")
+    app.sidebar.text_input[0].set_value(str(broken)).run()
+    button(app, "Run scan").click().run()
+    assert any("not a readable app package" in e.value for e in app.error)
+
+    # an upload that is not a ZIP archive is refused and not kept
+    uploads = tmp_path / "data" / "uploads"
+    app.file_uploader(key="app_upload").set_value(("junk.apk", b"not a zip", "x")).run()
+    assert not app.exception
+    assert app.session_state["target"] == str(broken)                   # unchanged
+    assert any("not a readable app package" in c.value and "junk.apk" in c.value
+               for c in app.sidebar.caption)
+    assert not uploads.exists() or list(uploads.iterdir()) == []
+
+    data = build_apk()
+    app.file_uploader(key="app_upload").set_value(          # a name in Arabic letters
+        ("تطبيق.apk", data, "application/vnd.android.package-archive")).run()
+    assert not app.exception
+    target = Path(app.session_state["target"])
+    assert target == tmp_path / "data" / "uploads" / (
+        "%s-app.apk" % hashlib.sha256(data).hexdigest()[:12])
+    assert target.read_bytes() == data
+    assert any("An app file" in c.value for c in app.sidebar.caption)
+    # the same app under another name is the same file and the same target (History)
+    app.file_uploader(key="app_upload").set_value(("second name.apk", data, "x")).run()
+    assert app.session_state["target"] == str(target)
+    assert [p.name for p in uploads.iterdir()] == [target.name]
+    button(app, "Run scan").click().run()
+    assert not app.exception
+    result = app.session_state["result"]
+    assert result.app["kind"] == "apk" and result.app["build_mode"] == "release"
+    assert "ANDROID-SIGN-001" in {f.rule_id for f in result.findings}
+    assert untranslated_steps(result.steps) == []
+    assert any(s.args == ("Bandit", "not used for app packages") for s in result.steps)
+    assert any(e.label == "Flutter app: com.example.kitapp" for e in app.expander)
+    metrics = {m.label: m.value for m in app.metric}
+    assert metrics["Build mode"] == "release" and metrics["Version"] == "1.2.3 (7)"
+    details = next(d.value for d in app.dataframe if "Fact" in d.value.columns)
+    assert dict(zip(details["Fact"], details["Value"]))["Size"] == \
+        "%d KB" % round(len(data) / 1000)                    # decimal units, as in the docs
+    certificates = next(d.value for d in app.dataframe if "Issuer" in d.value.columns)
+    assert list(certificates["Android debug certificate"]) == ["yes"]
+    assert any(c.value.startswith("Signature schemes: v2. The signature is not verified")
+               for c in app.caption)
+
+    app.radio[0].set_value("العربية").run()
+    assert not app.exception
+    assert any(e.label.startswith("تطبيق Flutter: ") for e in app.expander)
+    assert {m.label: m.value for m in app.metric}["نوع البناء"] == "إصدار (release)"
+    details = next(d.value for d in app.dataframe if "المعلومة" in d.value.columns)
+    assert dict(zip(details["المعلومة"], details["القيمة"]))["النوع"] == "تطبيق Android (APK)"
+    assert any(c.value.startswith("مخططات التوقيع: v2.") for c in app.caption)
+
+
+def test_sidebar_names_the_kind_of_folder_without_walking_it(tmp_path):
+    """A pure Dart package is not a Flutter project; an Android project gets its caption."""
+    dart = tmp_path / "dart_cli"
+    (dart / "bin").mkdir(parents=True)
+    (dart / "pubspec.yaml").write_text("name: dart_cli\nenvironment:\n  sdk: '>=3.0.0 <4.0.0'\n"
+                                       "dependencies:\n  http: ^1.1.0\n", encoding="utf-8")
+    droid = tmp_path / "droid"
+    (droid / "app" / "src" / "main").mkdir(parents=True)
+    (droid / "app" / "src" / "main" / "AndroidManifest.xml").write_text(FLUTTER_MANIFEST,
+                                                                        encoding="utf-8")
+    (droid / "app" / "build.gradle").write_text("plugins { id 'com.android.application' }\n",
+                                                encoding="utf-8")
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    app.run()
+    for folder, expected in ((dart, None), (droid, "An Android project"),
+                             (flutter_project(tmp_path / "tiny"), "A Flutter project")):
+        app.sidebar.text_input[0].set_value(str(folder)).run()
+        assert not app.exception
+        captions = [c.value for c in app.sidebar.caption
+                    if "project:" in c.value or "app file:" in c.value]
+        if expected is None:
+            assert captions == [], folder.name
+        else:
+            assert len(captions) == 1 and captions[0].startswith(expected), captions
+    app.radio[0].set_value("العربية").run()
+    assert any(c.value.startswith("مشروع Flutter") for c in app.sidebar.caption)
+
+
+def test_texts_of_a_scan_are_shown_as_text_not_as_markdown():
+    """Titles, file names, descriptions and facts can quote the scanned app: in labels,
+    captions and metrics they must not become links, images or formatting."""
+    from sca.models import Finding, ScanResult
+    link = "![x](http://evil.example/x.png) [click](http://evil.example)"
+    finding = Finding(rule_id="ANDROID-X", title="Exported receiver: " + link,
+                      file="lib/a_b_*c*.dart", line=3, severity="high", cwe="CWE-99999",
+                      confidence=0.8, engines=["flutter"], snippet="x",
+                      description="Quoted " + link, fix="Fix " + link,
+                      ai_verdict="true_positive", ai_model="m", ai_explanation="AI " + link)
+    facts = {"kind": "apk", "flutter": False, "package": "com.a_b " + link,
+             "version_name": "1.0", "min_sdk_note": link, "build_mode": "unknown",
+             "signing": {"schemes": ["v2 " + link], "certificates": []}}
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    app.session_state["result"] = ScanResult(target="C:/apps/[a](http://evil.example).apk",
+                                             app=facts, findings=[finding])
+    app.run()
+    assert not app.exception
+    shown = ([e.label for e in app.expander] + [m.value for m in app.markdown]
+             + [c.value for c in app.caption] + [i.value for i in app.info]
+             + [str(m.value) for m in app.metric])
+    quoted = [text for text in shown if "evil.example" in text]
+    assert len(quoted) >= 8
+    assert [text for text in quoted if re.search(r"(?<!\\)\]\(", text)] == []
+    label = next(e.label for e in app.expander if e.label.startswith("HIGH"))
+    assert label == ("HIGH | Exported receiver: !\\[x\\](http:⁠//evil.example/x.png) "
+                     "\\[click\\](http:⁠//evil.example) | lib/a\\_b\\_\\*c\\*.dart:3")
+    # the facts of an Android app without Flutter: no build mode, no Dart packages
+    assert "Build mode" not in {m.label for m in app.metric}
+    assert not [m.value for m in app.markdown if m.value.startswith("**Dart packages (")]
+
+
+@pytest.mark.skipif(not os.environ.get("SCA_FLUTTER_PROBE_DIR"),
+                    reason="set SCA_FLUTTER_PROBE_DIR to the APKs built from "
+                           "samples/flutter_apk_probe")
+def test_dashboard_scans_the_real_probe_apks():
+    folder = Path(os.environ["SCA_FLUTTER_PROBE_DIR"])
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=300)
+    app.run()
+    expected = {"ANDROID-SIGN-001", "ANDROID-NSC-001", "ANDROID-FILEPROVIDER-001",
+                "ANDROID-MANIFEST-005", "ANDROID-MANIFEST-007"}
+    for name, mode, also in (("release.apk", "release", "FLUTTER-APP-003"),
+                             ("debug.apk", "debug", "FLUTTER-APP-001"),
+                             ("release.aab", "release", "FLUTTER-APP-007")):
+        app.sidebar.text_input[0].set_value(str(folder / name)).run()
+        button(app, "Run scan").click().run()
+        assert not app.exception, name
+        result = app.session_state["result"]
+        assert result.app["build_mode"] == mode, name
+        assert expected | {also} <= {f.rule_id for f in result.findings}, name
+        assert untranslated_steps(result.steps) == [], name
+        assert any(e.label.startswith("Flutter app: com.example.flutter") for e in app.expander)
+        assert any(s.value == "By OWASP Mobile Top 10 (2024)" for s in app.subheader)
+    if os.environ.get("SCA_JADX"):                  # the optional tools on the release APK
+        checkbox(app, "Decompile and verify app files").check().run()
+        app.sidebar.text_input[0].set_value(str(folder / "release.apk")).run()
+        button(app, "Run scan").click().run()
+        assert not app.exception
+        result = app.session_state["result"]
+        assert result.app["tools"]["jadx"].startswith("ok")
+        details = next(d.value for d in app.dataframe if "Fact" in d.value.columns)
+        assert "jadx" in set(details["Fact"])

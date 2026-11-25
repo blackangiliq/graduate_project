@@ -4,9 +4,11 @@ __pycache__/
 venv/
 .pytest_cache/
 # local data: scan history, trained models, generated reports
-data/
+/data/
 reports/
 *.joblib
 .DS_Store
 # AI provider settings and API key
 .env
+# the Flutter samples bundle a fake .env asset on purpose (a finding they test)
+!samples/**/.env

@@ -1,6 +1,8 @@
 """Command line interface.
 
     python -m sca scan <folder> [--llm] [--deep] [--strict] [--format html,json,sarif,pdf]
+    python -m sca scan app.apk        # an app package (.apk, .aab, .apks, .xapk, .apkm)
+    python -m sca flutter info|decode|deps|apis|tools ...   # look inside an app or Flutter project
     python -m sca config              # choose the AI provider and store the API key
     python -m sca learn <folder>      # let the AI propose new rules from a project
     python -m sca learn <folder> --rounds 5 --auto-approve    # keep learning until stable
@@ -21,14 +23,23 @@ import argparse
 import json
 import subprocess
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from . import __version__
 from .models import SEVERITIES, SEVERITY_RANK
+from .walker import strip_bidi
 
 ROOT = Path(__file__).resolve().parent.parent
+# characters never printed as they are: text from a scanned app could move the cursor or
+# change the terminal, or reorder what is shown (Unicode bidirectional controls)
+_CONTROL = re.compile("[\x00-\x08\x0a-\x1f\x7f-\x9f]")
+
+
+def _printable(text: Any) -> str:
+    return strip_bidi(_CONTROL.sub(" ", str(text)))
 
 
 def _safe_stdout() -> None:
@@ -105,22 +116,38 @@ def _progress(args: argparse.Namespace):
         kind = getattr(message, "kind", "step")
         if kind == "file":
             if live:
-                print("\r       %-*.*s" % (width, width, message), end="", file=sys.stderr,
-                      flush=True)
+                print("\r       %-*.*s" % (width, width, _printable(message)), end="",
+                      file=sys.stderr, flush=True)
                 on_screen[0] = True
             return
         if on_screen[0]:
             print("\r" + " " * (width + 7) + "\r", end="", file=sys.stderr)
             on_screen[0] = False
         if kind == "result":
-            print("       -> %s" % message, file=sys.stderr)
+            print("       -> %s" % _printable(message), file=sys.stderr)
         else:
-            print("[%3d%%] %s" % (round(fraction * 100), message), file=sys.stderr)
+            print("[%3d%%] %s" % (round(fraction * 100), _printable(message)), file=sys.stderr)
     return progress
 
 
 # ------------------------------------------------------------------ scan
+def _app_line(facts: Dict[str, Any]) -> str:
+    """One line about a scanned app or project: package, version, kind and build."""
+    from .report.html_report import KIND_TEXT, fact_text
+
+    version = fact_text(facts.get("version_name"))
+    if facts.get("version_code"):
+        version = ("%s (%s)" % (version, fact_text(facts["version_code"]))).strip()
+    kind = KIND_TEXT.get(str(facts.get("kind")), fact_text(facts.get("kind")))
+    if facts.get("flutter") and facts.get("kind") != "flutter-project":   # said once
+        kind += ", Flutter" + (" %s build" % fact_text(facts["build_mode"])
+                               if facts.get("build_mode") else "")
+    name = fact_text(facts.get("package") or facts.get("name")) or "-"
+    return _printable(" ".join(part for part in (name, version, "- " + kind) if part))
+
+
 def cmd_scan(args: argparse.Namespace) -> int:
+    from .flutter import AppError
     from .pipeline import ScanOptions, run_scan
     from .report import write_reports
 
@@ -134,29 +161,42 @@ def cmd_scan(args: argparse.Namespace) -> int:
         llm_deep_scan=args.deep, lang=args.lang, save=not args.no_save,
         strict=args.strict, use_feedback=not args.no_feedback,
         include_tests=not args.skip_tests, use_taint_lite=not args.no_taint_lite,
-        use_c_memory=not args.no_c_memory,
+        use_c_memory=not args.no_c_memory, use_flutter=not args.no_flutter,
+        apk_tools=args.apk_tools,
         llm_deep_max_files=args.deep_max_files, llm_timeout=args.llm_timeout,
         **_llm_settings(args))
     try:
         result = run_scan(args.path, options, _progress(args))
-    except FileNotFoundError as exc:
-        print("Error: %s" % exc, file=sys.stderr)
+    except (FileNotFoundError, AppError) as exc:
+        print("Error: %s" % _printable(exc), file=sys.stderr)
         return 2
 
     counts = result.counts()
     print()
     print("Secure Code Analyzer %s" % __version__)
-    print("Target : %s" % result.target)
+    print("Target : %s" % _printable(result.target))
+    if result.app:
+        print("App    : %s" % _app_line(result.app))
     print("Scanned: %d files, %d lines in %.1f s" % (result.files_scanned,
                                                      result.lines_scanned,
                                                      result.duration_seconds))
     print("Engines: %s" % ", ".join(result.engines_used))
     for name, note in result.engine_notes.items():
         if not note.startswith("ok"):
-            print("  - %s: %s" % (name, note))
+            print("  - %s: %s" % (name, _printable(note)))
     for name, note in result.ai.items():
-        print("AI %-8s: %s" % (name, note))
+        print("AI %-8s: %s" % (name, _printable(note)))
     print()
+    apis = result.app.get("apis") if result.app else None
+    if isinstance(apis, dict):
+        from .report.html_report import api_alerts, api_summary
+        print("APIs   : %s" % _printable(api_summary(apis)))
+        serious = [text for level, text in api_alerts(apis) if level == "danger"]
+        for text in serious[:8]:
+            print("  ! %s" % _printable(text))
+        if len(serious) > 8:
+            print("  ! ... %d more alerts in the report" % (len(serious) - 8))
+        print()
     print("Score  : %d / 100   Grade %s" % (result.score, result.grade))
     print("Open   : " + "   ".join("%s %d" % (s, counts[s]) for s in SEVERITIES))
     confirmed = sum(1 for f in result.open_findings if f.tier == "confirmed")
@@ -171,12 +211,13 @@ def cmd_scan(args: argparse.Namespace) -> int:
     shown = result.open_findings[: args.top]
     for finding in shown:
         print("%-8s %-9s %s:%d" % (finding.severity.upper(), finding.cwe or "-",
-                                   finding.file, finding.line))
+                                   _printable(finding.file), finding.line))
         print("         %s  (confidence %d%%, %s)" % (
-            finding.title, round(finding.confidence * 100), "+".join(finding.engines)))
+            _printable(finding.title), round(finding.confidence * 100),
+            "+".join(finding.engines)))
         print("         %s%s   id %s" % (
-            finding.tier, ": " + "; ".join(finding.evidence) if finding.evidence else "",
-            finding.fingerprint))
+            finding.tier, ": " + _printable("; ".join(finding.evidence))
+            if finding.evidence else "", finding.fingerprint))
         if finding.ai_verdict:
             print("         AI: %s" % finding.ai_verdict.replace("_", " "))
     if len(result.open_findings) > len(shown):
@@ -239,6 +280,22 @@ def cmd_config(args: argparse.Namespace) -> int:
     return 0 if ready else 1
 
 
+def _print_mobile_tools() -> None:
+    """The "Mobile apps" part of doctor: the built-in decoders and checks, then the optional
+    tools that app packages can use (--apk-tools)."""
+    from .flutter import checks, tools
+
+    print("Mobile apps")
+    print("  [ok] checks     %d Flutter/Android checks of manifests, network security, signing, "
+          "build and dependencies (built in)" % len(checks.CHECKS))
+    print("  [ok] decoders   APK, AAB and split APK sets are decoded without other tools "
+          "(built in)")
+    hints = tools.hints()
+    for name, path in tools.availability().items():
+        print("  [%s] %-10s %s" % ("ok" if path else "--", name, path if path else
+                                   "not found - " + hints.get(name, "optional")))
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     from .ai.classifier import SKLEARN_AVAILABLE
     from .ai.providers import PRESETS, load_config, make_client
@@ -259,7 +316,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
              origins["imported"]["enabled"], origins["learned"]["enabled"],
              origins["custom"]["enabled"], counts["secret"]))
     print("  [ok] ast        Python taint analysis, inter-procedural within a file (built in)")
-    print("  [ok] taint-lite input tracing for JS, PHP, Java, Go, C#, Ruby, C (built in)")
+    print("  [ok] taint-lite input tracing for JS, PHP, Java, Go, C#, Ruby, C, Dart (built in)")
     print("  [ok] c-memory   C/C++ double free, use after free, leaks, overflowing sizes, "
           "bounds (built in)")
     print("  [ok] secrets    key formats + entropy (built in)")
@@ -269,7 +326,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
              "gitleaks": "optional: install from github.com/gitleaks/gitleaks"}
     for name, ok in tools.items():
         print("  [%s] %-10s %s" % ("ok" if ok else "--", name, "available" if ok
-                                   else "not found - " + hints[name]))
+                                   else "not found - " + hints.get(name, "optional")))
+    print()
+    _print_mobile_tools()
     print()
     print("AI components")
     print("  [%s] ML classifier (scikit-learn)%s" % (
@@ -302,13 +361,14 @@ def _print_candidates(candidates: List[Dict[str, Any]]) -> None:
 
 
 def cmd_learn(args: argparse.Namespace) -> int:
+    from .flutter import AppError
     from .learn import loop
     from .pipeline import ScanOptions, scan_project
     from .storage import Storage
 
     if not (args.path or args.bootstrap or args.from_feedback):
-        print("Give a project folder, or --bootstrap <language>, or --from-feedback.",
-              file=sys.stderr)
+        print("Give a project folder or app package, or --bootstrap <language>, or "
+              "--from-feedback.", file=sys.stderr)
         return 2
     client = _client(args)
     if client is None:
@@ -327,8 +387,8 @@ def cmd_learn(args: argparse.Namespace) -> int:
                 lambda: scan_project(args.path, options, _progress(args), storage),
                 rounds=args.rounds, approve=args.auto_approve, max_candidates=args.max_rules,
                 progress=_progress(args))
-        except FileNotFoundError as exc:
-            print("Error: %s" % exc, file=sys.stderr)
+        except (FileNotFoundError, AppError) as exc:
+            print("Error: %s" % _printable(exc), file=sys.stderr)
             return 2
         for entry in report:
             print("Round %d: %d candidate(s), %d passed validation, %d activated. AI: %s" % (
@@ -455,18 +515,31 @@ def _print_rule(rule) -> None:
                                 if rule.license else ""))
     if rule.note:
         print("note: %s" % rule.note)
-    keep = ("title", "kind", "languages", "cwe", "severity", "confidence", "pattern", "exclude",
-            "ignore_case", "message", "fix", "keywords", "entropy", "extra_excludes",
+    keep = ("title", "kind", "languages", "files", "cwe", "severity", "confidence", "pattern",
+            "exclude", "ignore_case", "message", "fix", "keywords", "entropy", "extra_excludes",
             "examples_vulnerable", "examples_safe", "file")
     print(yaml.safe_dump({k: data[k] for k in keep if data.get(k) not in ("", [], 0.0, False)},
                          sort_keys=False, allow_unicode=True, width=1000).rstrip())
+
+
+def _files_to_test(path: str) -> List[Any]:
+    """The files `rules test` reads: those of a folder or a file, or for an app package the
+    decoded files that the pattern rules read in a scan."""
+    from .flutter.context import RULES_ORIGINS
+    from .pipeline import decode_app, is_app_target
+    from .walker import walk_project
+
+    target = Path(path).expanduser()
+    if is_app_target(target):
+        return [sf for sf in decode_app(target, False).files if sf.origin in RULES_ORIGINS]
+    return list(walk_project(path))
 
 
 def _rulebook_action(args: argparse.Namespace, storage) -> int:
     """Everything that manages the rule set itself (see sca/rulebook.py)."""
     import yaml
     from . import rulebook
-    from .walker import walk_project
+    from .flutter import AppError
 
     action, ids = args.action, args.ids
     try:
@@ -526,7 +599,12 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
             changes: Dict[str, Any] = {}
             for item in args.set or []:
                 key, _, value = item.partition("=")
-                changes[key.strip()] = yaml.safe_load(value) if key.strip() in (
+                key = key.strip()
+                if key == "files":      # globs such as **/web/index.html are not YAML
+                    changes[key] = [p.strip().strip("'\"") for p in value.strip(" []").split(",")
+                                    if p.strip().strip("'\"")]
+                    continue
+                changes[key] = yaml.safe_load(value) if key in (
                     "languages", "confidence", "ignore_case", "enabled") else value
             if not changes:
                 print("Nothing to change. Use --set field=value, for example "
@@ -542,13 +620,19 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
             if len(ids) < 2:
                 print("Give a file or folder to test the rule on.", file=sys.stderr)
                 return 2
-            hits = 0
-            for sf in walk_project(ids[1]):
+            hits = skipped = 0
+            for sf in _files_to_test(ids[1]):
+                if not rule.applies_to(sf.rel):
+                    skipped += 1
+                    continue
                 for number, line in enumerate(sf.lines, start=1):
                     if rule.matches(line):
                         hits += 1
-                        print("%s:%d  %s" % (sf.rel, number, line.strip()[:140]))
+                        print("%s:%d  %s" % (sf.rel, number, _printable(line.strip()[:140])))
             print("%d line(s) matched by %s." % (hits, rule.id))
+            if skipped:
+                print("%d file(s) not read: the rule only reads files that match %s."
+                      % (skipped, ", ".join(rule.files)))
             return 0
         for rule_id in ids:
             if action == "enable":
@@ -563,7 +647,7 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
             elif action == "delete":
                 rulebook.delete(rule_id)
                 print("Deleted %s." % rule_id)
-    except (rulebook.RuleError, OSError) as exc:
+    except (rulebook.RuleError, OSError, AppError) as exc:
         print("Error: %s" % exc, file=sys.stderr)
         return 1
     return 0
@@ -610,8 +694,8 @@ def cmd_coverage(args: argparse.Namespace) -> int:
 
     matrix = coverage_matrix()
     cwes = sorted({c for row in matrix.values() for c in row}, key=lambda c: int(c.split("-")[1]))
-    print("Active pattern rules per language and weakness (rules for \"any\" language and "
-          "credential formats are not counted):\n")
+    print("Active pattern rules per language and weakness (rules for \"any\" language, rules "
+          "for named files only and credential formats are not counted):\n")
     print("%-12s %5s  %s" % ("Language", "Rules", "Weaknesses covered"))
     for language, row in matrix.items():
         covered = ", ".join("%s(%d)" % (c.replace("CWE-", ""), row[c]) for c in cwes if row.get(c))
@@ -622,6 +706,178 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     for c in cwes:
         print("  %-9s %s" % (c, info(c)["name"]))
     print("\nFill gaps with:  python -m sca learn --bootstrap <language>")
+    return 0
+
+
+# ------------------------------------------------------------------ flutter (app packages)
+FLUTTER_ROWS = 100           # rows of each list printed by `flutter info`; --json prints all
+_UNSAFE_PATH = re.compile(r'[\x00-\x1f\x7f\\:*?"<>|]')
+_RESERVED_NAME = re.compile(r"(?i)(con|prn|aux|nul|com\d|lpt\d|conin\$|conout\$)(\..*)?\Z")
+
+
+def output_path(folder: Path, rel: str) -> Optional[Path]:
+    """Where `flutter decode` writes a virtual file: folder/rel, or None when rel is not a
+    plain relative path that stays inside folder (absolute, a drive, '..', a name Windows
+    reserves or changes, or characters it refuses)."""
+    parts = rel.split("/")
+    if not rel or len(rel) > 400 or _UNSAFE_PATH.search(rel) or any(
+            part in ("", ".", "..") or part != part.rstrip(". ") or _RESERVED_NAME.match(part)
+            for part in parts):
+        return None
+    target = folder.joinpath(*parts)
+    try:
+        target.resolve().relative_to(folder.resolve())
+    except (OSError, ValueError):
+        return None
+    return target
+
+
+def _decode(ctx: Any, out: Optional[str]) -> int:
+    """Write every virtual file of an app (or the placeholders of a project) and facts.json
+    into an empty folder."""
+    if not out:
+        print("Give the output folder with --out FOLDER (it must be empty).", file=sys.stderr)
+        return 2
+    folder = Path(out).expanduser().resolve()
+    if folder.exists() and (not folder.is_dir() or any(folder.iterdir())):
+        print("Error: %s is not an empty folder." % folder, file=sys.stderr)
+        return 2
+    folder.mkdir(parents=True, exist_ok=True)
+    written, problems = 0, []
+    outputs = [(sf.rel, sf.text) for sf in ctx.files] + [
+        ("facts.json", json.dumps(ctx.facts, indent=2, ensure_ascii=False) + "\n")]
+    for rel, text in outputs:
+        target = output_path(folder, rel)
+        if target is None:
+            problems.append("%s (not a safe file name)" % rel)
+            continue
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with open(target, "x", encoding="utf-8", newline="\n") as handle:
+                handle.write(text)
+        except OSError as exc:
+            problems.append("%s (%s)" % (rel, exc.strerror or exc))
+            continue
+        written += 1
+    print("Wrote %d %s to %s" % (written, "file" if written == 1 else "files", folder))
+    for problem in problems[:20]:
+        print("  not written: %s" % _printable(problem))
+    if len(problems) > 20:
+        print("  and %d more not written" % (len(problems) - 20))
+    return 1 if problems else 0
+
+
+def _print_facts(facts: Dict[str, Any]) -> None:
+    from .report.html_report import app_overview, app_tables
+
+    width = max([len(label) for label, _ in app_overview(facts)] + [8])
+    for label, text in app_overview(facts):
+        print("%-*s  %s" % (width, label, text))
+    for title, columns, rows in app_tables(facts):
+        print("\n%s (%d)" % (title, len(rows)))
+        for row in rows[:FLUTTER_ROWS]:
+            more = ", ".join("%s: %s" % (column.lower(), cell)
+                             for column, cell in zip(columns[1:], row[1:]) if cell)
+            print("  %s%s" % (row[0], "  (%s)" % more if more else ""))
+        if len(rows) > FLUTTER_ROWS:
+            print("  and %d more (--json prints all)" % (len(rows) - FLUTTER_ROWS))
+
+
+def _print_apis(apis: Dict[str, Any]) -> None:
+    """The API and key inventory for a terminal: summary, alerts, then every list."""
+    from .report.html_report import api_alerts, api_summary, api_tables
+
+    print("APIs and keys: %s" % _printable(api_summary(apis)))
+    print("Keys are masked; no address was contacted.")
+    alerts = api_alerts(apis)
+    if alerts:
+        print("\nAlerts (%d)" % len(alerts))
+        for level, text in alerts:
+            print("  %-7s %s" % (level.upper(), _printable(text)))
+    for title, columns, rows in api_tables(apis):
+        print("\n%s (%d)" % (title, len(rows)))
+        for row in rows[:FLUTTER_ROWS]:
+            more = "; ".join("%s: %s" % (column.lower(), cell)
+                             for column, cell in zip(columns[1:], row[1:]) if cell)
+            print("  %s%s" % (_printable(row[0]), "  (%s)" % _printable(more) if more else ""))
+        if len(rows) > FLUTTER_ROWS:
+            print("  and %d more (--json prints all)" % (len(rows) - FLUTTER_ROWS))
+    truncated = apis.get("truncated")
+    if isinstance(truncated, dict) and truncated:
+        print("\nLists cut to keep the facts small: %s" % ", ".join(
+            "%s +%s" % item for item in truncated.items()))
+
+
+def cmd_flutter(args: argparse.Namespace) -> int:
+    from .flutter import AppError
+    from .pipeline import inspect_mobile
+
+    if args.action == "tools":
+        _print_mobile_tools()
+        return 0
+    if not args.path:
+        print("Give an app package (.apk, .aab, .apks, .xapk, .apkm) or a project folder.",
+              file=sys.stderr)
+        return 2
+    try:
+        ctx, _files, findings, note = inspect_mobile(
+            args.path, args.apk_tools, [d for d in args.exclude.split(",") if d],
+            key_rules=args.action in ("apis", "info", "decode"))
+    except (FileNotFoundError, AppError) as exc:
+        print("Error: %s" % _printable(exc), file=sys.stderr)
+        return 2
+    if ctx is None:
+        print("Error: %s holds neither a Flutter app nor an Android project." % args.path,
+              file=sys.stderr)
+        return 2
+    if args.action == "decode":
+        return _decode(ctx, args.out)
+    if args.action == "deps":
+        issues = [f for f in findings if f.rule_id.startswith("FLUTTER-PUB-")]
+        if args.json:
+            print(json.dumps({"packages": ctx.facts.get("packages") or [],
+                              "issues": [f.to_dict() for f in issues]},
+                             indent=2, ensure_ascii=False))
+            return 0
+        packages = [p for p in ctx.facts.get("packages") or [] if isinstance(p, dict)]
+        print("%d packages" % len(packages))
+        width = min(40, max([len(str(p.get("name", ""))) for p in packages] + [10]))
+        for item in packages:
+            where = [str(item[key]) for key in ("source", "dependency") if item.get(key)]
+            if item.get("found_in"):
+                where.append("found in %s" % item["found_in"])
+            print("  %-*s %-14s %s" % (width, _printable(item.get("name", "")),
+                                       _printable(item.get("version") or "unknown"),
+                                       _printable(", ".join(where))))
+        print("\n%d dependency issues" % len(issues))
+        for finding in issues:
+            print("  %-8s %-15s %s  (%s:%d)" % (finding.severity.upper(), finding.rule_id,
+                                                _printable(finding.title),
+                                                _printable(finding.file), finding.line))
+        return 0
+    if args.action == "apis":
+        apis = ctx.facts.get("apis")
+        if not isinstance(apis, dict):
+            print("Error: the API inventory could not be built: %s" % _printable(note),
+                  file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(apis, indent=2, ensure_ascii=False))
+            return 0
+        _print_apis(apis)
+        return 0
+    if args.json:
+        print(json.dumps(ctx.facts, indent=2, ensure_ascii=False))
+        return 0
+    _print_facts(ctx.facts)
+    if isinstance(ctx.facts.get("apis"), dict):
+        from .report.html_report import api_summary
+        print("\nAPIs and keys: %s\n  (flutter apis PATH lists them with their places)"
+              % api_summary(ctx.facts["apis"]))
+    print("\nThe Flutter/Android checks found %d weaknesses; scan the target for the full "
+          "report." % len(findings))
+    if "not checked" in note or not note.startswith("ok") or "API inventory failed" in note:
+        print("Note: %s" % _printable(note))
     return 0
 
 
@@ -697,15 +953,33 @@ def cmd_ui(args: argparse.Namespace) -> int:
         return 0
 
 
+def _add_flutter_options(parser: argparse.ArgumentParser, default: Any = None) -> None:
+    """The options of `flutter`. default=argparse.SUPPRESS leaves an option that is not given
+    out of the result (for the parsers of the actions, see build_parser)."""
+    def given(value: Any) -> Any:
+        return value if default is None else default
+
+    parser.add_argument("--out", default=given(None),
+                        help="decode: an empty folder for the decoded files")
+    parser.add_argument("--json", action="store_true", default=given(False),
+                        help="info, deps, apis: print JSON")
+    parser.add_argument("--apk-tools", action="store_true", default=given(False),
+                        help="also use jadx and apksigner when they are installed")
+    parser.add_argument("--exclude", default=given(""),
+                        help="projects: comma list of folder names to skip")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sca", description="Secure Code Analyzer: static + AI vulnerability scanner "
-                                "that learns new rules")
+                                "for source code and Android/Flutter app packages that "
+                                "learns new rules")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command")
 
-    scan = sub.add_parser("scan", help="scan a project folder")
-    scan.add_argument("path", help="project folder (or a single file)")
+    scan = sub.add_parser("scan", help="scan a project folder or an app package")
+    scan.add_argument("path", help="folder, file or app package (.apk, .aab, .apks, .xapk, "
+                                   ".apkm)")
     scan.add_argument("--out", default="reports", help="report folder (default: reports)")
     scan.add_argument("--format", default="html,json",
                       help="comma list of: html, json, sarif, pdf (default: html,json)")
@@ -737,9 +1011,16 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--llm-timeout", type=int, default=180,
                       help="seconds to wait for one AI answer (default 180)")
     scan.add_argument("--no-taint-lite", action="store_true",
-                      help="do not trace user input for JS, PHP, Java, Go, C#, Ruby, C")
+                      help="do not trace user input for JS, PHP, Java, Go, C#, Ruby, C, Dart")
     scan.add_argument("--no-c-memory", action="store_true",
                       help="skip the C/C++ memory checks (double free, use after free, ...)")
+    scan.add_argument("--no-flutter", action="store_true",
+                      help="skip the Flutter/Android checks (manifest, network security, "
+                           "signing, build, dependencies); a source project then also has no "
+                           "app facts and no API and key inventory")
+    scan.add_argument("--apk-tools", action="store_true",
+                      help="app packages: also decompile the app's classes with jadx and "
+                           "verify the signature with apksigner, when they are installed")
     _add_llm_arguments(scan)
     scan.set_defaults(func=cmd_scan)
 
@@ -752,7 +1033,7 @@ def build_parser() -> argparse.ArgumentParser:
     config.set_defaults(func=cmd_config)
 
     learn = sub.add_parser("learn", help="let the AI propose new rules")
-    learn.add_argument("path", nargs="?", help="project to learn from")
+    learn.add_argument("path", nargs="?", help="project folder or app package to learn from")
     learn.add_argument("--bootstrap", metavar="LANGUAGE",
                        help="write rules for the weaknesses this language has no rule for; "
                             "'all' does every language that has a gap")
@@ -789,12 +1070,15 @@ The rule set:
   catalog                 every rule (--origin, --lang, --cwe, --search, --disabled)
   enable ID... / disable ID...
                           without an id: every rule matching --origin/--lang/--cwe/--search
-  edit ID --set field=value [--set ...]    fields: title, languages, cwe, severity,
-                          confidence, pattern, exclude, ignore_case, message, fix
+  edit ID --set field=value [--set ...]    fields: title, languages, files, cwe,
+                          severity, confidence, pattern, exclude, ignore_case, message,
+                          fix (files: file name patterns separated by commas, e.g.
+                          --set "files=**/web/index.html, *.sh"; empty = every file)
   reset ID...             undo your changes to a rule that ships with the tool
   template                print an empty rule to fill in
   new FILE.yaml           add your own rule(s) from a file (same as import)
-  test ID PATH            show the lines of a file or folder that a rule marks
+  test ID PATH            show the lines of a file, folder or app package that a rule
+                          marks (only in the files the rule reads)
   delete ID...            remove one of your own or learned rules (remove = same)
   export [ID...]          print rules as YAML (--origin custom, -o FILE)
   import FILE.yaml        add rules exported from another computer""")
@@ -819,6 +1103,40 @@ The rule set:
 
     coverage = sub.add_parser("coverage", help="rules per language and weakness")
     coverage.set_defaults(func=cmd_coverage)
+
+    mobile = sub.add_parser(
+        "flutter", help="look inside an app package or a Flutter/Android project",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""Look inside an app package (.apk, .aab, .apks, .xapk, .apkm) or a
+Flutter/Android project folder. An app is decoded and read, never installed or run.
+  info PATH               package, versions, build mode, signing, permissions, components
+  decode PATH --out DIR   write the decoded files and facts.json into an empty folder
+  deps PATH               the Dart packages and their known weaknesses
+  apis PATH               every server address, API call, API path and key, with the
+                          file and line of each place, and the alerts about them
+  tools                   which optional tools (jadx, apksigner ...) are installed
+The options can come before or after the action and the path.""")
+    # One parser per action, so that options may come between the action and the path
+    # (flutter info --json app.apk). The options are also accepted before the action
+    # (flutter --json info app.apk); an action leaves them as they are unless it is given
+    # them itself (default SUPPRESS).
+    _add_flutter_options(mobile)
+    actions = mobile.add_subparsers(dest="action", metavar="action",
+                                    help="info, decode, deps, apis or tools")
+    actions.required = True
+    for name, text in (("info", "package, versions, build mode, signing, permissions, "
+                                "components"),
+                       ("decode", "write the decoded files and facts.json into an empty "
+                                  "folder (--out DIR)"),
+                       ("deps", "the Dart packages and their known weaknesses"),
+                       ("apis", "server addresses, API calls, API paths and keys, with their "
+                                "places and alerts"),
+                       ("tools", "which optional tools (jadx, apksigner ...) are installed")):
+        action = actions.add_parser(name, help=text, description=text)
+        if name != "tools":
+            action.add_argument("path", nargs="?", help="app package or project folder")
+        _add_flutter_options(action, argparse.SUPPRESS)
+    mobile.set_defaults(func=cmd_flutter, path=None)
 
     doctor = sub.add_parser("doctor", help="check which components are available")
     doctor.set_defaults(func=cmd_doctor)

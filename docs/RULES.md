@@ -5,7 +5,7 @@ the dashboard and from `evaluation/import_report.json`.
 
 ## The rule set
 
-The tool ships **407 rules, 360 of them active**: 107 built in and
+The tool ships **517 rules, 470 of them active**: 217 built in and
 300 imported from open-source rule sets (253 active). 205 of the
 imported rules are credential formats and run inside the secrets engine. Rules learned from
 the AI and rules you write yourself are added on top.
@@ -74,27 +74,27 @@ Lines of real code the rules were measured on:
 | **total** | **2,384,751** |
 
 Active pattern rules per language after the import (Python's main engine is the AST taint
-analysis, so it has no built-in pattern rules):
+analysis, so it has few built-in pattern rules):
 
 | Language | Built in | Imported, enabled | Imported, disabled |
 |---|---:|---:|---:|
 | c (+ cpp) | 8 | 9 | 15 |
-| config | 0 | 3 | 1 |
-| csharp | 8 | 13 | 13 |
-| dart | 0 | 0 | 6 |
+| config | 8 | 3 | 1 |
+| csharp | 16 | 13 | 13 |
+| dart | 47 | 0 | 6 |
 | elixir | 0 | 0 | 6 |
-| go | 8 | 1 | 7 |
-| html | 0 | 0 | 6 |
-| java (+ kotlin, scala, groovy) | 22 | 3 | 11 |
-| javascript (+ typescript) | 22 | 2 | 10 |
+| go | 12 | 1 | 7 |
+| html | 2 | 0 | 6 |
+| java (+ kotlin, scala, groovy) | 31 | 3 | 11 |
+| javascript (+ typescript) | 38 | 2 | 10 |
 | lua | 0 | 0 | 6 |
 | perl | 0 | 0 | 6 |
-| php | 18 | 7 | 8 |
+| php | 24 | 7 | 8 |
 | powershell | 3 | 6 | 11 |
-| python | 0 | 6 | 11 |
-| ruby | 11 | 2 | 8 |
+| python | 2 | 6 | 11 |
+| ruby | 17 | 2 | 8 |
 | rust | 3 | 1 | 7 |
-| shell | 4 | 3 | 6 |
+| shell | 6 | 3 | 6 |
 | sql | 0 | 1 | 6 |
 | swift | 0 | 2 | 6 |
 | any language | 0 | 5 | 5 |
@@ -115,6 +115,7 @@ are skipped) and reports the line if `pattern` matches and `exclude` does not.
 | `id` | Unique name, for example `MY-SQLI-001`. |
 | `title` | Short description shown in the findings list. |
 | `languages` | The languages the rule applies to, or `any`. TypeScript uses the JavaScript rules, C++ the C rules, Kotlin/Scala/Groovy the Java rules. |
+| `files` | Optional file name patterns (`*.gradle`, `**/web/index.html`): the rule then reads only the files of its languages whose path or name matches one of them. Upper and lower case are the same; a leading `**/` also matches the top folder. |
 | `cwe` | The weakness, as a CWE number (`CWE-89` = SQL injection). It decides the explanation, the fix text and the OWASP category. |
 | `severity` | `critical`, `high`, `medium`, `low` or `info`. |
 | `confidence` | 0 to 1: how sure the rule is on its own. Start a new rule around 0.5 to 0.6; your reviews move it. |
@@ -171,6 +172,8 @@ an update of the tool, and **Restore original** removes it.
 - id: MY-RULE-001                 # unique name
   title: Short description of the weakness
   languages: [javascript]         # any, python, javascript, typescript, php, java, kotlin, scala, groovy, c, cpp, csharp, go, ruby, rust, swift, dart, shell, powershell, perl, lua, elixir, sql, config, html
+  files: []                       # optional: only files whose path or name matches, for
+                                  # example ['*.gradle', '**/web/index.html']
   cwe: CWE-89                     # https://cwe.mitre.org
   severity: high                  # critical, high, medium, low, info
   confidence: 0.6                 # 0..1: how sure the rule is on its own
@@ -227,7 +230,7 @@ python -m sca coverage                                         # Rules per langu
 
 ## مجموعة القواعد
 
-تأتي الأداة مع **407 قاعدة، منها 360 فعّالة**: 107 مدمجة و 300
+تأتي الأداة مع **517 قاعدة، منها 470 فعّالة**: 217 مدمجة و 300
 مستوردة من مجموعات قواعد مفتوحة المصدر (253 منها فعّالة). من المستوردة 205
 صيغة مفتاح تعمل داخل محرك الأسرار. وتُضاف فوقها القواعد المتعلَّمة من الذكاء الاصطناعي
 والقواعد التي تكتبها أنت.
@@ -293,28 +296,28 @@ python -m sca coverage                                         # Rules per langu
 | sql | 75 |
 | **المجموع** | **2,384,751** |
 
-قواعد الأنماط لكل لغة بعد الاستيراد (المحرك الأساسي لبايثون هو تحليل AST، ولهذا ليس لها قواعد
-أنماط مدمجة):
+قواعد الأنماط لكل لغة بعد الاستيراد (المحرك الأساسي لبايثون هو تحليل AST، ولهذا قواعد الأنماط
+المدمجة لها قليلة):
 
 | اللغة | مدمجة | مستوردة ومفعّلة | مستوردة ومعطّلة |
 |---|---:|---:|---:|
 | c (+ cpp) | 8 | 9 | 15 |
-| config | 0 | 3 | 1 |
-| csharp | 8 | 13 | 13 |
-| dart | 0 | 0 | 6 |
+| config | 8 | 3 | 1 |
+| csharp | 16 | 13 | 13 |
+| dart | 47 | 0 | 6 |
 | elixir | 0 | 0 | 6 |
-| go | 8 | 1 | 7 |
-| html | 0 | 0 | 6 |
-| java (+ kotlin, scala, groovy) | 22 | 3 | 11 |
-| javascript (+ typescript) | 22 | 2 | 10 |
+| go | 12 | 1 | 7 |
+| html | 2 | 0 | 6 |
+| java (+ kotlin, scala, groovy) | 31 | 3 | 11 |
+| javascript (+ typescript) | 38 | 2 | 10 |
 | lua | 0 | 0 | 6 |
 | perl | 0 | 0 | 6 |
-| php | 18 | 7 | 8 |
+| php | 24 | 7 | 8 |
 | powershell | 3 | 6 | 11 |
-| python | 0 | 6 | 11 |
-| ruby | 11 | 2 | 8 |
+| python | 2 | 6 | 11 |
+| ruby | 17 | 2 | 8 |
 | rust | 3 | 1 | 7 |
-| shell | 4 | 3 | 6 |
+| shell | 6 | 3 | 6 |
 | sql | 0 | 1 | 6 |
 | swift | 0 | 2 | 6 |
 | كل اللغات (any) | 0 | 5 | 5 |
@@ -335,6 +338,7 @@ python -m sca coverage                                         # Rules per langu
 | `id` | اسم فريد، مثل `MY-SQLI-001`. |
 | `title` | وصف قصير يظهر في قائمة النتائج. |
 | `languages` | اللغات التي تنطبق عليها القاعدة، أو `any` للجميع. TypeScript تستخدم قواعد JavaScript، و C++ قواعد C، و Kotlin و Scala و Groovy قواعد Java. |
+| `files` | أنماط اختيارية لأسماء الملفات (`*.gradle` و `**/web/index.html`): عندها لا تقرأ القاعدة من ملفات لغاتها إلا ما يطابق مساره أو اسمه أحد هذه الأنماط. لا فرق بين الأحرف الكبيرة والصغيرة، و `**/` في البداية يطابق المجلد الأعلى أيضاً. |
 | `cwe` | نوع الثغرة برقم CWE (مثل `CWE-89` لحقن SQL). منه يؤخذ الشرح ونص الإصلاح وفئة OWASP. |
 | `severity` | الخطورة: `critical` أو `high` أو `medium` أو `low` أو `info`. |
 | `confidence` | من 0 إلى 1: مدى ثقة القاعدة بنفسها. ابدأ القاعدة الجديدة بين 0.5 و 0.6، ومراجعاتك تحرّكها. |

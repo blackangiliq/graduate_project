@@ -42,6 +42,7 @@ LAUNCHER_CATEGORIES = ("android.intent.category.LAUNCHER",
 FILE_PROVIDER_CLASSES = ("androidx.core.content.FileProvider",
                          "android.support.v4.content.FileProvider")
 FILE_PROVIDER_PATHS = "android.support.FILE_PROVIDER_PATHS"
+MAPS_KEY_METADATA = ("com.google.android.geo.API_KEY", "com.google.android.maps.v2.API_KEY")
 WEB_SCHEMES = ("http", "https")
 # schemes of standard handlers (documents, mail, phone, maps ...): an app that opens them is
 # not claiming a link of its own
@@ -457,6 +458,16 @@ class ManifestInfo:
         """An <application> attribute by its name without prefix ("allowBackup")."""
         return self.application.get(self.attr_prefix + name) if self.application else None
 
+    def drops_inherited_app_attr(self, name: str) -> bool:
+        """Whether this overlay replaces <application> or removes the lower-priority attribute."""
+        if self.application is None:
+            return False
+        _, tools = _prefixes(self.root)
+        if self.application.get(tools + "node") == "replace":
+            return True
+        removed = (self.application.get(tools + "remove") or "").split(",")
+        return any(item.strip() == self.attr_prefix + name for item in removed)
+
     def app_line(self, name: str = "") -> int:
         """Line of an <application> attribute; the start tag when it is absent."""
         if self.application is None:
@@ -807,7 +818,9 @@ class FileProviderPaths:
     @classmethod
     def from_node(cls, node: XmlNode) -> "FileProviderPaths":
         result = cls(root=node)
-        for child in node.children:
+        # AndroidX parsePathStrategy consumes every START_TAG, including paths nested
+        # under wrappers such as <resources><paths> (observed in real APKs).
+        for child in node.iter():
             if child.tag in PATH_KINDS:
                 result.paths.append(SharedPath(child.tag, (child.get("name") or "").strip(),
                                                child.get("path") or "", child))

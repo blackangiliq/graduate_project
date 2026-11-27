@@ -134,7 +134,7 @@ STATUS_TEXT = {"open": "open", "needs_review": "needs review",
 
 
 # ------------------------------------------------------------------ app facts as text
-def fact_text(value: Any) -> str:
+def fact_text(value: Any, *, limit: int = _MAX_TEXT) -> str:
     """One fact as a short line of text: yes/no for booleans, lists joined by commas.
     Control characters, the bidirectional ones included, are removed (the facts come from an
     untrusted app)."""
@@ -143,13 +143,13 @@ def fact_text(value: Any) -> str:
     if isinstance(value, bool):
         return "yes" if value else "no"
     if isinstance(value, (list, tuple)):
-        text = ", ".join(fact_text(item) for item in value)
+        text = ", ".join(fact_text(item, limit=limit) for item in value)
     elif isinstance(value, dict):
         text = json.dumps(value, ensure_ascii=False, default=str)
     else:
         text = str(value)
     text = strip_bidi(_CONTROL.sub(" ", text)).strip()
-    return text if len(text) <= _MAX_TEXT else text[:_MAX_TEXT] + "..."
+    return text if not limit or len(text) <= limit else text[:limit] + "..."
 
 
 def size_text(size: int) -> str:
@@ -347,6 +347,9 @@ def api_tables(apis: Dict[str, Any]) -> List[Tuple[str, List[str], List[List[str
         return [item for item in value if isinstance(item, dict)] \
             if isinstance(value, list) else []
 
+    def value_text(value: Any) -> str:
+        return fact_text(value, limit=0 if apis.get("values_visible") else _MAX_TEXT)
+
     tables: List[Tuple[str, List[str], List[List[str]]]] = []
     keys = []
     for k in items("keys"):
@@ -354,15 +357,16 @@ def api_tables(apis: Dict[str, Any]) -> List[Tuple[str, List[str], List[List[str
             continue
         claims = k.get("claims") if isinstance(k.get("claims"), dict) else {}
         keys.append([fact_text(k.get("type")), fact_text(k.get("service")),
-                     fact_text(k.get("value")) or "-", fact_text(k.get("severity")),
+                     value_text(k.get("value")) or "-", fact_text(k.get("severity")),
                      "yes" if k.get("public") else "", _places(k),
                      ", ".join("%s=%s" % (fact_text(a), fact_text(b)) for a, b in claims.items())
                      or fact_text(k.get("used_by")), fact_text(k.get("advice_text"))])
-    tables.append(("Keys, tokens and passwords (masked)",
+    tables.append(("Keys, tokens and passwords" if apis.get("values_visible")
+                   else "Keys, tokens and passwords (masked)",
                    ["Type", "Service", "Value", "Severity", "Public", "Places", "Details",
                     "What to do"], keys))
     tables.append(("Server addresses", ["Address", "Service", "Kind", "TLS", "Alerts", "Places"],
-                   [[fact_text(e.get("url")), fact_text(e.get("service")) or "-",
+                   [[value_text(e.get("url")), fact_text(e.get("service")) or "-",
                      _CATEGORY_TEXT.get(str(e.get("category")), fact_text(e.get("category"))),
                      "-" if e.get("host_only") else "no" if e.get("cleartext") else "yes",
                      _labels(e.get("alerts")), _places(e)] for e in items("endpoints")]))
@@ -372,22 +376,22 @@ def api_tables(apis: Dict[str, Any]) -> List[Tuple[str, List[str], List[List[str
                      fact_text(h.get("endpoints")), _labels(h.get("alerts"))]
                     for h in items("hosts")]))
     tables.append(("API calls in the code", ["Method", "Target", "Kind", "Place"],
-                   [[fact_text(c.get("method")), fact_text(c.get("target")),
+                   [[fact_text(c.get("method")), value_text(c.get("target")),
                      fact_text(c.get("kind")), "%s:%s" % (fact_text(c.get("file")),
                                                           fact_text(c.get("line")))]
                     for c in items("calls")]))
     tables.append(("API paths", ["Path", "Alerts", "Places"],
-                   [[fact_text(p.get("path")), _labels(p.get("alerts")), _places(p)]
+                   [[value_text(p.get("path")), _labels(p.get("alerts")), _places(p)]
                     for p in items("paths")]))
     firebase = apis.get("firebase") if isinstance(apis.get("firebase"), dict) else {}
     tables.append(("Firebase project", ["Fact", "Value"],
-                   [[key.replace("_", " "), fact_text(value)] for key, value in firebase.items()]))
+                   [[key.replace("_", " "), value_text(value)] for key, value in firebase.items()]))
     tables.append(("Service identifiers", ["Name", "Value", "Service", "Places"],
-                   [[fact_text(c.get("label")), fact_text(c.get("value")),
+                   [[fact_text(c.get("label")), value_text(c.get("value")),
                      fact_text(c.get("service")), _places(c)] for c in items("config")]))
     tables.append((".env entries", ["File", "Line", "Name", "Value"],
                    [[fact_text(e.get("file")), fact_text(e.get("line")), fact_text(e.get("name")),
-                     fact_text(e.get("value"))] for e in items("env")]))
+                     value_text(e.get("value"))] for e in items("env")]))
     return [table for table in tables if table[2]]
 
 
@@ -395,8 +399,9 @@ def _apis_html(apis: Dict[str, Any]) -> str:
     level_color = {"danger": "critical", "warning": "medium", "info": "low"}
     alerts = "".join('<li style="color:var(--%s)">%s</li>' % (level_color[level], escape(text))
                      for level, text in api_alerts(apis))
-    parts = ['<div class="sub">%s. Keys are masked; no address was contacted.</div>'
-             % escape(api_summary(apis))]
+    note = ("Original values are shown; no address was contacted." if apis.get("values_visible")
+            else "Keys are masked; no address was contacted.")
+    parts = ['<div class="sub">%s. %s</div>' % (escape(api_summary(apis)), escape(note))]
     if api_truncated(apis):
         parts.append('<div class="sub">%s</div>' % escape(api_truncated(apis)))
     if alerts:
@@ -413,6 +418,9 @@ def _apis_html(apis: Dict[str, Any]) -> str:
 
 
 def _app_html(facts: Dict[str, Any]) -> str:
+    if not facts.get("kind") and set(facts) <= {"apis"}:
+        apis = facts.get("apis")
+        return _apis_html(apis) if isinstance(apis, dict) else ""
     overview = "".join("<tr><th>%s</th><td>%s</td></tr>" % (escape(label), escape(text))
                        for label, text in app_overview(facts))
     parts = ['<table class="kv">%s</table>' % overview]
@@ -607,7 +615,7 @@ false positives; AI reviews can be wrong. Verify findings before acting on them.
         "file_rows": file_rows or "<tr><td>None</td></tr>",
         "buttons": "".join(buttons), "findings": findings_html, "engine_rows": engine_rows,
         "version": __version__, "app": _app_html(result.app) if result.app else "",
-        "mobile": _mobile_html(result) if result.app else "",
+        "mobile": _mobile_html(result) if result.app.get("kind") else "",
     }
     # The page itself has no bidirectional controls: any in it came from a scanned file or
     # app (a title, a path, a quoted line) and could make that text read differently.

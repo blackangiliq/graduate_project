@@ -7,13 +7,22 @@ source project have different ones, and a scan saved by an older version has non
 """
 from __future__ import annotations
 
+import inspect
 import re
-from typing import Any, Callable, Dict, List, Mapping
+from typing import Any, Callable, Dict, List, Mapping, Optional, get_args
 
 import pandas as pd
 import streamlit as st
+from streamlit.elements import arrow
+
+from ..walker import strip_bidi
 
 Text = Callable[[str], str]
+ApiLocation = Callable[[str, Optional[Mapping[str, Any]], Any], None]
+TABLE_SELECTION = "on_select" in inspect.signature(st.dataframe).parameters
+# Streamlit added individual cell selection after its initial row selection support.
+SINGLE_SELECTION_MODE = ("single-cell" if "single-cell" in get_args(getattr(arrow, "SelectionMode", None))
+                         else "single-row")
 
 PROJECT_KINDS = ("flutter-project", "android-project")
 # Values the loaders and checks write into the facts, and the English text shown for them
@@ -82,6 +91,40 @@ def render(facts: Mapping[str, Any], t: Text, ltr: Text, wide: Dict) -> None:
                                                        _sdk(facts.get("target_sdk")))))
     for column, (label, value) in zip(st.columns(len(metrics)), metrics):
         column.metric(label, value)
+    members = facts.get("apk_members")
+    if members:
+        st.subheader(t("APK files in this scan"))
+        status_names = {"read": t("Read"), "partial": t("Partially read"), "skipped": t("Skipped")}
+        role_names = {"base": t("Base APK"), "split": t("Split APK"), "alternative": t("Alternative APK")}
+        read = sum(item.get("status") == "read" for item in members)
+        st.caption(t("%d of %d APK files read without a reported input limit.") % (read, len(members)))
+        st.dataframe(pd.DataFrame([{
+            t("File"): strip_bidi(str(item.get("name", ""))),
+            t("Package role"): role_names.get(item.get("role"), t("unknown")),
+            t("Status"): status_names.get(item.get("status"), t("unknown")),
+            t("Details"): t(str(item.get("reason") or "")),
+        } for item in members]), hide_index=True, **wide)
+    coverage = facts.get("analysis_coverage") or {}
+    extraction = {label: facts[name] for name, label in (
+        ("native_string_coverage", "Native library string coverage"),
+        ("encoded_literal_coverage", "Base64 literal coverage"),
+        ("complex_resources", "Complex Android resources")) if facts.get(name)}
+    if extraction:
+        with st.expander(t("Extraction coverage")):
+            for label, detail in extraction.items():
+                st.markdown("**%s**" % t(label))
+                st.json(detail, expanded=False)
+            st.caption(t("Read and omitted inputs, decoding budgets and derived-text counts "
+                         "describe coverage; they do not prove that every vulnerability was found."))
+    if coverage.get("pattern_long_lines"):
+        st.info(t("%d long lines exceed the code-pattern analysis limit. Secrets and literal URLs "
+                  "are checked separately; code vulnerability coverage is partial.") % coverage["pattern_long_lines"])
+    java = facts.get("java_decompilation") or {}
+    if java:
+        st.caption(t("JADX loaded %d files. Scope: the base APK's manifest package and declared "
+                     "components; limits: %d files and %d seconds. Other DEX contents are still "
+                     "examined as extracted strings.") % (java.get("loaded_files", 0),
+                     java.get("file_limit", 0), java.get("time_limit_seconds", 0)))
     notes = [_sdk_note(str(facts[key]), t) for key in ("min_sdk_note", "target_sdk_note")
              if facts.get(key)]
     if notes:
@@ -169,12 +212,21 @@ def alert_text(alert: Mapping[str, Any], t: Text) -> str:
     return t(template) % values
 
 
-def render_apis(apis: Mapping[str, Any], t: Text, ltr: Text, wide: Dict) -> None:
+def render_apis(apis: Mapping[str, Any], t: Text, ltr: Text, wide: Dict,
+                key_locations: Optional[Callable[
+                    [List[Mapping[str, Any]], Optional[int], Any], None]] = None,
+                api_location: Optional[ApiLocation] = None
+                ) -> None:
     """Draw the API and key inventory (call it inside an expander)."""
     summary = apis.get("summary") if isinstance(apis.get("summary"), Mapping) else {}
-    st.caption(t("Every server address, API call, API path and key the analyzer found, with "
-                 "the file and line of each place. Keys are masked. Nothing was contacted: "
-                 "the addresses are only read."))
+    values_visible = bool(apis.get("values_visible"))
+    if values_visible:
+        st.caption(t("Addresses, API calls, paths and keys observed in the scanned files, with "
+                     "their recorded locations. Values are shown in full. No service was contacted."))
+    else:
+        st.caption(t("Every server address, API call, API path and key the analyzer found, with "
+                     "the file and line of each place. Keys are masked. Nothing was contacted: "
+                     "the addresses are only read."))
     metrics = [(t("Server addresses"), summary.get("endpoints", 0)),
                (t("Hosts"), summary.get("hosts", 0)),
                (t("Without TLS"), summary.get("cleartext", 0)),
@@ -192,7 +244,7 @@ def render_apis(apis: Mapping[str, Any], t: Text, ltr: Text, wide: Dict) -> None
         for alert in alerts:
             show.get(str(alert.get("level")), st.info)(alert_text(alert, t))
     else:
-        st.success(t("No alerts: no keys, unencrypted addresses or test servers were found."))
+        st.caption(t("No inventory alerts at the current thresholds."))
 
     keys = [k for k in apis.get("keys") or [] if isinstance(k, Mapping) and not k.get("dismissed")]
     endpoints = [e for e in apis.get("endpoints") or [] if isinstance(e, Mapping)]
@@ -201,14 +253,24 @@ def render_apis(apis: Mapping[str, Any], t: Text, ltr: Text, wide: Dict) -> None
     paths = [p for p in apis.get("paths") or [] if isinstance(p, Mapping)]
     config = [c for c in apis.get("config") or [] if isinstance(c, Mapping)]
     env = [e for e in apis.get("env") or [] if isinstance(e, Mapping)]
-    tabs = st.tabs([t("Keys (%d)") % len(keys), t("Server addresses (%d)") % len(endpoints),
+    tabs = st.tabs([t("Server addresses (%d)") % len(endpoints), t("Keys (%d)") % len(keys),
                     t("Hosts (%d)") % len(hosts), t("API calls (%d)") % len(calls),
                     t("API paths (%d)") % len(paths), t("Service IDs (%d)") % len(config),
                     t(".env entries (%d)") % len(env)])
     with tabs[0]:
-        _key_rows(keys, t, wide)
+        if any(e.get("requires_runtime_resolution") for e in endpoints):
+            st.caption(t("URL templates are shown exactly as stored, including placeholders. "
+                         "Their final addresses require runtime values; finding a literal "
+                         "does not prove a network request occurred."))
+        _api_rows("endpoints", endpoints, _endpoint_rows(endpoints, t), t, wide, api_location)
     with tabs[1]:
-        _endpoint_rows(endpoints, t, wide)
+        if key_locations is not None and keys:
+            key_table, preview = st.columns([3, 2])
+            with key_table:
+                selected = _key_rows(keys, t, wide, selectable=True, values_visible=values_visible)
+                key_locations(keys, selected, preview)
+        else:
+            _key_rows(keys, t, wide, values_visible=values_visible)
     with tabs[2]:
         _rows([{t("Host"): str(h.get("host", "")), t("Service provider"): t(str(h.get("service") or "-")),
                 t("Kind"): t(CATEGORIES.get(str(h.get("category")), str(h.get("category", "")))),
@@ -216,23 +278,29 @@ def render_apis(apis: Mapping[str, Any], t: Text, ltr: Text, wide: Dict) -> None
                 t("Without TLS"): yes_no(h.get("cleartext"), t),
                 t("Alerts"): _alert_labels(h.get("alerts"), t)} for h in hosts], t, wide)
     with tabs[3]:
-        st.caption(t("Calls of HTTP, WebSocket and GraphQL clients in the code. A release build "
-                     "keeps no code text, so for it see the addresses and API paths."))
-        _rows([{t("Method"): str(c.get("method", "")), t("Target"): str(c.get("target", "")),
-                t("Kind"): t(CALL_KINDS.get(str(c.get("kind")), str(c.get("kind", "")))),
-                t("Place"): "%s:%s" % (c.get("file", ""), c.get("line", ""))} for c in calls],
-              t, wide)
+        st.caption(t("Calls found in source or decompiled code. Some compiled apps only expose "
+                     "address and path strings."))
+        call_rows = [{t("Method"): str(c.get("method", "")), t("Target"): str(c.get("target", "")),
+                      t("Kind"): t(CALL_KINDS.get(str(c.get("kind")), str(c.get("kind", "")))),
+                      t("Place"): places({"locations": [c]})} for c in calls]
+        _api_rows("calls", calls, call_rows, t, wide, api_location)
     with tabs[4]:
         st.caption(t("Parts of addresses kept as texts, such as /api/v1/login: a compiled app "
                      "keeps them even when the full address is put together at run time."))
-        _rows([{t("Path"): str(p.get("path", "")), t("Alerts"): _alert_labels(p.get("alerts"), t),
-                t("Places"): places(p)} for p in paths], t, wide)
+        path_rows = [{t("Path"): str(p.get("path", "")), t("Alerts"): _alert_labels(p.get("alerts"), t),
+                      t("Places"): places(p)} for p in paths]
+        _api_rows("paths", paths, path_rows, t, wide, api_location)
     with tabs[5]:
-        _config_rows(apis, config, t, wide)
+        _config_rows(apis, config, t, wide, api_location)
     with tabs[6]:
-        _rows([{t("File"): str(e.get("file", "")), t("Line"): e.get("line", ""),
-                t("Name"): str(e.get("name", "")), t("Value"): str(e.get("value", "")),
-                t("Secret"): yes_no(e.get("secret"), t)} for e in env], t, wide)
+        _api_rows("env", env,
+                  [{t("File"): str(e.get("file", "")), t("Line"): e.get("line", ""),
+                    t("Name"): str(e.get("name", "")), t("Value"): str(e.get("value", "")),
+                    t("Secret"): yes_no(e.get("secret"), t)} for e in env], t, wide, api_location)
+    coverage = apis.get("coverage") or {}
+    if coverage.get("context_lines_skipped"):
+        st.info(t("%d long code lines were checked for literal URLs, but their API call expressions "
+                  "could not be fully analyzed.") % coverage["context_lines_skipped"])
     truncated = apis.get("truncated")
     if isinstance(truncated, Mapping) and truncated:
         st.caption(t("Lists were cut to keep the report small: %s.") % ", ".join(
@@ -255,38 +323,82 @@ def _alert_labels(codes: Any, t: Text) -> str:
     return ", ".join(t(ALERT_LABELS.get(str(c), str(c))) for c in codes or []) or "-"
 
 
-def _key_rows(keys: List[Mapping[str, Any]], t: Text, wide: Dict) -> None:
-    if not keys:
+def selected_table_row(state: Mapping) -> Optional[int]:
+    selection = state["selection"]
+    cells = selection.get("cells", [])
+    return cells[0][0] if cells else next(iter(selection.get("rows", [])), None)
+
+
+def _selectable_table(rows: List[Dict[str, Any]], wide: Dict, key: str) -> Optional[int]:
+    state = st.dataframe(pd.DataFrame(rows), hide_index=True, on_select="rerun",
+                         selection_mode=SINGLE_SELECTION_MODE, key=key, **wide)
+    return selected_table_row(state)
+
+
+def _api_rows(kind: str, items: List[Mapping[str, Any]], rows: List[Dict[str, Any]], t: Text,
+              wide: Dict, location: Optional[ApiLocation]) -> None:
+    if not rows:
         st.caption(t("None."))
         return
-    st.caption(t("Keys, tokens and passwords, masked. A key inside an app package is public: "
-                 "anyone can unpack the app and read it."))
+    if location is None:
+        st.dataframe(pd.DataFrame(rows), hide_index=True, **wide)
+        return
+    table, preview = st.columns([3, 2])
+    key = f"decoded_inventory_{kind}_{id(items[0])}"
+    with table:
+        if TABLE_SELECTION:
+            index = _selectable_table(rows, wide, key)
+        else:
+            st.dataframe(pd.DataFrame(rows), hide_index=True, **wide)
+            index = st.selectbox(t(LIST_NAMES[kind]), range(len(rows)), index=None, key=key,
+                                 format_func=lambda i: " · ".join(str(v) for v in rows[i].values()))
+    item = items[index] if index is not None and 0 <= index < len(items) else None
+    location(kind, item, preview)
+
+
+def _key_rows(keys: List[Mapping[str, Any]], t: Text, wide: Dict, *, selectable: bool = False,
+              values_visible: bool = False
+              ) -> Optional[int]:
+    if not keys:
+        st.caption(t("None."))
+        return None
+    if values_visible:
+        st.caption(t("Values are shown in full. The severity reflects the evidence in the scanned "
+                     "files. Service permissions and restrictions require separate verification."))
+    else:
+        st.caption(t("Values are masked. The severity reflects the evidence in the scanned files. "
+                     "Service permissions and restrictions require separate verification."))
     rows = []
     for k in keys:
         claims = k.get("claims") if isinstance(k.get("claims"), Mapping) else {}
         rows.append({
             t("Type"): t(str(k.get("type", ""))), t("Service provider"): t(str(k.get("service", ""))),
-            t("Value (masked)"): str(k.get("value") or "-"),
+            t("Value") if values_visible else t("Value (masked)"): str(k.get("value") or "-"),
             t("Severity"): t(str(k.get("severity", "")).capitalize()),
             t("Public by design"): yes_no(k.get("public"), t),
             t("Places"): places(k),
             t("Details"): ", ".join("%s=%s" % item for item in claims.items())
             or str(k.get("used_by") or ""),
             t("What to do"): t(str(k.get("advice_text", "")))})
+    if selectable and TABLE_SELECTION:
+        return _selectable_table(rows[:MAX_ROWS], wide, f"decoded_inventory_keys_{id(keys[0])}")
     _table(rows, wide)
+    return None
 
 
-def _endpoint_rows(endpoints: List[Mapping[str, Any]], t: Text, wide: Dict) -> None:
-    _rows([{t("Address"): str(e.get("url", "")), t("Service provider"): t(str(e.get("service") or "-")),
+def _endpoint_rows(endpoints: List[Mapping[str, Any]], t: Text) -> List[Dict[str, Any]]:
+    return [{t("Address"): str(e.get("url", "")), t("Service provider"): t(str(e.get("service") or "-")),
+            t("Evidence"): t("URL template" if e.get("requires_runtime_resolution") else
+                             "Host literal" if e.get("host_only") else "URL literal"),
             t("Kind"): t(CATEGORIES.get(str(e.get("category")), str(e.get("category", "")))),
             t("TLS"): "-" if e.get("host_only") else yes_no(not e.get("cleartext"), t),
             t("Alerts"): _alert_labels(e.get("alerts"), t),
             t("Times found"): int(e.get("count") or 0), t("Places"): places(e, 3)}
-           for e in endpoints], t, wide)
+            for e in endpoints]
 
 
 def _config_rows(apis: Mapping[str, Any], config: List[Mapping[str, Any]], t: Text,
-                 wide: Dict) -> None:
+                 wide: Dict, api_location: Optional[ApiLocation] = None) -> None:
     firebase = apis.get("firebase")
     if isinstance(firebase, Mapping) and firebase:
         labels = {"project_id": "Firebase project ID", "app_ids": "Firebase app ID",
@@ -297,11 +409,16 @@ def _config_rows(apis: Mapping[str, Any], config: List[Mapping[str, Any]], t: Te
         _table([{t("Fact"): t(labels.get(key, key)),
                  t("Value"): ", ".join(map(str, value)) if isinstance(value, list) else str(value)}
                 for key, value in firebase.items()], wide)
-    st.caption(t("Identifiers of the services the app uses. They are not secrets, but they tell "
-                 "which projects and accounts to check (security rules, key restrictions)."))
-    _rows([{t("Name"): t(str(c.get("label", ""))), t("Value"): str(c.get("value", "")),
-            t("Service provider"): t(str(c.get("service", ""))), t("Places"): places(c)}
-           for c in config], t, wide)
+    st.caption(t("Service configuration and credential candidates found in the files. "
+                 "Client identifiers can be public; a name alone does not establish "
+                 "privileges or exploitability. Select a value to inspect its source."))
+    _api_rows("config", config,
+              [{t("Name"): t(str(c.get("label", ""))), t("Value"): str(c.get("value", "")),
+                t("Classification"): t({"credential_candidate": "Credential candidate; review required",
+                                        "sdk_client_identifier": "SDK client identifier"}.get(
+                                            str(c.get("classification", "")), "Service configuration")),
+                t("Service provider"): t(str(c.get("service", ""))), t("Places"): places(c)}
+               for c in config], t, wide, api_location)
 
 
 # ------------------------------------------------------------------ values

@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
-from . import flutter, merge, scoring
+from . import flutter, merge, scoring, sourcearchive, splitinput
 from .ai import llm as llm_module
 from .ai.classifier import get_classifier
 from .ai.providers import LLMConfig, make_client
@@ -109,6 +109,9 @@ class ScanOptions:
     # output
     lang: str = "en"                  # language of explanations: en | ar
     save: bool = True
+    work_dir: Optional[Path] = None   # private temporary workspace for hosted targets
+    target_label: str = ""            # display name for a hosted target
+    keep_decoded: bool = False        # retain original evidence for dashboard previews and history
 
 
 def client_from_options(options: ScanOptions) -> Any:
@@ -132,28 +135,34 @@ def run_scan(target: str, options: Optional[ScanOptions] = None,
 
 def is_app_target(path: Path) -> bool:
     """True when the scan target is an app package file (by its suffix)."""
-    return path.is_file() and path.suffix.lower() in flutter.APP_SUFFIXES
+    return path.is_file() and (path.suffix.lower() in flutter.APP_SUFFIXES
+                               or path.suffix.lower() == ".zip" and splitinput.is_packaged_zip(path))
 
 
 def scan_project(target: str, options: Optional[ScanOptions] = None,
                  progress: Optional[ProgressFn] = None,
                  storage: Optional[Storage] = None) -> Tuple[ScanResult, List[SourceFile]]:
     """Run the pipeline. Returns the result and the source files (used by the learner).
-    Raises FileNotFoundError for a missing target and flutter.AppError for an app package
-    that cannot be read."""
-    options = options or ScanOptions()
-    progress = progress or _noop
-    root = Path(target).expanduser().resolve()
-    if not root.exists():
+    A source ZIP is extracted for the scan and removed before returning. The SourceFile
+    text and relative paths remain available after an archive scan."""
+    path = Path(target).expanduser().resolve()
+    if not path.exists():
         raise FileNotFoundError("Path does not exist: %s" % target)
-    if storage is None:
+    options = options or ScanOptions()
+    with splitinput.scan_root(path, options.work_dir) as root:
+        return _scan_project(root, path, options, progress or _noop, storage)
+
+
+def _scan_project(root: Path, target: Path, options: ScanOptions, progress: ProgressFn,
+                  storage: Optional[Storage]) -> Tuple[ScanResult, List[SourceFile]]:
+    if storage is None and (options.save or options.use_feedback or options.use_llm):
         try:
             storage = Storage()
         except Exception:      # a read-only folder must not stop the scan
             storage = None
 
     started = time.time()
-    result = ScanResult(target=str(root),
+    result = ScanResult(target=options.target_label or str(target),
                         started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def say(kind: str, fraction: float, template: str, *args: Any) -> None:
@@ -166,14 +175,17 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
     # 1. walk -------------------------------------------------------------------
     ctx: Optional[flutter.MobileContext] = None
     if is_app_target(root):
-        say("step", 0.01, "Unpacking the app %s", root.name)
-        ctx = decode_app(root, options.apk_tools)
+        say("step", 0.01, "Unpacking the app %s", options.target_label or root.name)
+        ctx = decode_app(root, options.apk_tools, options.work_dir)
         files: List[SourceFile] = list(ctx.files)
         say("result", 0.02, "Decoded the app: %d files, %s build", len(files),
             ctx.facts.get("build_mode") or "unknown")
     else:
-        say("step", 0.02, "Collecting the source files of %s", str(root))
+        say("step", 0.02, "Collecting the source files of %s",
+            options.target_label or (target.name if root != target else str(root)))
         files = list(walk_project(str(root), options.exclude_dirs))
+        if root != target and not files:
+            raise sourcearchive.ArchiveError("The source ZIP contains no readable source files.")
     # Everything in an app package ships to its users, whatever the folder is called (an
     # asset under test/ or mocks/ too): test code is only recognised in source folders.
     test_files = set() if ctx is not None else {sf.rel for sf in files if is_test_path(sf.rel)}
@@ -189,14 +201,31 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
             result.engine_notes["flutter"] = "failed: %s" % _reason(exc)
             say("result", 0.03, "%s: failed - %s", ENGINE_TEXT["flutter"][0], _reason(exc))
         if ctx is not None:
+            if root != target and ctx.facts.get("name") == root.name:
+                ctx.facts["name"] = target.stem
             ctx.files = [sf for sf in ctx.files
                          if options.include_tests or not is_test_path(sf.rel)]
             files.extend(ctx.files)
             test_files |= {sf.rel for sf in ctx.files if is_test_path(sf.rel)}
             say("result", 0.03, "Found a Flutter project: %s" if ctx.kind == "flutter-project"
-                else "Found an Android project: %s", ctx.facts.get("name") or root.name)
+                else "Found an Android project: %s", ctx.facts.get("name") or target.name)
     if ctx is not None:
         result.app = ctx.facts
+    from .encoded import recover as recover_encoded
+    derived_files, decoding = recover_encoded(files)
+    if derived_files:
+        derived_tests = {sf.rel for sf in derived_files
+                         if sf.derivation.get("source_file") in test_files}
+        test_files.update(derived_tests)
+        files.extend(derived_files)
+    if ctx is not None:
+        ctx.facts["encoded_literal_coverage"] = decoding
+    if derived_files or decoding["limits_reached"]:
+        result.engine_notes["encoded literals"] = (
+            "%d Base64-derived files; %d candidates checked; limits reached: %s. "
+            "Derived text is not original code; source spans are retained."
+            % (len(derived_files), decoding["candidates_checked"],
+               ", ".join(decoding["limits_reached"]) or "none"))
     result.files_scanned = len(files)
     result.lines_scanned = sum(len(f.lines) for f in files if f.origin in KLOC_ORIGINS)
     for sf in files:
@@ -273,6 +302,21 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
                          rule_files, 0.12, 0.30)
 
     run_engine("rules", options.use_rules, 0.12, scan_rules)
+    if options.use_rules:
+        long_rule_lines = sum(len(line) > rules_engine.MAX_LINE_LENGTH
+                              for sf in rule_files for line in sf.lines)
+        if long_rule_lines:
+            result.engine_notes["pattern coverage"] = (
+                "%d long lines exceed the %d-character pattern-analysis limit; "
+                "credential and literal URL checks are separate"
+                % (long_rule_lines, rules_engine.MAX_LINE_LENGTH))
+        if ctx is not None:
+            result.app["analysis_coverage"] = {
+                "pattern_long_lines": long_rule_lines,
+                "pattern_line_limit": rules_engine.MAX_LINE_LENGTH,
+                "strings_files": sum(sf.origin == "strings" for sf in files),
+                "decompiled_files": sum(sf.origin == "decompiled" for sf in files),
+            }
     learned = sum(1 for f in raw if f.engines == ["learned"])
     if learned:
         result.engine_notes["rules"] += " including %d from learned rules" % learned
@@ -345,8 +389,8 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
             add_note("flutter", "app context not applied: %s" % str(exc)[:200])
         else:
             if refined:
-                add_note("flutter", "%d Google API keys of Firebase files lowered to low "
-                                    "severity (identifiers, not secrets)" % refined)
+                add_note("flutter", "%d Google API key findings in client configurations "
+                                    "lowered to low severity" % refined)
     verdicts: Dict[str, str] = {}
     reviewed: List[Tuple[str, int]] = []
     if options.use_feedback and storage is not None:
@@ -460,6 +504,18 @@ def scan_project(target: str, options: Optional[ScanOptions] = None,
                                  "TLS), %d keys (%d secret), %d API calls, %d API paths",
                 summary["endpoints"], summary["hosts"], summary["cleartext"], summary["keys"],
                 summary["secret_keys"], summary["calls"], summary["paths"])
+    if options.keep_decoded:
+        from .decoded import CredentialEvidence, build_previews
+        from .flutter.inventory import build as build_inventory
+        source_root = None
+        if root == target and not is_app and not options.target_label:
+            source_root = target if target.is_dir() else target.parent
+        result.decoded_files = build_previews(files, source_root=source_root)
+        result.credential_evidence = CredentialEvidence(files)
+        try:
+            result.visible_apis = build_inventory(ctx, files, findings, reveal_values=True)
+        except Exception as exc:
+            result.engine_notes["visible API inventory"] = "failed: %s" % _reason(exc)
     result.duration_seconds = time.time() - started
     say("result", 0.97, "Scan finished in %.1f s", result.duration_seconds)
 
@@ -485,10 +541,13 @@ def _reason(exc: BaseException) -> str:
     return ("%s: %s" % (type(exc).__name__, exc))[:200]
 
 
-def decode_app(path: Path, use_tools: bool) -> "flutter.MobileContext":
+def decode_app(path: Path, use_tools: bool, work_dir: Optional[Path] = None
+               ) -> "flutter.MobileContext":
     """flutter.load_app, with an unexpected failure of a decoder turned into an AppError,
     so that the user reads why the app cannot be scanned instead of a stack trace."""
     try:
+        if work_dir is not None:
+            return flutter.load_app(path, use_tools=use_tools, work_dir=work_dir)
         return flutter.load_app(path, use_tools=use_tools)
     except flutter.AppError:
         raise
@@ -568,6 +627,19 @@ def share_secrets(findings: Iterable[Finding], files: Sequence[SourceFile],
     # the values of its other credential findings (found with the rule's own pattern)
     found: Dict[str, set] = {sf.rel: set(sf.secret_values) | set(text_secrets(sf))
                              for sf in files}
+    # If a derived file contains credentials, protect its encoded representation in
+    # analysis/AI text too. Original dashboard snapshots remain untouched.
+    for sf in files:
+        reference = sf.derivation
+        if not reference or not sf.secret_values:
+            continue
+        original = by_rel.get(reference.get("source_file"))
+        number = reference.get("source_line", 0)
+        if original is not None and 1 <= number <= len(original.lines):
+            value = original.lines[number - 1][reference["source_column"] - 1:
+                                                reference["source_end_column"] - 1]
+            if value:
+                found.setdefault(original.rel, set()).add(value)
     patterns = {rule.id: rule.pattern for rule in rules_engine.load_rules()}
     for finding in findings:
         sf = by_rel.get(finding.file)
@@ -640,9 +712,16 @@ def inspect_mobile(target: str, use_tools: bool = False, exclude_dirs: Sequence[
     masked). Returns (context with complete facts, files, findings of the checks, engine
     note); the context is None for a folder that is neither. Raises FileNotFoundError, and
     flutter.AppError for an app that cannot be decoded or a project that cannot be read."""
-    root = Path(target).expanduser().resolve()
-    if not root.exists():
+    path = Path(target).expanduser().resolve()
+    if not path.exists():
         raise FileNotFoundError("Path does not exist: %s" % target)
+    with splitinput.scan_root(path) as root:
+        return _inspect_mobile(root, use_tools, exclude_dirs, key_rules)
+
+
+def _inspect_mobile(root: Path, use_tools: bool, exclude_dirs: Sequence[str], key_rules: bool
+                    ) -> Tuple[Optional["flutter.MobileContext"], List[SourceFile],
+                               List[Finding], str]:
     if is_app_target(root):
         ctx: Optional[flutter.MobileContext] = decode_app(root, use_tools)
         files = list(ctx.files)
@@ -656,6 +735,10 @@ def inspect_mobile(target: str, use_tools: bool = False, exclude_dirs: Sequence[
         if ctx is None:
             return None, files, [], ""
         files += ctx.files
+    from .encoded import recover as recover_encoded
+    derived_files, decoding = recover_encoded(files)
+    files.extend(derived_files)
+    ctx.facts["encoded_literal_coverage"] = decoding
     secret_findings = secrets.scan([sf for sf in files if sf.origin in SECRETS_ORIGINS])
     by_rel = {sf.rel: sf for sf in files}
     try:

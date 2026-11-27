@@ -24,7 +24,7 @@ It ships ENABLED only if it is not a "manual review" rule and is quiet on that c
 otherwise it ships DISABLED, with the reason in its `note`, and can be switched on from the
 Rules tab of the dashboard or with `python -m sca rules enable ID`.
 
-This script needs Python 3.11+ (tomllib) and, for Gitleaks, `pip install exrex`.
+This script needs the development dependencies (tomli on Python 3.10, and exrex).
 The tool itself does not need this script: the converted rules are in sca/rules/imported/.
 """
 from __future__ import annotations
@@ -35,6 +35,10 @@ import json
 import re
 import subprocess
 import sys
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10 development environment
+    import tomli as tomllib
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -215,8 +219,11 @@ REVIEW_ONLY = ("manualreview", "bestpractice")
 # Rules that passed every automatic check but whose matches in the real-code corpus were
 # read by hand and found to be mostly harmless. They ship disabled, with the reason.
 REVIEWED_NOISY = {
-    "DS187371": "its short cipher-mode names (EAX, CTS, ...) also match unrelated identifiers "
-                "such as CPU register names",
+    "DS187371": "the original word-only expression matched RSA transformation names, "
+                "authenticated modes and unrelated identifiers. Local 2026-11-27 precision "
+                "adaptation of DS187371 at 6997e759b48d9fed457b5399b4e89681e6a4dcd4 (MIT) "
+                "limits each match to explicit symmetric ECB settings. It remains disabled "
+                "by default and preserves user enable overrides",
     "DS197836": "its matches were ordinary HMAC calls and comments, not hashes of "
                 "low-entropy data",
     "DS125134": "it also matches type declarations of the option, not only the place where "
@@ -224,6 +231,23 @@ REVIEWED_NOISY = {
     "DS169126": "it also matches the options that DISABLE old protocols (SSL_OP_NO_SSLv3)",
     "DS169125": "its only match was a help text that lists protocol names",
     "DS440010": "it flags every explicit TLS version, including a safe minimum version",
+}
+DEVSKIM_ADAPTATIONS = {
+    "DS187371": {
+        "title": "Explicit symmetric encryption in ECB mode",
+        "pattern": r'\bCipherMode\s*\.\s*ECB\b|["\x27](?i:(?:AES|DES|DESede|Blowfish|RC2)/ECB/[A-Za-z0-9][A-Za-z0-9_-]*)["\x27]',
+        "message": "An explicit symmetric ECB setting is present. ECB can expose repeated "
+                   "plaintext patterns; review whether this configuration is used for sensitive "
+                   "data. RSA transformation names are not classified as symmetric ECB.",
+        "fix": "Use an appropriate authenticated encryption construction, such as AES-GCM "
+               "with correct nonce management, and review the surrounding key and data handling.",
+        "examples_vulnerable": ['tdes.Mode = CipherMode.ECB;',
+                                'Cipher.getInstance("AES/ECB/PKCS5Padding");'],
+        "examples_safe": ['Cipher.getInstance("RSA/ECB/PKCS1Padding");',
+                          'Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");',
+                          'Cipher.getInstance("AES/GCM/NoPadding");',
+                          'int EAX = 0; String modeName = "AEAD";'],
+    },
 }
 
 
@@ -283,6 +307,7 @@ def convert_devskim(rule: Dict[str, Any]) -> Tuple[Optional[Dict[str, Any]], str
         "examples_safe": [str(x) for x in rule.get("must-not-match") or []][:4],
         "_review_only": severity in REVIEW_ONLY,
     }
+    out.update(DEVSKIM_ADAPTATIONS.get(rule["id"], {}))
     return out, ""
 
 
@@ -373,7 +398,6 @@ def generate_example(raw: Dict[str, Any]) -> str:
 
 def import_gitleaks(path: Path, corpus: Optional[Corpus], clean: List[str]
                     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    import tomllib
     config = tomllib.loads((path / "config" / "gitleaks.toml").read_text(encoding="utf-8"))
     builtin = [re.compile(p) for _i, _t, p, _s, _c in secrets.KNOWN_FORMATS]
     kept, report = [], []

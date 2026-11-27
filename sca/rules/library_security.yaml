@@ -1,0 +1,223 @@
+# Original, narrow API-setting detectors. References and pinned source revisions are
+# recorded in evaluation/upstream_sources_2026_11_27.json. These are not upstream
+# AST/data-flow rules, nor assertions that a setting is reachable or exploitable.
+
+- id: ANDROID-KEYSTORE-RANDOMIZATION-DISABLED
+  title: Android Keystore randomized-encryption requirement is disabled
+  languages: [java]
+  cwe: CWE-1204
+  severity: medium
+  confidence: 0.8
+  code_only: true
+  pattern: '\.\s*setRandomizedEncryptionRequired\s*\(\s*false\s*\)'
+  message: The key configuration permits encryption that is not required to be randomized. Review the selected cipher mode and IV generation; this call alone does not prove IV reuse.
+  fix: Keep randomized encryption required and let the provider generate a fresh IV or nonce for each encryption.
+  examples_vulnerable: ['builder.setRandomizedEncryptionRequired(false);']
+  examples_safe: ['builder.setRandomizedEncryptionRequired(true);', 'builder.setRandomizedEncryptionRequired(policy)']
+
+- id: JVM-NETTY-INSECURE-TRUST
+  title: Netty client selects a trust manager that accepts all certificates
+  languages: [java]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.88
+  code_only: true
+  pattern: '\.\s*trustManager\s*\(\s*(?:io\.netty\.handler\.ssl\.util\.)?InsecureTrustManagerFactory\s*\.\s*INSTANCE\s*\)'
+  message: This SSL context builder is configured to accept any certificate chain. Confirm where the resulting context is used and whether additional identity checks exist.
+  fix: Use a trust manager configured with the intended certificate authorities.
+  examples_vulnerable: ['SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE);']
+  examples_safe: ['builder.trustManager(trustedCertificates);', 'var available = InsecureTrustManagerFactory.INSTANCE;']
+
+- id: JVM-TINK-CLEARTEXT-WRITE
+  title: Tink keyset is written without keyset encryption
+  languages: [java]
+  cwe: CWE-312
+  severity: medium
+  confidence: 0.82
+  code_only: true
+  pattern: '\bCleartextKeysetHandle\s*\.\s*write\s*\('
+  message: This API writes a keyset without encryption. Check whether it contains secret key material and whether the destination provides sufficient access protection.
+  fix: Prefer an encrypted keyset protected by an appropriate master key; public-only keysets do not require secret-key protection.
+  examples_vulnerable: ['CleartextKeysetHandle.write(handle, writer);']
+  examples_safe: ['handle.write(writer, masterKey);', 'CleartextKeysetHandle.read(reader);']
+
+- id: JVM-JJWT-UNSECURED
+  title: JJWT parser explicitly enables unsigned tokens
+  languages: [java]
+  cwe: CWE-347
+  severity: high
+  confidence: 0.82
+  code_only: true
+  pattern: '\.\s*unsecured\s*\(\s*\)'
+  near: '\b(?:Jwts|JwtParserBuilder)\b'
+  within: 5
+  message: In a visible JJWT parser context this call enables parsing of unsigned JWTs. Review whether parsed claims influence authentication or authorization.
+  fix: Require signed tokens and configure a trusted verification key and expected claims.
+  examples_vulnerable: ['var parser = Jwts.parser().unsecured().build();']
+  examples_safe: ['var parser = Jwts.parser().verifyWith(key).build();', 'parser.unsecured(policy);']
+
+- id: JVM-JJWT-UNSECURED-DECOMPRESSION
+  title: JJWT enables decompression of unauthenticated token payloads
+  languages: [java]
+  cwe: CWE-409
+  severity: medium
+  confidence: 0.8
+  code_only: true
+  pattern: '\.\s*unsecuredDecompression\s*\(\s*\)'
+  near: '\b(?:Jwts|JwtParserBuilder)\b'
+  within: 5
+  message: This JJWT configuration permits decompression of unsigned token content when unsigned parsing is also enabled. Review untrusted input and resource limits.
+  fix: Keep unsecured decompression disabled and authenticate tokens before processing their content.
+  examples_vulnerable: ['Jwts.parser().unsecured().unsecuredDecompression().build();']
+  examples_safe: ['Jwts.parser().verifyWith(key).build();', 'builder.unsecuredDecompression(policy);']
+
+- id: JVM-AUTH0-JWT-NONE
+  title: JWT verification is configured with the unsigned algorithm
+  languages: [java]
+  cwe: CWE-347
+  severity: high
+  confidence: 0.88
+  code_only: true
+  pattern: '\bJWT\s*\.\s*require\s*\(\s*(?:com\.auth0\.jwt\.algorithms\.)?Algorithm\s*\.\s*none\s*\(\s*\)\s*\)'
+  message: This verifier accepts the unsigned JWT algorithm. Claims from such tokens are not authenticated by a signature.
+  fix: Select the expected signing algorithm and a trusted verification key; validate issuer and audience.
+  examples_vulnerable: ['JWT.require(Algorithm.none()).build();']
+  examples_safe: ['JWT.require(Algorithm.RSA256(publicKey, null)).build();', 'var algorithm = Algorithm.none();']
+
+- id: JVM-XSTREAM-ANY-TYPE
+  title: XStream deserialization permits any type
+  languages: [java]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.85
+  code_only: true
+  pattern: '\.\s*addPermission\s*\(\s*(?:com\.thoughtworks\.xstream\.security\.)?AnyTypePermission\s*\.\s*ANY\s*\)'
+  message: This permission removes XStream's type restriction. Exploitability depends on whether untrusted XML reaches this instance and on available classes.
+  fix: Allow only the specific types required by the expected document schema.
+  examples_vulnerable: ['xstream.addPermission(AnyTypePermission.ANY);']
+  examples_safe: ['xstream.addPermission(NoTypePermission.NONE);', 'xstream.allowTypes(expectedTypes);']
+
+- id: JVM-FASTJSON-AUTOTYPE
+  title: Fastjson parser enables automatic type selection
+  languages: [java]
+  cwe: CWE-502
+  severity: medium
+  confidence: 0.8
+  code_only: true
+  pattern: '\.\s*setAutoTypeSupport\s*\(\s*true\s*\)'
+  near: '\bParserConfig\b'
+  within: 5
+  message: The visible Fastjson parser configuration enables automatic type selection. Whether untrusted data can select unsafe classes depends on parser version, allowed types and call sites.
+  fix: Keep automatic type selection disabled for untrusted input and use explicitly defined data types.
+  examples_vulnerable: ['ParserConfig.getGlobalInstance().setAutoTypeSupport(true);']
+  examples_safe: ['ParserConfig.getGlobalInstance().setAutoTypeSupport(false);', 'config.setAutoTypeSupport(policy);']
+
+- id: JVM-JACKSON-PERMISSIVE-TYPING
+  title: Jackson default typing uses a permissive subtype validator
+  languages: [java]
+  cwe: CWE-502
+  severity: high
+  confidence: 0.83
+  code_only: true
+  pattern: '\.\s*activateDefaultTyping(?:AsProperty)?\s*\(\s*(?:com\.fasterxml\.jackson\.databind\.jsontype\.impl\.)?LaissezFaireSubTypeValidator\s*\.\s*instance\b'
+  message: This default-typing configuration uses a validator that permits arbitrary subtypes. Review whether attacker-controlled JSON reaches the configured mapper.
+  fix: Use a restrictive subtype validator and fixed expected types for untrusted documents.
+  examples_vulnerable: ['mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance);']
+  examples_safe: ['mapper.activateDefaultTyping(allowedSubtypeValidator);', 'var validator = LaissezFaireSubTypeValidator.instance;']
+
+- id: JVM-RETROFIT-FULL-LOGGING
+  title: Retrofit 1 full HTTP logging is enabled
+  languages: [java]
+  cwe: CWE-532
+  severity: medium
+  confidence: 0.78
+  code_only: true
+  pattern: '\.\s*setLogLevel\s*\(\s*RestAdapter\s*\.\s*LogLevel\s*\.\s*FULL\s*\)'
+  message: Retrofit 1 FULL logging can include HTTP headers and bodies. Review runtime enablement, sensitive fields and access to these logs.
+  fix: Keep full HTTP logging disabled in production and avoid recording credentials or personal data.
+  examples_vulnerable: ['builder.setLogLevel(RestAdapter.LogLevel.FULL);']
+  examples_safe: ['builder.setLogLevel(RestAdapter.LogLevel.NONE);', 'builder.setLogLevel(RestAdapter.LogLevel.BASIC);']
+
+- id: JVM-GRPC-PLAINTEXT
+  title: gRPC channel builder explicitly selects plaintext transport
+  languages: [java]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.78
+  code_only: true
+  pattern: '\.\s*usePlaintext\s*\(\s*\)'
+  near: '\b(?:ManagedChannelBuilder|NettyChannelBuilder|OkHttpChannelBuilder)\b'
+  within: 5
+  message: The visible gRPC builder selects an unencrypted channel. Check the target, deployment network and sensitivity of RPC data.
+  fix: Use transport security with the correct trust roots and service identity.
+  examples_vulnerable: ['ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();']
+  examples_safe: ['ManagedChannelBuilder.forAddress(host, port).useTransportSecurity().build();', 'builder.usePlaintext(policy);']
+
+- id: DART-DIO-CERTIFICATE-ACCEPT-ALL
+  title: Dio custom certificate callback always accepts the certificate
+  languages: [dart]
+  cwe: CWE-295
+  severity: medium
+  confidence: 0.8
+  code_only: true
+  pattern: '\bvalidateCertificate\s*:\s*\([^)]{0,180}\)\s*(?:=>\s*true\b|\{\s*return\s+true\s*;\s*\})'
+  message: The custom Dio certificate check accepts every certificate it receives. This alone does not disable the underlying HttpClient certificate validation, but it provides no additional certificate restriction.
+  fix: Validate the expected certificate identity in this callback when additional certificate restrictions are required, and retain platform TLS validation.
+  examples_vulnerable: ['IOHttpClientAdapter(validateCertificate: (cert, host, port) => true);']
+  examples_safe: ['IOHttpClientAdapter(validateCertificate: (cert, host, port) => verify(cert, host));', 'IOHttpClientAdapter(validateCertificate: (cert, host, port) => false);']
+
+- id: DART-INAPPWEBVIEW-DISABLE-SECURITY
+  title: Linux InAppWebView explicitly disables web security
+  languages: [dart]
+  cwe: CWE-346
+  severity: high
+  confidence: 0.85
+  code_only: true
+  pattern: '\bdisableWebSecurity\s*:\s*true\b'
+  near: '\b(?:InAppWebViewSettings|InAppWebViewOptions)\b'
+  within: 5
+  message: This setting disables same-origin security controls on the supported Linux WebKit backend. It is not an Android WebView setting. Review the app's target platforms, loaded content and native bridges.
+  fix: Keep web security enabled and configure explicit, narrowly scoped cross-origin access on the server.
+  examples_vulnerable: ['InAppWebViewSettings(disableWebSecurity: true);']
+  examples_safe: ['InAppWebViewSettings(disableWebSecurity: false);', 'InAppWebViewSettings(disableWebSecurity: trustedPolicy);']
+
+- id: DART-INAPPWEBVIEW-SAFE-BROWSING
+  title: InAppWebView Safe Browsing is disabled
+  languages: [dart]
+  cwe: CWE-693
+  severity: medium
+  confidence: 0.8
+  code_only: true
+  pattern: '\bsafeBrowsingEnabled\s*:\s*false\b'
+  near: '\b(?:InAppWebViewSettings|AndroidInAppWebViewOptions)\b'
+  within: 5
+  message: This setting disables Android WebView Safe Browsing on supported versions. It does not by itself prove that the app loads a malicious page.
+  fix: Keep Safe Browsing enabled and restrict untrusted navigation where appropriate.
+  examples_vulnerable: ['InAppWebViewSettings(safeBrowsingEnabled: false);']
+  examples_safe: ['InAppWebViewSettings(safeBrowsingEnabled: true);', 'InAppWebViewSettings(safeBrowsingEnabled: policy);']
+
+- id: PY-HTTPX-UNVERIFIED-CLIENT
+  title: HTTPX client disables TLS certificate verification
+  languages: [python]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.86
+  code_only: true
+  pattern: '\bhttpx\s*\.\s*(?:AsyncClient|Client)\s*\(\s*(?:[A-Za-z_]\w*\s*=\s*(?:\w+|\d+)\s*,\s*)*verify\s*=\s*False\s*[,)]'
+  message: Requests through this client do not verify the server certificate. Review which endpoints and data use this client.
+  fix: Enable certificate verification or provide a verifying SSLContext for the intended trust roots.
+  examples_vulnerable: ['client = httpx.AsyncClient(verify=False)', 'client = httpx.Client(timeout=10, verify=False)']
+  examples_safe: ['client = httpx.Client(verify=context)', 'client = httpx.Client(verify=False if testing else context)', 'client = other.Client(verify=False)']
+
+- id: CS-HTTPCLIENT-ACCEPT-ANY-CERTIFICATE
+  title: HttpClient uses the callback that accepts any server certificate
+  languages: [csharp]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.88
+  code_only: true
+  pattern: '\bServerCertificateCustomValidationCallback\s*=\s*(?:System\.Net\.Http\.)?HttpClientHandler\s*\.\s*DangerousAcceptAnyServerCertificateValidator\b'
+  message: This handler callback unconditionally accepts the server certificate. Confirm where this handler is used; the callback is not an identity check.
+  fix: Retain the default certificate validation or implement a correctly verifying custom callback.
+  examples_vulnerable: ['handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;']
+  examples_safe: ['handler.ServerCertificateCustomValidationCallback = ValidateServerCertificate;', 'var unused = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;']

@@ -229,7 +229,8 @@ def jadx_decompile(apk: Path, out_dir: Path, classes: Sequence[str]) -> Tuple[Li
     key = _input_key(inputs, wanted)
     reused = _reuse(out_dir, key)
     if reused is not None:
-        return reused, "ok (%d files, from an earlier scan of this app)" % len(reused)
+        files, original_note = reused
+        return files, original_note + " (from an earlier scan of this app)"
     shutil.rmtree(_long(out_dir), ignore_errors=True)
     out_dir.parent.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="jadx-", dir=str(out_dir.parent)))
@@ -238,19 +239,23 @@ def jadx_decompile(apk: Path, out_dir: Path, classes: Sequence[str]) -> Tuple[Li
                             + [str(path) for path in inputs], JADX_TIMEOUT)
         if code is None:
             return [], "failed: %s" % output
-        files = _keep(_long(work), out_dir, wanted)
+        files, omitted = _keep(_long(work), out_dir, wanted)
     finally:
         shutil.rmtree(_long(work), ignore_errors=True)
     if not files:
         reason = _first_line(output, r"ERROR") or _first_line(output) or "no class decompiled"
         return [], "failed: %s" % reason
+    errors = "; jadx reported errors" if code else ""
+    limited = "; %d matching Java files omitted by the %d-file limit" % (omitted, MAX_JAVA_FILES) \
+        if omitted else ""
+    note = "ok (%d files%s%s)" % (len(files), errors, limited)
     try:
         (out_dir / MARKER).write_text(json.dumps({"key": key, "files": [
-            path.relative_to(out_dir).as_posix() for path in files]}), encoding="utf-8")
+            path.relative_to(out_dir).as_posix() for path in files], "note": note,
+            "omitted_files": omitted, "file_limit": MAX_JAVA_FILES}), encoding="utf-8")
     except OSError:
         pass
-    errors = "; jadx reported errors" if code else ""
-    return files, "ok (%d files%s)" % (len(files), errors)
+    return files, note
 
 
 def _input_key(inputs: Sequence[Path], wanted: Sequence[str]) -> str:
@@ -265,7 +270,7 @@ def _input_key(inputs: Sequence[Path], wanted: Sequence[str]) -> str:
     return digest.hexdigest()
 
 
-def _reuse(out_dir: Path, key: str) -> Optional[List[Path]]:
+def _reuse(out_dir: Path, key: str) -> Optional[Tuple[List[Path], str]]:
     """The files of an earlier run with the same key, or None."""
     try:
         data = json.loads((out_dir / MARKER).read_text(encoding="utf-8"))
@@ -273,27 +278,36 @@ def _reuse(out_dir: Path, key: str) -> Optional[List[Path]]:
         return None
     if not isinstance(data, dict) or data.get("key") != key:
         return None
+    if data.get("file_limit", MAX_JAVA_FILES) != MAX_JAVA_FILES:
+        return None
     files = [out_dir / rel for rel in data.get("files") or [] if isinstance(rel, str)]
-    return files if files and all(path.is_file() for path in files) else None
+    if not files or not all(path.is_file() for path in files):
+        return None
+    note = data.get("note")
+    if not isinstance(note, str) or not note:
+        note = "ok (%d files; original decompiler error and limit status unavailable)" % len(files)
+    return files, note
 
 
-def _keep(work: Path, out_dir: Path, wanted: Sequence[str]) -> List[Path]:
+def _keep(work: Path, out_dir: Path, wanted: Sequence[str]) -> Tuple[List[Path], int]:
     """Move the Java files of the wanted classes from jadx's output to out_dir."""
     exact = {name for name in wanted if not name.endswith(".*")}
     packages = tuple(name[:-1] for name in wanted if name.endswith(".*"))
     kept: List[Path] = []
+    omitted = 0
     for path in sorted(work.rglob("*.java")):
         rel = path.relative_to(work).as_posix()
         name = rel[:-5].replace("/", ".")
         if name not in exact and not name.startswith(packages):
             continue
+        if len(kept) >= MAX_JAVA_FILES:
+            omitted += 1
+            continue
         target = _long(out_dir) / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(path), str(target))
         kept.append(out_dir / rel)
-        if len(kept) >= MAX_JAVA_FILES:
-            break
-    return kept
+    return kept, omitted
 
 
 def _long(path: Path) -> Path:

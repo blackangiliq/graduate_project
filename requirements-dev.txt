@@ -1,3 +1,4 @@
 -r requirements.txt
 pytest>=7.4
 exrex>=0.11   # builds test strings for the imported credential formats
+tomli>=2.0; python_version < "3.11"

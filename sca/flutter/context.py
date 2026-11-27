@@ -27,12 +27,13 @@ ORIGIN_DECODED = "decoded"        # decoded from an app package (manifest, res/x
 ORIGIN_RECOVERED = "recovered"    # Dart source recovered from kernel_blob.bin (debug builds)
 ORIGIN_DECOMPILED = "decompiled"  # Java written by jadx (optional tool)
 ORIGIN_STRINGS = "strings"        # strings dump of a binary (libapp.so, classes.dex, other .so)
+ORIGIN_LITERAL = "decoded_literal"  # decoded Base64 text, linked to its encoded source span
 ORIGIN_SUMMARY = "summary"        # _sca/*.txt: facts written by the analyzer itself
 ORIGIN_PLACEHOLDER = "placeholder"  # stands for a binary file on disk (a keystore)
 
 # Which engines and measures use a file of each origin.
 RULES_ORIGINS = (ORIGIN_DISK, ORIGIN_DECODED, ORIGIN_RECOVERED, ORIGIN_DECOMPILED)
-SECRETS_ORIGINS = RULES_ORIGINS + (ORIGIN_STRINGS,)
+SECRETS_ORIGINS = RULES_ORIGINS + (ORIGIN_STRINGS, ORIGIN_LITERAL)
 KLOC_ORIGINS = RULES_ORIGINS                    # lines that count for the project score
 AI_ORIGINS = RULES_ORIGINS                      # files the ML classifier and the LLM may see
 

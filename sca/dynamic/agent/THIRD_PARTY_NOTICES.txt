@@ -1,0 +1,26 @@
+The generated observer.bundle.js contains the unmodified frida-java-bridge 7.1.0
+JavaScript sources, bundled using Frida 17.28.0's Compiler. Its declared license is
+LGPL-2.0 WITH WxWindows-exception-3.1. The complete upstream license texts are
+provided in COPYING (Frida release 17.28.0) and COPYING.LIB (GNU LGPL 2.0).
+
+Upstream bridge source: https://github.com/frida-packages/frida-java-bridge
+Pinned source package: https://registry.npmjs.org/frida-java-bridge/-/frida-java-bridge-7.1.0.tgz
+Integrity digest and exact dependency revision: package-lock.json
+License source: https://github.com/frida/frida/tree/17.28.0
+LGPL source: https://www.gnu.org/licenses/old-licenses/lgpl-2.0.txt
+
+The Frida compiler also bundles @frida/base64-js 2.0.3 (MIT), @frida/ieee754
+2.0.2 (BSD-3-Clause), and @frida/buffer 7.1.0 (MIT). Their original copyright
+and license texts, pinned archive URLs and verified integrity digests are in
+SHIM_LICENSES.txt. These versions come from Frida 17.28.0's compiler lockfile.
+
+The bridge sources are unmodified. observer.js contains this project's observation
+hooks. Rebuild the combined agent from the repository root with:
+  cd sca/dynamic/agent
+  npm ci --ignore-scripts
+  cd ../../..
+  python -m sca.dynamic.build_agent
+
+The observer does not alter TLS validation, root/integrity decisions, return
+values, request headers, or remote services. It records actual runtime evidence
+from the selected local Android lab process.

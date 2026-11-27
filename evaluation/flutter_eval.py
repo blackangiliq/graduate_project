@@ -38,6 +38,7 @@ from datetime import date
 from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import parse_qsl, urlsplit
 
 import yaml
 
@@ -395,6 +396,31 @@ def inventory_match(match: Dict[str, Any], apis: Dict[str, Any]) -> bool:
                    for e in apis.get("endpoints") or [])
     if "path_alert" in match:
         return any(match["path_alert"] in p.get("alerts", []) for p in apis.get("paths") or [])
+    if "query_template" in match:
+        # These fixtures have an empty or interpolated query argument. They must
+        # remain navigable inventory evidence without claiming a literal secret.
+        expected = match["query_template"]
+        collection, field = (("endpoints", "url") if expected["kind"] == "endpoint"
+                             else ("paths", "path"))
+        for item in apis.get(collection) or []:
+            try:
+                address = urlsplit(item.get(field, ""))
+            except ValueError:
+                continue
+            if expected.get("host") and address.hostname != expected["host"]:
+                continue
+            if not address.path.endswith(expected["path_suffix"]):
+                continue
+            values = [value for key, value in parse_qsl(address.query, keep_blank_values=True)
+                      if key == expected["name"]]
+            if not values or any(value not in expected["values"] for value in values):
+                continue
+            if "secret_in_url" in item.get("alerts", []):
+                continue
+            if any(loc.get("file") and isinstance(loc.get("line"), int) and loc["line"] > 0
+                   for loc in item.get("locations") or []):
+                return True
+        return False
     if "endpoint" in match:
         return any(e.get("url") == match["endpoint"] for e in apis.get("endpoints") or [])
     if "host" in match:

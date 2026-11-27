@@ -1,0 +1,194 @@
+# Android source and resource rules for Java, Kotlin and Flutter's native Android layer.
+# Android's security guidance: https://developer.android.com/privacy-and-security/risks
+
+- id: ANDROID-WEBVIEW-MIXED-CONTENT
+  title: Android WebView always allows mixed content
+  languages: [java]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.88
+  pattern: '\b(?:setMixedContentMode\s*\(\s*|mixedContentMode\s*=\s*)(?:WebSettings\s*\.\s*)?MIXED_CONTENT_ALWAYS_ALLOW\b'
+  message: An HTTPS page in this WebView can load subresources over unencrypted HTTP.
+  fix: Use MIXED_CONTENT_NEVER_ALLOW and serve pages and subresources over HTTPS.
+  examples_vulnerable:
+    - 'settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);'
+    - 'webView.settings.mixedContentMode = MIXED_CONTENT_ALWAYS_ALLOW'
+  examples_safe:
+    - 'settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);'
+    - 'webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW'
+
+- id: ANDROID-WEBVIEW-SAFE-BROWSING
+  title: Android WebView Safe Browsing is disabled in code
+  languages: [java]
+  cwe: CWE-693
+  severity: medium
+  confidence: 0.85
+  pattern: '\b(?:setSafeBrowsingEnabled\s*\(\s*false\s*\)|safeBrowsingEnabled\s*=\s*false\b)'
+  message: This WebView can load known unsafe sites without the protection of Android's Safe Browsing checks.
+  fix: Leave Safe Browsing enabled and review any false positives.
+  examples_vulnerable:
+    - 'webView.getSettings().setSafeBrowsingEnabled(false);'
+    - 'webView.settings.safeBrowsingEnabled = false'
+  examples_safe:
+    - 'settings.setSafeBrowsingEnabled(true);'
+    - 'webView.settings.safeBrowsingEnabled = true'
+
+- id: ANDROID-STORAGE-WORLD-ACCESS
+  title: Android file or preferences use legacy world access
+  languages: [java]
+  cwe: CWE-732
+  severity: high
+  confidence: 0.86
+  pattern: '\b(?:getSharedPreferences|openFileOutput|getDir|openOrCreateDatabase)\s*\([^;]{0,180}\bMODE_WORLD_(?:READABLE|WRITEABLE)\b'
+  message: On older Android versions these modes let other apps read or change this data. Newer versions can reject the call.
+  fix: Use MODE_PRIVATE for app data and a narrowly scoped content provider when another app needs access.
+  examples_vulnerable:
+    - 'getSharedPreferences("state", Context.MODE_WORLD_READABLE);'
+    - 'openFileOutput("state", MODE_APPEND or MODE_WORLD_WRITEABLE)'
+  examples_safe:
+    - 'getSharedPreferences("state", Context.MODE_PRIVATE);'
+    - 'openFileOutput("state", MODE_APPEND or MODE_PRIVATE)'
+
+- id: ANDROID-INTENT-UNSAFE-IMPLICIT
+  title: App opts out of Android's mutable PendingIntent safety check
+  languages: [java]
+  cwe: CWE-284
+  severity: medium
+  confidence: 0.85
+  pattern: '\bFLAG_ALLOW_UNSAFE_IMPLICIT_INTENT\b'
+  exclude: '^\s*import\b'
+  message: This flag opts out of Android's rejection of mutable PendingIntents with implicit targets. Review how this PendingIntent is shared and where it can resolve.
+  fix: Name an explicit component and keep the PendingIntent immutable when its recipient does not need to modify it.
+  examples_vulnerable:
+    - 'int flags = PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT;'
+    - 'val flags = FLAG_MUTABLE or FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT'
+  examples_safe:
+    - 'PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);'
+    - 'import android.app.PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT'
+
+- id: ANDROID-INTENT-IMPLICIT-MUTABLE
+  title: PendingIntent uses a mutable flag with an implicit Intent
+  languages: [java]
+  cwe: CWE-284
+  severity: medium
+  confidence: 0.8
+  pattern: '\bPendingIntent\s*\.\s*get(?:Activity|Broadcast|Service|ForegroundService)\s*\([^;\n]{0,160}?,\s*(?:new\s+)?Intent\s*\(\s*(?:"[^"]{1,120}"|Intent\s*\.\s*ACTION_\w+)?\s*\)\s*,[^);\n]{0,140}\bFLAG_MUTABLE\b'
+  exclude: '\bFLAG_ALLOW_UNSAFE_IMPLICIT_INTENT\b'
+  message: The mutable PendingIntent wraps an Intent with no component. How it is shared determines whether another app can change fields of the underlying Intent.
+  fix: Create an explicit Intent and use FLAG_IMMUTABLE unless mutability is required.
+  examples_vulnerable:
+    - 'PendingIntent.getBroadcast(this, 0, new Intent("example.REMIND"), PendingIntent.FLAG_MUTABLE);'
+    - 'val pending = PendingIntent.getActivity(this, requestId, Intent(), FLAG_MUTABLE)'
+  examples_safe:
+    - 'PendingIntent.getBroadcast(this, 0, new Intent(this, AlarmReceiver.class), PendingIntent.FLAG_MUTABLE);'
+    - 'val pending = PendingIntent.getActivity(this, requestId, Intent(), FLAG_IMMUTABLE)'
+
+- id: ANDROID-LOG-HTTP-BODY
+  title: OkHttp logging can record headers and request or response bodies
+  languages: [java]
+  cwe: CWE-532
+  severity: medium
+  confidence: 0.78
+  pattern: '(?:\bHttpLoggingInterceptor\s*\.\s*Level\s*\.\s*(?:BODY|HEADERS)|(?:\.\s*setLevel\s*\(\s*|\.\s*level\s*=\s*)Level\s*\.\s*(?:BODY|HEADERS))\b'
+  exclude: '^\s*import\b'
+  message: OkHttp's HTTP logging mode can include cookies, authorization headers or personal data. Review redaction and whether this can run in a release build.
+  fix: Disable HTTP logging for release builds. Use BASIC or NONE and redact sensitive fields in any development logs.
+  examples_vulnerable:
+    - 'logging.setLevel(HttpLoggingInterceptor.Level.BODY);'
+    - 'interceptor.level = HttpLoggingInterceptor.Level.HEADERS'
+  examples_safe:
+    - 'logging.setLevel(HttpLoggingInterceptor.Level.BASIC);'
+    - 'interceptor.level = HttpLoggingInterceptor.Level.NONE'
+
+- id: ANDROID-LOG-SENSITIVE
+  title: Potentially sensitive value sent to Android logs
+  languages: [java]
+  cwe: CWE-532
+  severity: medium
+  confidence: 0.7
+  pattern: >-
+    (?x)\b(?:Log|Timber)\s*\.\s*(?:[vdiwe]|wtf)\s*\(
+    [^;\n]{0,250}?(?:,\s*|\+\s*|\$\{?)
+    [\w.]{0,100}(?i:password|passwd|access_?token|refresh_?token|session_?token|api_?key|private_?key|client_?secret)
+    [\w.]{0,60}\s*(?=[,)}+"])
+  message: This log statement appears to record a password, token or other sensitive field. Logs may be included in diagnostics or visible to privileged software.
+  fix: Remove the sensitive field and log an event identifier or a pre-redacted value.
+  examples_vulnerable:
+    - 'Log.d(TAG, "Login token " + response.accessToken);'
+    - 'Timber.d("Refresh token $refreshToken")'
+  examples_safe:
+    - 'Log.d(TAG, "Login completed");'
+    - 'Timber.d("Account id $accountId")'
+
+- id: ANDROID-CRYPTO-FIXED-IV
+  title: Cipher uses a fixed initialization vector
+  languages: [java]
+  cwe: CWE-1204
+  severity: high
+  confidence: 0.82
+  pattern: '\bIvParameterSpec\s*\(\s*(?:new\s+byte\s*\[\s*\d+\s*\]|ByteArray\s*\(\s*\d+\s*\)|"[^"$\\]{8,64}"\s*\.\s*(?:getBytes|toByteArray)\s*\()'
+  message: The IV comes from a deterministic value. Reuse during encryption can disclose relationships between messages.
+  fix: Generate a fresh IV for each encryption operation using the cipher provider or SecureRandom. Store the IV alongside the ciphertext.
+  examples_vulnerable:
+    - 'IvParameterSpec iv = new IvParameterSpec(new byte[16]);'
+    - 'val iv = IvParameterSpec("0000000000000000".toByteArray())'
+  examples_safe:
+    - 'IvParameterSpec iv = new IvParameterSpec(cipher.getIV());'
+    - 'val iv = IvParameterSpec(SecureRandom.getSeed(16))'
+
+- id: ANDROID-SECRET-RESOURCE
+  kind: secret
+  title: Hard-coded credential in Android string resources
+  languages: [config]
+  files: ['**/res/values*/*.xml']
+  cwe: CWE-798
+  severity: high
+  confidence: 0.83
+  pattern: '<string\b[^<>]{0,220}\bname\s*=\s*["''](?i:[\w.]*?(?:api_?key|client_?secret|private_?key|access_?token|refresh_?token|password|passwd))["''][^<>]{0,100}>\s*([A-Za-z0-9+/_~.=:!%\-]{8,200})\s*</string>'
+  keywords: ['<string']
+  entropy: 2.8
+  exclude: '(?i)\bname\s*=\s*["''](?:google_api_key|google_crash_reporting_api_key|maps_api_key|com_braze_api_key|com_appboy_api_key|(?:title|label|hint|prompt|error|message|description|button|text)_[\w.]*)["'']|>\s*(?:pk_(?:live|test)_|sb_publishable_|pk\.eyJ)'
+  message: Android string resources are packaged into the app. This literal appears to contain a credential.
+  fix: Rotate any valid exposed credential. Keep privileged credentials on the backend and use per-user tokens with limited lifetimes.
+
+- id: ANDROID-SECRET-BUILD-CONFIG
+  kind: secret
+  title: Android build embeds a credential in BuildConfig or a resource
+  languages: [config, kotlin]
+  files: ['*.gradle', '*.gradle.kts']
+  cwe: CWE-798
+  severity: high
+  confidence: 0.84
+  pattern: >-
+    (?ix)\b(?:buildConfigField|resValue)\s*\(?\s*["']string["']\s*,\s*
+    ["'][\w.]*?(?:api_?key|client_?secret|private_?key|access_?token|refresh_?token|password|passwd)["']\s*,\s*
+    (?:['"]\\?")?["']?([A-Za-z0-9+/_~.=:!%\-]{8,200})(?=(?:\\?")?["'])
+  keywords: [buildConfigField, resValue]
+  entropy: 2.8
+  exclude: '(?i)["''](?:google_api_key|google_crash_reporting_api_key|maps_api_key)["'']'
+  message: This Gradle value is embedded in the generated BuildConfig class or string resources of the installed app.
+  fix: Rotate any valid exposed credential and keep server credentials in a backend secret store.
+
+- id: ANDROID-SECRET-CRYPTO-LITERAL
+  kind: secret
+  title: Hard-coded JVM cryptographic key
+  languages: [java]
+  cwe: CWE-798
+  severity: high
+  confidence: 0.88
+  pattern: '\bSecretKeySpec\s*\(\s*"([^"$\\]{8,120})"\s*\.\s*(?:getBytes|toByteArray)\s*\('
+  keywords: [SecretKeySpec]
+  message: The encryption or signing key is stored as a literal that can be recovered from the app.
+  fix: Rotate exposed keys. Generate a unique key with Android Keystore for local use and hold shared service keys on the backend.
+
+- id: ANDROID-SECRET-HTTP-BASIC
+  kind: secret
+  title: Hard-coded HTTP Basic credentials in OkHttp
+  languages: [java]
+  cwe: CWE-798
+  severity: high
+  confidence: 0.84
+  pattern: '\bCredentials\s*\.\s*basic\s*\(\s*"[^"$\\]{1,80}"\s*,\s*"([^"$\\]{6,120})"\s*[,)]'
+  keywords: [Credentials]
+  message: An HTTP Basic password is stored in the client app and can be recovered from its package.
+  fix: Rotate any exposed password. Authenticate people individually and issue short-lived tokens without embedding service credentials in the app.

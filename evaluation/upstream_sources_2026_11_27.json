@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "reviewed": "2026-11-27",
+  "sources": [
+    {
+      "repository": "gitleaks/gitleaks",
+      "commit": "5f6ec56cfa6f8c67648d863582c7ae2f206d5c1c",
+      "path": "config/gitleaks.toml",
+      "license": "MIT",
+      "use": "existing configuration unchanged",
+      "sha256": "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf",
+      "bytes": 97731,
+      "url": "https://github.com/gitleaks/gitleaks/blob/5f6ec56cfa6f8c67648d863582c7ae2f206d5c1c/config/gitleaks.toml"
+    },
+    {
+      "repository": "betterleaks/betterleaks",
+      "commit": "702504ab4551b9a1c1837efdb6b340536aa4c761",
+      "path": "config/betterleaks.toml",
+      "license": "MIT",
+      "use": "21 additional reviewed contextual static detectors",
+      "sha256": "d0bcc9fc06fbbd14c97a49a3d50eb6ee62be64bef18ccab74b86eab3767f2355",
+      "bytes": 683704,
+      "url": "https://github.com/betterleaks/betterleaks/blob/702504ab4551b9a1c1837efdb6b340536aa4c761/config/betterleaks.toml"
+    },
+    {
+      "repository": "microsoft/DevSkim",
+      "commit": "7f8e5e24f62d9ba95f261e7f45b4b1c293a59a51",
+      "path": "rules/default/security/frameworks/android.json",
+      "license": "MIT",
+      "use": "Android XML settings already handled by structural manifest checks; XPath not flattened to regex",
+      "sha256": "4b7036b799b0aea5841501b7409f0addd01df5454658ce89c90823bb73c70be7",
+      "bytes": 4914,
+      "url": "https://github.com/microsoft/DevSkim/blob/7f8e5e24f62d9ba95f261e7f45b4b1c293a59a51/rules/default/security/frameworks/android.json"
+    },
+    {
+      "repository": "github/codeql",
+      "commit": "a2eb8773e16f5c1c76810ae3bdc9d5cfbd44b5c2",
+      "path": "LICENSE",
+      "license": "MIT",
+      "use": "existing nine narrow adaptations retained; full CodeQL engine not embedded",
+      "sha256": "66056d06b874e3eb6a22f5fff297e1676a23dc43e8c8b81279c1ef33a6a270df",
+      "bytes": 1074,
+      "url": "https://github.com/github/codeql/blob/a2eb8773e16f5c1c76810ae3bdc9d5cfbd44b5c2/LICENSE"
+    },
+    {
+      "repository": "MobSF/mobsfscan",
+      "commit": "e48f780d04c4fdd38ec07c1de3d2210513f48ecd",
+      "path": "LICENSE",
+      "license": "LGPL-3.0",
+      "use": "review reference only; AST and taint rules not flattened or copied",
+      "sha256": "a5681bf9b05db14d86776930017c647ad9e6e56ff6bbcfdf21e5848288dfaf1b",
+      "bytes": 7651,
+      "url": "https://github.com/MobSF/mobsfscan/blob/e48f780d04c4fdd38ec07c1de3d2210513f48ecd/LICENSE"
+    },
+    {
+      "repository": "mindedsecurity/semgrep-rules-android-security",
+      "commit": "8133aa8aff3b0aa897cd92a004af9ae7b854270b",
+      "path": "LICENSE",
+      "license": "GPL-3.0",
+      "use": "review reference only; no rule source copied",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "bytes": 35149,
+      "url": "https://github.com/mindedsecurity/semgrep-rules-android-security/blob/8133aa8aff3b0aa897cd92a004af9ae7b854270b/LICENSE"
+    },
+    {
+      "repository": "semgrep/semgrep-rules",
+      "commit": "a5ad1714f00c9f7fde980cab0ea1d6dc6d414fd2",
+      "path": "LICENSE",
+      "license": "Semgrep Rules License v1.0",
+      "use": "review reference only; no rules copied into this pack",
+      "sha256": "1a6466ae5f1c68631bbd13e3f1aa8f380d84219853c08f0456b853fccfacee1d",
+      "bytes": 92,
+      "url": "https://github.com/semgrep/semgrep-rules/blob/a5ad1714f00c9f7fde980cab0ea1d6dc6d414fd2/LICENSE"
+    },
+    {
+      "repository": "trufflesecurity/trufflehog",
+      "commit": "23255461ddf3958c4d949d89925b03eaf263d838",
+      "path": "LICENSE",
+      "license": "AGPL-3.0",
+      "use": "review reference only; no detector or credential validation code copied",
+      "sha256": "33d580ea3d93edcb787c2fa826bbf5afcec3058ce4c894a6beaad3eb4f389d2b",
+      "bytes": 35449,
+      "url": "https://github.com/trufflesecurity/trufflehog/blob/23255461ddf3958c4d949d89925b03eaf263d838/LICENSE"
+    },
+    {
+      "repository": "jwtk/jjwt",
+      "commit": "fb71496164c71442d08adec4571d9616ed5e1b8d",
+      "path": "api/src/main/java/io/jsonwebtoken/JwtParserBuilder.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original JJWT setting detectors",
+      "sha256": "d7589e0748408a09828cf57f8597a280c1281f1a38de5dca984e8244dc9794e6",
+      "bytes": 44996,
+      "url": "https://github.com/jwtk/jjwt/blob/fb71496164c71442d08adec4571d9616ed5e1b8d/api/src/main/java/io/jsonwebtoken/JwtParserBuilder.java"
+    },
+    {
+      "repository": "x-stream/xstream",
+      "commit": "a0f1637e977e6f682f483873b5877e6fe18247b8",
+      "path": "xstream/src/java/com/thoughtworks/xstream/security/AnyTypePermission.java",
+      "license": "BSD-3-Clause",
+      "use": "semantic reference for original unrestricted type permission detector",
+      "sha256": "fd3a8eb50e052eb77063553563dff67cbefcebe3d9b536a8ade90446937394d3",
+      "bytes": 730,
+      "url": "https://github.com/x-stream/xstream/blob/a0f1637e977e6f682f483873b5877e6fe18247b8/xstream/src/java/com/thoughtworks/xstream/security/AnyTypePermission.java"
+    },
+    {
+      "repository": "alibaba/fastjson",
+      "commit": "c942c83443117b73af5ad278cc780270998ba3e1",
+      "path": "src/main/java/com/alibaba/fastjson/parser/ParserConfig.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original auto-type configuration detector",
+      "sha256": "7a845e0640c695764e7f0631a24a65efe060143477cd0d1575f185d0da7c56e0",
+      "bytes": 59292,
+      "url": "https://github.com/alibaba/fastjson/blob/c942c83443117b73af5ad278cc780270998ba3e1/src/main/java/com/alibaba/fastjson/parser/ParserConfig.java"
+    },
+    {
+      "repository": "netty/netty",
+      "commit": "af1d7743c05df2af05af594aa8ce5e4cda3a2f5e",
+      "path": "handler/src/main/java/io/netty/handler/ssl/util/InsecureTrustManagerFactory.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original insecure trust-manager setting detector",
+      "sha256": "a35fdbc580d900f8df4c355d397937ba44766b7de9ea36db8e078e3d2811296b",
+      "bytes": 3833,
+      "url": "https://github.com/netty/netty/blob/af1d7743c05df2af05af594aa8ce5e4cda3a2f5e/handler/src/main/java/io/netty/handler/ssl/util/InsecureTrustManagerFactory.java"
+    },
+    {
+      "repository": "tink-crypto/tink-java",
+      "commit": "33fcdc22ada0fc4ed6f7cc0703ffaf55bac783f1",
+      "path": "src/main/java/com/google/crypto/tink/CleartextKeysetHandle.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original cleartext keyset write detector",
+      "sha256": "afef3e8ef5a77558186095c3912f85bdb5db00cd7d64964c597dff7f1c5b4066",
+      "bytes": 6274,
+      "url": "https://github.com/tink-crypto/tink-java/blob/33fcdc22ada0fc4ed6f7cc0703ffaf55bac783f1/src/main/java/com/google/crypto/tink/CleartextKeysetHandle.java"
+    },
+    {
+      "repository": "cfug/dio",
+      "commit": "f1bef462289b40992d625d4eb2a2f42321217573",
+      "path": "dio/lib/src/adapters/io_adapter.dart",
+      "license": "MIT",
+      "use": "semantic reference for original additional certificate-check detector; platform TLS remains separate",
+      "sha256": "516b9dc4a630a8bc8870e6f53c29f252e8bded200b9c1c2aeeaf3bb2d4f17b6a",
+      "bytes": 8492,
+      "url": "https://github.com/cfug/dio/blob/f1bef462289b40992d625d4eb2a2f42321217573/dio/lib/src/adapters/io_adapter.dart"
+    },
+    {
+      "repository": "pichillilorenzo/flutter_inappwebview",
+      "commit": "17527cae5a3371c1e87f9c1df4281a7710debf28",
+      "path": "flutter_inappwebview_platform_interface/lib/src/in_app_webview/in_app_webview_settings.dart",
+      "license": "Apache-2.0",
+      "use": "semantic reference: Android Safe Browsing and Linux web-security settings",
+      "sha256": "ea264daccc2b4e56d8e056d7b1abd101f1c9dfd6a835f40d3a0f147ad033be2a",
+      "bytes": 155137,
+      "url": "https://github.com/pichillilorenzo/flutter_inappwebview/blob/17527cae5a3371c1e87f9c1df4281a7710debf28/flutter_inappwebview_platform_interface/lib/src/in_app_webview/in_app_webview_settings.dart"
+    },
+    {
+      "repository": "encode/httpx",
+      "commit": "e347fb5e93b91f7cf63a575f595f33db8d90fe20",
+      "path": "httpx/_config.py",
+      "license": "BSD-3-Clause",
+      "use": "semantic reference for original TLS-verification setting detector",
+      "sha256": "a4fa7653ec2271f70ab05f8a6111352d876dddee84446788a1767c1a3a372d67",
+      "bytes": 8547,
+      "url": "https://github.com/encode/httpx/blob/e347fb5e93b91f7cf63a575f595f33db8d90fe20/httpx/_config.py"
+    },
+    {
+      "repository": "auth0/java-jwt",
+      "commit": "1d589a4c1c3ca3ed56dd453be7a8a55b6f41dde0",
+      "path": "lib/src/main/java/com/auth0/jwt/algorithms/Algorithm.java",
+      "license": "MIT",
+      "use": "semantic reference for original JWT unsigned verifier detector",
+      "sha256": "d162b9488fd358ac56c1615286748e7be3419b15639f4c025a5ebefcb6999c12",
+      "bytes": 23905,
+      "url": "https://github.com/auth0/java-jwt/blob/1d589a4c1c3ca3ed56dd453be7a8a55b6f41dde0/lib/src/main/java/com/auth0/jwt/algorithms/Algorithm.java"
+    },
+    {
+      "repository": "FasterXML/jackson-databind",
+      "commit": "287af92705039b2afaa5ce2680026a3f6c25a8e9",
+      "path": "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/LaissezFaireSubTypeValidator.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original permissive subtype validator detector",
+      "sha256": "5bdf5e4ffe6a6e441fef1110d13ca5b3c3f841bed849dc990ba42fc341f1419a",
+      "bytes": 1408,
+      "url": "https://github.com/FasterXML/jackson-databind/blob/287af92705039b2afaa5ce2680026a3f6c25a8e9/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/LaissezFaireSubTypeValidator.java"
+    },
+    {
+      "repository": "grpc/grpc-java",
+      "commit": "f3afa33cc255af3238049dd0c7471ce57391c590",
+      "path": "api/src/main/java/io/grpc/ManagedChannelBuilder.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original plaintext channel detector",
+      "sha256": "a60bbe57839802bcb57845e68f0bc1d9b34e7ea435809c18f30fc40fe0005c92",
+      "bytes": 28136,
+      "url": "https://github.com/grpc/grpc-java/blob/f3afa33cc255af3238049dd0c7471ce57391c590/api/src/main/java/io/grpc/ManagedChannelBuilder.java"
+    },
+    {
+      "repository": "square/retrofit",
+      "commit": "2f4caa6f5df8e7f47a881266bbfc723f537b0b47",
+      "path": "retrofit/src/main/java/retrofit/RestAdapter.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original legacy Retrofit 1 full logging detector",
+      "sha256": "0983a1a687f4f44635457137e8c599376588e13749a54e98ea081cce5bfa0432",
+      "bytes": 26040,
+      "url": "https://github.com/square/retrofit/blob/2f4caa6f5df8e7f47a881266bbfc723f537b0b47/retrofit/src/main/java/retrofit/RestAdapter.java"
+    },
+    {
+      "repository": "aosp-mirror/platform_frameworks_base",
+      "commit": "1cdfff555f4a21f71ccc978290e2e212e2f8b168",
+      "path": "keystore/java/android/security/keystore/KeyGenParameterSpec.java",
+      "license": "Apache-2.0",
+      "use": "semantic reference for original randomized encryption setting detector",
+      "sha256": "f488cc59a773af3e0c7cc893dd2e6c4391302cb07670dd318e3d0130162b47a9",
+      "bytes": 92918,
+      "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/1cdfff555f4a21f71ccc978290e2e212e2f8b168/keystore/java/android/security/keystore/KeyGenParameterSpec.java"
+    },
+    {
+      "repository": "dotnet/runtime",
+      "commit": "546a94e68c739515edcae2a4a13cd9ba0716d378",
+      "path": "src/libraries/System.Net.Http/src/System/Net/Http/HttpClientHandler.cs",
+      "license": "MIT",
+      "use": "semantic reference for original unconditional certificate callback detector",
+      "sha256": "873900803985638a130fa727801fc29ae6df28591e4a9956acfa74a82557fe74",
+      "bytes": 14849,
+      "url": "https://github.com/dotnet/runtime/blob/546a94e68c739515edcae2a4a13cd9ba0716d378/src/libraries/System.Net.Http/src/System/Net/Http/HttpClientHandler.cs"
+    }
+  ]
+}

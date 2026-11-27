@@ -1,0 +1,20 @@
+services:
+  scanner:
+    build: .
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    cpus: 2
+    mem_limit: 3g
+    memswap_limit: 3g
+    pids_limit: 128
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,mode=1777,size=512m
+    environment:
+      STREAMLIT_BROWSER_SERVER_ADDRESS: ${SCA_BROWSER_HOST:-localhost}
+    ports:
+      - "127.0.0.1:${SCA_HOST_PORT:-8501}:8501"

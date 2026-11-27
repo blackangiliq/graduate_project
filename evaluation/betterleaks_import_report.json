@@ -1,0 +1,2456 @@
+{
+  "source": {
+    "name": "Betterleaks",
+    "url": "https://github.com/betterleaks/betterleaks/blob/702504ab4551b9a1c1837efdb6b340536aa4c761/config/betterleaks.toml",
+    "license": "MIT",
+    "copyright": "Copyright (c) 2026 Zachary Rice",
+    "commit": "702504ab4551b9a1c1837efdb6b340536aa4c761",
+    "sha256": "d0bcc9fc06fbbd14c97a49a3d50eb6ee62be64bef18ccab74b86eab3767f2355",
+    "imported": "2026-11-26"
+  },
+  "upstream_rules": 486,
+  "counts": {
+    "skipped": 406,
+    "enabled": 80
+  },
+  "checks": {
+    "known_safe_lines": 324,
+    "known_safe_matches": 0,
+    "python_compatible": 80,
+    "stress_checks_passed": 80,
+    "matching_examples": 80,
+    "live_credentials_validated": 0
+  },
+  "rules": [
+    {
+      "id": "1password-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "1password-service-account-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "abuseipdb-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "adafruit-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "adobe-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "adobe-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "age-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "aikido-ci-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "aikido-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "aikido-client-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "airtable-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "airtable-oauth-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "airtable-personnal-access-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "aiven-auth-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "algolia-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "algolia-application-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "alibaba-access-key-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "alibaba-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "alibaba-sts-access-key-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "alibaba-sts-access-key-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "alibaba-sts-security-token",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "amplitude-secret-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "anthropic-admin-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "anthropic-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "anthropic-oauth-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "anthropic-oauth-refresh-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "apify-api-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "apollo-api-key.1",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "artifactory-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "artifactory-jfrog-url",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "artifactory-reference-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "asaas-api-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "asana-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "asana-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "assemblyai-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "atlassian-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "auth0-client-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "auth0-client-secret.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "auth0-domain.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "authress-service-client-access-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "aws-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "aws-amazon-bedrock-api-key-long-lived",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "aws-amazon-bedrock-api-key-short-lived",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "aws-secret-access-key",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "azure-ad-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "azure-app-configuration-connection-string",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "azure-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "azure-servicebus-connection-string",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "azure-storage-account-key",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "azure-storage-account-name",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "azure-tenant-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "beamer-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "bitbucket-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "bitbucket-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "bitbucket-data-center-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "bitly-access-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "bitrise-access-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "bittrex-access-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "bittrex-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "box-api-access-token",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "brave-search-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "browserstack-access-key.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "browserstack-username.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "buildkite-service-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "buildkite-user-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "cal-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "canadian-digital-service-notify-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "canva-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "canva-client-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "cartesia-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "cerebras-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "checkout-secret-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "circleci-personal-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "circleci-project-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "cisco-meraki-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "civo-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "clerk-secret-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "clickhouse-cloud-api-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "clickhouse-cloud-key-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "clickup-personal-api-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "clojars-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cloudflare-account-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "cloudflare-api-key.1",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cloudflare-api-key.2",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cloudflare-global-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cloudflare-origin-ca-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cloudinary-api-key",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "cloudinary-api-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "cloudinary-cloud-name",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "cloudsmith-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "cockroachlabs-cloud-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "codecov-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cohere-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "coinbase-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "configcat-sdk-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "configcat-sdk-key-extended",
+      "status": "skipped",
+      "reason": "client SDK identifier; not treated as a secret by this pack"
+    },
+    {
+      "id": "confluent-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "confluent-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "contentful-delivery-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "couchbase-capella-api-key",
+      "status": "skipped",
+      "reason": "broad nearby-name expression, outside prefixed-token subset"
+    },
+    {
+      "id": "coveralls-personal-api-token",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "coveralls-repo-token",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "coveralls-repo-token-coveralls-yml",
+      "status": "skipped",
+      "reason": "requires path semantics not implemented by this importer"
+    },
+    {
+      "id": "crates-io-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "curl-auth-header",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "curl-auth-user",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "cursor-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "cypress-project-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "cypress-record-key",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "databento-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "databricks-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "datadog-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "datadog-application-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "datagov-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "datastax-astra-application-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "daytona-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "deepgram-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "deepseek-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "defined-networking-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "deno-account-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "devcycle-server-sdk-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "devin-personal-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "devin-service-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "devin-service-user-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "digitalocean-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "digitalocean-pat",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "digitalocean-refresh-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "discord-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "discord-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "discord-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "disqus-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "docker-swarm-join-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "docker-swarm-unlock-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "dockerhub-organization-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "dockerhub-personal-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "doppler-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "droneci-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "dropbox-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "dropbox-long-lived-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "dropbox-short-lived-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "duffel-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "dynatrace-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "easypost-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "easypost-test-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "ebay-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "ebay-client-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "elastic-cloud-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "elevenlabs-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "endorlabs-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "endorlabs-api-secret",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "etsy-open-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "exoscale-api-key",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "exoscale-api-secret",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "facebook-access-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "facebook-page-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "facebook-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "fal-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "fastly-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "figma-personal-access-header-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "figma-personal-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "finicity-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "finicity-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "finnhub-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "flickr-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "flutterwave-encryption-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "flutterwave-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "flyio-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "frameio-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "freemius-secret-key",
+      "status": "skipped",
+      "reason": "requires path semantics not implemented by this importer"
+    },
+    {
+      "id": "freshbooks-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "fullstory-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "gcp-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gcp-application-default-credentials",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "gcp-gemini-api",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "gcp-service-account",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "generic-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "generic-credential-uri",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "generic-password",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "generic-username",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "gitea-access-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "github-app-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "github-fine-grained-pat",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "github-oauth",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "github-pat",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "github-refresh-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "gitlab-cicd-job-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-deploy-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-feature-flag-client-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-feed-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-incoming-mail-address-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "gitlab-incoming-mail-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-kubernetes-agent-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-oauth-app-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-pat",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-pat-routable",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-pat-routable-versioned",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "gitlab-ptt",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-rrt",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-runner-authentication-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-runner-authentication-token-routable",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-scim-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitlab-session-cookie",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gitter-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "gocardless-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "grafana-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "grafana-cloud-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "grafana-service-account-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "greptile-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "groq-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "gumroad-access-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "harness-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "hashicorp-tf-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "hashicorp-tf-password",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "heroku-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "heroku-api-key-v2",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "highnote-secret-live-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "honeycomb-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "hubspot-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "huggingface-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "huggingface-organization-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "hunter-api-key.1",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "ibm-cloud-user-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "influxdb-api-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "infomaniak-api-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "infracost-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "instantly-api-key.1",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "intercom-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "intra42-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "ionic-personal-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "jina-ai-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "jumpcloud-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "jwt",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "jwt-base64",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "kagi-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "kimi-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "klaviyo-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "kraken-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "kubernetes-secret-yaml",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "kucoin-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "kucoin-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "labelbox-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "labelbox-recursion-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "langchain-langsmith-personal-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "langchain-langsmith-service-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "langfuse-public-key.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "langfuse-secret-key.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "lark-app-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "lark-app-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "launchdarkly-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "lichess-personal-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "lighton-paradigm-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "linear-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "linear-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "linkedin-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "linkedin-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "llama-cloud-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "lob-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "looker-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "looker-client-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mailchimp-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mailersend-api-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "mailgun-private-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mailgun-pub-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mailgun-signing-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mapbox-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mapbox-secret-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "maptiler-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "maptiler-api-key-url",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "mattermost-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "maxmind-license-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "mem0-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "mercury-production-api-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "mergify-application-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "messagebird-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "messagebird-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "microsoft-teams-webhook",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "midtrans-production-server-client-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "minimax-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "miro-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "miro-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "miro-client-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "mistral-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "monday-api-token.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "mongodb-atlas-service-account-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "mongodb-atlas-service-account-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "mongodb-connection-string",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "mux-access-token-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "mux-access-token-secret.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "neon-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "netlify-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "new-relic-browser-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "new-relic-insert-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "new-relic-user-api-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "new-relic-user-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "ngrok-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "notion-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "npm-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "nuget-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "nuget-config-password",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "nvidia-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "nx-cloud-access-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "nx-cloud-access-token-nx-json",
+      "status": "skipped",
+      "reason": "requires path semantics not implemented by this importer"
+    },
+    {
+      "id": "nylas-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "nytimes-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "octopus-deploy-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "okta-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "ollama-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "onesignal-rich-authentication-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "onfido-live-api-token-ca",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "onfido-live-api-token-eu",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "onfido-live-api-token-us",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "openai-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "openrouter-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "openshift-user-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "openweather-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "opsgenie-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "ovh-application-key",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "ovh-application-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "ovh-consumer-key",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "paddle-live-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "pagerduty-authorization-token.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "paypal-client-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "paypal-client-secret.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "perplexity-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "persona-production-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "pinecone-api-key.1",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "pinecone-api-key.2",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "pinterest-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "pkcs12-file",
+      "status": "skipped",
+      "reason": "requires path semantics not implemented by this importer"
+    },
+    {
+      "id": "plaid-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "plaid-client-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "plaid-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "planetscale-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "planetscale-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "planetscale-oauth-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "planetscale-password",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "plivo-auth-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "plivo-auth-token",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "polar-oauth-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "polar-organization-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "polar-personal-access-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "polymarket-address",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "polymarket-api-key",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "polymarket-api-secret",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "polymarket-passphrase",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "polymarket-private-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "posthog-personal-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "postman-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "postmark-api-token.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "prefect-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "private-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "privateai-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "proof-full-access-api-key",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "pulumi-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "pypi-upload-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "rainforest-pay-production-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "ramp-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "ramp-client-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "rapidapi-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "razorpay-key-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "razorpay-key-secret.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "readme-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "redirect-pizza-api-token.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "render-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "replicate-api-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "resend-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "retell-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "rootly-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "rubygems-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "runpod-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "salesforce-access-token.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "salesforce-instance-url.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "samsara-api-token.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "scaleway-secret-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "scalingo-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "scalr-api-access-token.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "segment-public-api-token.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "sendbird-access-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sendbird-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sendgrid-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sendinblue-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sentry-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sentry-org-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sentry-user-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "settlemint-application-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "settlemint-personal-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "settlemint-service-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "shippo-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "shopify-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "shopify-custom-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "shopify-private-app-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "shopify-shared-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sidekiq-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sidekiq-sensitive-url",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-app-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "slack-bot-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-config-access-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-config-refresh-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "slack-legacy-bot-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-legacy-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-legacy-workspace-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-session-cookie",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-session-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "slack-user-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "slack-webhook-url",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "snowflake-account-host.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "snowflake-programmatic-access-token.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "snyk-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sonar-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sourcegraph-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "square-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "squarespace-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sslmate-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "stability-ai-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "stripe-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sumologic-access-id",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "sumologic-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "supabase-management-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "supabase-project-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "supabase-project-url",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "tableau-personal-access-token-name.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "tableau-personal-access-token.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "tableau-server-host.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "tailscale-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "tailscale-auth-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "tailscale-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "tailscale-oauth-client-secret",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "tailscale-scim-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "tailscale-webhook-secret",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "tavily-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "telegram-bot-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "telnyx-api-v2-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "temporal-cloud-api-key.1",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "thunderstore-api-token.1",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "togetherai-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "travisci-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twilio-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twitch-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twitter-access-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twitter-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twitter-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twitter-api-secret",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "twitter-bearer-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "typeform-api-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "unkey-root-key.1",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "upcloud-api-token",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "upstage-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "upstash-redis-rest-token.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "upstash-redis-rest-url.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "val-town-api-token.1",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "vault-batch-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "vault-service-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "vercel-ai-gateway-key",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "vercel-api-token",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "vercel-app-access-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "vercel-app-refresh-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "vercel-integration-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "vercel-personal-access-token",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "virustotal-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "voyageai-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "vultr-api-key.1",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "wakatime-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "wakatime-api-key.2",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "weatherstack-api-key.1",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "weights-and-biases-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "weights-and-biases-api-key-v1",
+      "status": "skipped",
+      "reason": "requires unsupported filter semantics; not silently dropped"
+    },
+    {
+      "id": "wiz-client-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "wiz-client-secret.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "woocommerce-consumer-secret.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "workato-developer-api-token.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "workos-production-api-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "xai-api-key",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "xendit-production-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    },
+    {
+      "id": "yandex-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "yandex-api-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "yandex-aws-access-token",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "zai-api-key",
+      "status": "skipped",
+      "reason": "outside the reviewed high-confidence subset"
+    },
+    {
+      "id": "zendesk-secret-key",
+      "status": "skipped",
+      "reason": "already represented by the Gitleaks pack"
+    },
+    {
+      "id": "zhipu-api-key",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "zoho-client-id.1",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "zoho-client-secret.1",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "zoho-oauth-token.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "zoho-zapi-key.1",
+      "status": "skipped",
+      "reason": "not a standalone provider-prefixed token"
+    },
+    {
+      "id": "zoom-client-id",
+      "status": "skipped",
+      "reason": "association-only identifier, not a stand-alone secret"
+    },
+    {
+      "id": "zoom-client-secret",
+      "status": "skipped",
+      "reason": "requires component association not implemented by the static importer"
+    },
+    {
+      "id": "zuplo-consumer-api-key.1",
+      "status": "enabled",
+      "reason": "compatible prefix, capture, entropy, stress and clean-sample checks passed"
+    }
+  ]
+}

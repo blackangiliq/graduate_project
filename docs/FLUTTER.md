@@ -3,7 +3,14 @@
 The analyzer reads Flutter and Android apps in two forms: the **source project** (a folder
 with `pubspec.yaml`, `android/`, `ios/`) and the **built app package** (`.apk`, `.aab`,
 `.apks`, `.xapk`, `.apkm`). Both are analysed statically: an app package is decoded and read
-in Python, never installed, run or emulated, and nothing is downloaded.
+in Python, without installing or running it. The separate [Runtime analysis](DYNAMIC_ANALYSIS.md)
+tab can install and record an application on a configured Android lab.
+
+> Current evidence behavior (2026-11-27): dashboard previews, inventories, downloads and
+> local evidence archives retain complete original values. References below to masked values
+> describe the analysis/AI and CLI representations. Literal templates, source locations,
+> SDK configuration candidates and native extraction limits are documented in the
+> [current validation review](VALIDATION_2026_11_27.md).
 
 Arabic version: [FLUTTER_AR.md](FLUTTER_AR.md). Measured results:
 [evaluation/flutter_results.md](../evaluation/flutter_results.md).
@@ -130,7 +137,7 @@ that an address or an e-mail in them does not become a link.
 
 ## 3. The structural checks
 
-49 checks, all in `sca/flutter/checks.py` (engine `flutter`); none of them is duplicated as
+52 checks, all in `sca/flutter/checks.py` (engine `flutter`); none of them is duplicated as
 a regular-expression rule. The dashboard's Guide tab shows the same table, generated from
 the code.
 
@@ -148,6 +155,9 @@ the code.
 | ANDROID-MANIFEST-010 | Legacy external storage (android:requestLegacyExternalStorage) | CWE-922 | low / 0.70 | Android manifest | Source project and app package |
 | ANDROID-MANIFEST-011 | Task hijacking exposure (taskAffinity, allowTaskReparenting) | CWE-1021 | low / 0.40 | Android manifest | Source project and app package |
 | ANDROID-MANIFEST-012 | WebView Safe Browsing switched off (EnableSafeBrowsing) | CWE-1188 | low / 0.80 | Android manifest | Source project and app package |
+| ANDROID-MANIFEST-013 | Application disables native heap pointer tagging | CWE-693 | low / 0.90 | Android manifest | Source project and app package |
+| ANDROID-MANIFEST-014 | Application default disables GWP-ASan | CWE-693 | low / 0.90 | Android manifest | Source project and app package |
+| ANDROID-MANIFEST-015 | Application default disables hardware memory tagging (MTE) | CWE-693 | info / 0.90 | Android manifest | Source project and app package |
 | ANDROID-SDK-001 | Runs on Android versions before 7.0 (minSdk below 24) | CWE-693 | low / 0.70 | Android manifest | Source project and app package |
 | ANDROID-SDK-002 | Targets an Android version before 9 (targetSdk below 28) | CWE-693 | low / 0.70 | Android manifest | Source project and app package |
 | ANDROID-FILEPROVIDER-001 | FileProvider shares a whole storage root | CWE-552 | high / 0.80 | Android manifest | Source project and app package |
@@ -197,7 +207,11 @@ Notes on the values:
   `web/firebase-messaging-sw.js`, the `firebaseConfig` of `web/index.html`, or the strings
   dump of `libapp.so` when it also holds the other Firebase values (database URL, storage
   bucket, `messagingSenderId`) are lowered to low severity and confidence 0.4: they identify
-  a Firebase project and are restricted in the Google Cloud console, they are not secrets.
+  a Firebase project. The project owner can verify their restrictions in Google Cloud.
+- When a packaged Android manifest declares a client key for the Google Maps SDK, the
+  scanner marks the value's decoded line with low severity and confidence 0.6. The
+  project owner can check the allowed Android app, signing certificate and APIs in Google
+  Cloud. The scanner evaluates a copy used elsewhere in its own context.
 - A structural finding points at the attribute or key that causes it (one attribute per
   line), at the start tag when the attribute is missing and the platform default applies,
   or at the matching line of a `_sca/*.txt` summary.
@@ -259,7 +273,7 @@ CWEs outside the table get no mobile class (for example CWE-470 of DART-CODE-002
 | M3 Insecure Authentication/Authorization | MASVS-PLATFORM | 939 |
 | M4 Insufficient Input/Output Validation | MASVS-CODE | 22, 78, 89, 90, 94, 95, 98, 502, 601, 611, 643, 943, 1336 |
 | M4 Insufficient Input/Output Validation | MASVS-PLATFORM | 79, 749 |
-| M5 Insecure Communication | MASVS-NETWORK | 295, 319, 829 |
+| M5 Insecure Communication | MASVS-NETWORK | 295, 319, 322, 829 |
 | M6 Inadequate Privacy Controls | MASVS-PRIVACY | 200, 359 |
 | M7 Insufficient Binary Protections | MASVS-RESILIENCE | 215, 489, 693 |
 | M8 Security Misconfiguration | MASVS-PLATFORM | 250, 276, 614, 732, 926, 942, 1004, 1021, 1188 |
@@ -473,18 +487,23 @@ Obfuscation renames classes and functions, not texts, and does not change the in
   before or after the action and the path (`flutter decode app.apk --out decoded` and
   `flutter --out decoded decode app.apk` are the same). Package sizes are given in decimal
   units (1 MB = 1,000,000 bytes), as in the evaluation tables.
-- Dashboard: the target box takes a folder or an app file; **Browse app...** opens a file
-  dialog, **Upload an app file** takes a file up to 200 MB, **Flutter sample** selects
+- The **Scan input** tab accepts a file, a local directory, or uploads. Select the directory
+  containing the base APK and its companion APKs, or upload the files together. Selecting
+  a local base APK shows the adjacent files and a checkbox to include them. **Flutter sample** in **Samples** selects
   `samples/flutter_vulnerable_app`. **Flutter / Android checks** and **Decompile and verify
   app files (jadx, apksigner)** are the two switches. After a scan the Dashboard tab shows
   an app panel (package, versions, build mode, SDK levels, signing, permissions,
   components, deep links, packages, decoder warnings) and charts by OWASP Mobile Top 10 and
   MASVS group. Under the app panel, **APIs and keys: N server addresses, N keys, N serious
-  alerts** opens the inventory: the counts, the alerts as coloured boxes, the tabs Keys,
-  Server addresses, Hosts, API calls, API paths, Service IDs (with the Firebase project) and
+  alerts** opens the inventory: the counts, the alerts as coloured boxes, the tabs Server
+  addresses, Keys, Hosts, API calls, API paths, Service IDs (with the Firebase project) and
   .env entries, and a **Download the inventory (JSON)** button. It replaces the plain list
   of server addresses that the app panel showed before. The Guide tab has a **Flutter and
   APK** page with the checks and rules tables and a description of this panel.
+- Click a server address, API path or API call to open its recorded file and line beside the
+  table. For repeated addresses or paths, use **Recorded locations** to choose the occurrence.
+  A call opens at the invocation. When its target was recorded on a different line, both
+  locations are available. A line in a binary strings view refers to the extracted list.
 - Reports: the HTML report has an *APIs and keys* section (summary line, alerts, tables,
   and a note when a list was cut), the PDF report the same as text, SARIF the summary, the
   alerts and the `truncated` counts in `run.properties.apiInventory`, and the JSON report

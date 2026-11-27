@@ -62,6 +62,7 @@ MAX_WARNINGS = 50
 MAX_CHUNKS = 200_000
 MAX_PACKAGES = 64
 MAX_VALUES = 1_000_000
+MAX_BAG_ITEMS = 100_000       # complex-resource members across one table
 MAX_POOL_STRINGS = 2_000_000
 MAX_STRING_BYTES = 1 << 20
 MAX_REFERENCE_CHARS = 1 << 20    # rendered "@type/name" characters beyond twice the table size
@@ -81,6 +82,22 @@ class ResValue(NamedTuple):
     data_type: int       # a TYPE_* constant; TYPE_BAG for a style, array or plurals
     data: int            # the raw 32-bit data
     text: str            # readable form: the string, "@xml/name", "true", "#ff1d873b", "4dp"
+
+
+class ResMapValue(NamedTuple):
+    """One named member of an array, plural or style resource."""
+
+    name: int
+    data_type: int
+    data: int
+    text: str
+
+
+class ResBag(NamedTuple):
+    resource_id: int
+    config: str
+    parent: int
+    items: List[ResMapValue]
 
 
 @dataclass
@@ -116,6 +133,7 @@ class ResourceTable:
         self._by_id: Dict[int, ResEntry] = {}
         self._package_names: Dict[int, str] = {}
         self._main_package = 0x7F
+        self.bags: List[ResBag] = []
 
     def warn(self, message: str) -> None:
         if len(self.warnings) < MAX_WARNINGS:
@@ -314,6 +332,7 @@ class _RawPackage:
         self.type_id_offset = type_id_offset
         self.keys: Dict[int, int] = {}                           # res id -> key index
         self.values: Dict[int, List[Tuple[str, int, int]]] = {}  # res id -> (config, type, data)
+        self.bags: Dict[Tuple[int, str], Tuple[int, List[Tuple[int, int, int]]]] = {}
         self.chunks: set = set()                                 # (type id, config) read
 
 
@@ -325,6 +344,7 @@ class _Parser:
         self.pool: Optional[_Pool] = None
         self.raw: List[_RawPackage] = []
         self.value_count = 0
+        self.bag_item_count = 0
         self.noted: set = set()
         self.references: Dict[int, str] = {}     # res id << 1 | attribute -> rendered name
         self.name_budget = 2 * len(buf) + MAX_REFERENCE_CHARS
@@ -476,6 +496,9 @@ class _Parser:
                      if o != NO_ENTRY]
         base = raw.package.id << 24 | type_id << 16
         entries = start + entries_start
+        unique_offsets = sorted({offset for _, offset in slots})
+        entry_ends = {offset: min(end, entries + following)
+                      for offset, following in zip(unique_offsets, unique_offsets[1:])}
         for slot, offset in slots:
             if self.value_count >= MAX_VALUES:
                 self.note("values", f"more than {MAX_VALUES} values; the rest are skipped")
@@ -493,6 +516,29 @@ class _Parser:
                 continue
             elif entry_flags & ENTRY_COMPLEX:
                 key, data_type, data = key_or_data, TYPE_BAG, 0
+                entry_end = entry_ends.get(offset, end)
+                if size_or_key < 16 or pos + size_or_key > entry_end:
+                    self.note("bag-header", f"{where}: a complex resource has an invalid header")
+                    continue
+                parent, declared = struct.unpack_from("<II", buf, pos + 8)
+                members_at = pos + size_or_key
+                fitted = (entry_end - members_at) // 12
+                available = max(0, MAX_BAG_ITEMS - self.bag_item_count)
+                count_members = min(declared, fitted, available)
+                if declared > fitted:
+                    self.note("bag-size", f"{where}: complex resource members run past their chunk; clamped")
+                if declared > available:
+                    self.note("bag-limit", f"more than {MAX_BAG_ITEMS} complex resource members; the rest are skipped")
+                members = []
+                for member_index in range(count_members):
+                    member_at = members_at + member_index * 12
+                    item_name, item_size, _, item_type, item_data = struct.unpack_from("<IHBBI", buf, member_at)
+                    if item_size != 8:
+                        self.note("bag-value", f"{where}: complex resource has an invalid value size; skipped")
+                        continue
+                    members.append((item_name, item_type, item_data))
+                raw.bags[(base | slot, config)] = (parent, members)
+                self.bag_item_count += count_members
             else:
                 key, value_at = key_or_data, pos + size_or_key
                 if value_at + 8 > end:
@@ -545,6 +591,15 @@ class _Parser:
             values = entry.values
             for i, (config, data_type, data) in enumerate(values):
                 values[i] = ResValue(config, data_type, data, self._render(data_type, data))
+        for raw in self.raw:
+            own_ids = {entry.id for entry in raw.package.entries}
+            for (resource_id, config), (parent, members) in raw.bags.items():
+                if resource_id not in own_ids:
+                    continue
+                table.bags.append(ResBag(resource_id, config, parent,
+                    [ResMapValue(name, data_type, data, self._render(data_type, data))
+                     for name, data_type, data in members]))
+            raw.bags = {}
 
     def _render(self, data_type: int, data: int) -> str:
         if data_type == TYPE_STRING:
@@ -766,7 +821,13 @@ def _build_value(value: object, pool: Dict[str, int]) -> Tuple[int, object]:
     if isinstance(value, str):
         return TYPE_STRING, pool.setdefault(value, len(pool))
     if isinstance(value, dict):
-        return TYPE_BAG, [(int(k), TYPE_INT_DEC, int(v) & 0xFFFFFFFF) for k, v in value.items()]
+        members = []
+        for name, member in value.items():
+            data_type, data = _build_value(member, pool)
+            if data_type == TYPE_BAG:
+                raise ValueError("build_arsc cannot encode nested complex resources")
+            members.append((int(name), data_type, data))
+        return TYPE_BAG, members
     if isinstance(value, tuple) and len(value) == 2:
         return int(value[0]), int(value[1]) & 0xFFFFFFFF
     raise ValueError(f"build_arsc cannot encode {value!r}")

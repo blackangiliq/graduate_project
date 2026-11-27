@@ -84,6 +84,11 @@ def to_sarif(result: ScanResult) -> Dict[str, Any]:
                 "reviewerVerdict": finding.user_verdict,
             },
         }
+        if getattr(finding, "column", 0) > 0:
+            region = entry["locations"][0]["physicalLocation"]["region"]
+            region["startColumn"] = finding.column
+            if finding.end_line == finding.line and finding.end_column > finding.column:
+                region["endColumn"] = finding.end_column
         if result.app:
             entry["properties"].update(owaspMobile=finding.owasp_mobile, masvs=finding.masvs)
             if finding.owasp_mobile or finding.masvs:

@@ -61,23 +61,22 @@ def rebuild(data, replace=None, add=(), drop=()):
 
 
 def check_virtual_files(ctx):
-    """The rules for virtual files: unique rels that are their paths, no "#", lines shorter
-    than 600 characters without control characters, a known origin."""
+    """The rules for virtual files: unique rels that are their paths, no "#", complete logical lines
+    without control characters, a known origin."""
     rels = [source.rel for source in ctx.files]
     assert len(rels) == len(set(rels))
     for source in ctx.files:
         assert source.path == Path(source.rel) and "#" not in source.rel and "\\" not in source.rel
         assert source.lines == source.text.splitlines()
-        assert all(len(line) < 600 and not CONTROL.search(line) for line in source.lines)
+        assert all(not CONTROL.search(line) for line in source.lines)
         assert source.origin in ("decoded", "recovered", "decompiled", "strings", "summary")
 
 
 # ------------------------------------------------------------------ helpers of apk.py
-def test_text_lines_clean_and_split():
+def test_text_lines_clean_without_splitting_source_lines():
     text = "a\x00b\tc\x0bd\x0ce\x1cf\x85g\u2028h\u2029i\r\nj\x7f\ud800" + "x" * 1300
     lines = apk.text_lines(text)
-    assert lines[:8] == ["ab\tc", "d", "e", "f", "g", "h", "i", "j\x7f\ufffd" + "x" * 596]
-    assert [len(line) for line in lines[8:]] == [599, 105]
+    assert lines == ["ab\tc", "d", "e", "f", "g", "h", "i", "j\x7f\ufffd" + "x" * 1300]
     assert apk.text_lines("") == [] and apk.text_lines("one\n\ntwo") == ["one", "", "two"]
     assert apk.clean_line("ok\x1b[0m") == "ok[0m"
 
@@ -85,9 +84,9 @@ def test_text_lines_clean_and_split():
 def test_dump_lines():
     strings = ["plain", "two\nlines", "  ", "", "tab\tkept", "y" * 1200, "\x01\x02"]
     assert apk.dump_lines(strings, 100) == ["plain", "two", "lines", "tab\tkept",
-                                            "y" * 599, "y" * 599, "y" * 2]
+                                            "y" * 1200]
     assert apk.dump_lines(strings, 3) == ["plain", "two", "lines"]
-    assert apk.dump_lines(["z" * 2000], 2) == ["z" * 599, "z" * 599]
+    assert apk.dump_lines(["z" * 2000], 2) == ["z" * 2000]
 
 
 def test_string_resource_lines():
@@ -95,7 +94,7 @@ def test_string_resource_lines():
         '    <string name="app_name">A &amp; B &lt;x&gt;\\n"q"\\ttab</string>']
     assert apk._string_lines('we"ird', "v") == ['    <string name="we&quot;ird">v</string>']
     lines = apk._string_lines("long", "&" * 700)
-    assert all(len(line) < 600 for line in lines) and len(lines) == 6
+    assert len(lines) == 1
     assert "".join(lines) == '    <string name="long">' + "&amp;" * 700 + "</string>"
     assert all(re.fullmatch(r"(.*>)?(&amp;)*(</string>)?", line) for line in lines)
 
@@ -370,14 +369,19 @@ def test_split_apk_sets(tmp_path, layout, suffix):
     assert kit.AWS_KEY in by["lib/arm64-v8a/libapp.so"].lines and "AndroidManifest.xml" in by
     assert ctx.facts["signing"]["schemes"] == ["v2"]
     assert ctx.facts["signing"]["certificates"][0]["debug"] is True
-    assert ctx.warnings == []
+    assert {r["status"] for r in ctx.facts["apk_members"]} == {"read"}
+    assert len(ctx.facts["apk_members"]) == 3
+    second_abi = "lib/x86_64/libapp.so"
+    assert second_abi in by
+    assert ctx.facts["apk_file_members"][second_abi].endswith(".apk")
 
 
 def test_split_set_with_a_feature_split_and_no_base(tmp_path):
     parts = kit.split_apk(kit.build_apk())
     parts["split_extras"] = kit.build_apk(mode="none")
     ctx = load(tmp_path, kit.build_apk_set(parts), "set.apks")
-    assert any("split_extras is a feature split" in w for w in ctx.warnings)
+    other = next(r for r in ctx.facts["apk_members"] if r["name"].endswith("extras-master.apk"))
+    assert (other["status"], other["reason"]) == ("skipped", "APK has no declared split ID")
     del parts["base"]
     with pytest.raises(flutter.AppError, match="no AndroidManifest.xml"):
         load(tmp_path, kit.build_apk_set({"split_config.arm64_v8a":
@@ -438,21 +442,23 @@ def test_native_libraries_and_abi_choice(tmp_path):
     native = kit.snapshot.build_elf({"kSecret": b"\x00jdbc:mysql://db.internal/app\x00k\x00"})
     libs = {"libnative.so": native, "libVkLayer_khronos_validation.so": native}
     libs.update({"libextra%d.so" % n: native for n in range(11)})
-    # both ABIs have libapp.so and arm64-v8a is read; the other libraries are in armeabi-v7a
-    # (the first ABI given), so none of them is dumped
+    # Metadata still prefers arm64-v8a, while strings from the secondary ABI and
+    # libraries supplied only for that ABI are retained independently.
     data = kit.build_apk(abis=("armeabi-v7a", "arm64-v8a"), native_libs=libs)
     ctx = load(tmp_path, data)
     assert ctx.facts["abis"] == ["arm64-v8a", "armeabi-v7a"]
     by = files_of(ctx)
     assert "lib/arm64-v8a/libapp.so" in by
-    assert not any(rel.startswith("lib/armeabi-v7a/") for rel in by)
+    assert "lib/armeabi-v7a/libapp.so" in by
+    assert "jdbc:mysql://db.internal/app" in by["lib/armeabi-v7a/libnative.so"].lines
+    assert "lib/armeabi-v7a/libnative.so" in ctx.facts["native_string_coverage"]["libraries_read"]
     data = kit.build_apk(native_libs=libs)
     ctx = load(tmp_path, data, "libs.apk")
     dumped = [rel for rel in files_of(ctx) if rel.startswith("lib/arm64-v8a/lib") and
               rel != "lib/arm64-v8a/libapp.so"]
-    assert len(dumped) == 10 and "lib/arm64-v8a/libVkLayer_khronos_validation.so" not in dumped
+    assert len(dumped) == 12 and "lib/arm64-v8a/libVkLayer_khronos_validation.so" not in dumped
     assert "jdbc:mysql://db.internal/app" in files_of(ctx)["lib/arm64-v8a/libextra0.so"].lines
-    assert "12 other native libraries; only the first 10 are read" in ctx.warnings
+    assert not any("only the first" in warning and "native libraries" in warning for warning in ctx.warnings)
     assert all(rel in ctx.strings_files for rel in dumped)
 
 
@@ -530,7 +536,7 @@ def test_long_lines_in_decoded_xml(tmp_path):
     application = ctx.manifests[0][1].find("application")
     assert application.get("android:label") == "L" * 900          # the tree keeps the value
     line = files_of(ctx)["AndroidManifest.xml"].lines[application.line_of("android:label") - 1]
-    assert len(line) == 599 and line.endswith("LLL...")
+    assert "L" * 900 in line and not line.endswith("...")
 
 
 def test_a_failing_decoder_does_not_stop_the_rest(tmp_path, monkeypatch):
@@ -863,12 +869,13 @@ def test_jadx_decompile(tmp_path, monkeypatch, no_tools):
                             "--output-dir-src"] and calls[0][-1] == str(inputs / "classes.dex")
     assert sorted(p.name for p in out_dir.parent.iterdir()) == ["jadx", "jadx-input"]
     again, note = tools.jadx_decompile(inputs, out_dir, list(reversed(wanted)))
-    assert again == files and note == "ok (3 files, from an earlier scan of this app)"
+    assert again == files and note == "ok (3 files; jadx reported errors) (from an earlier scan of this app)"
     assert len(calls) == 1
     (inputs / "classes.dex").write_bytes(b"dex\n035\x00changed")
     monkeypatch.setattr(tools, "MAX_JAVA_FILES", 1)
     files, note = tools.jadx_decompile(inputs, out_dir, wanted)
-    assert len(calls) == 2 and note == "ok (1 files; jadx reported errors)" and len(files) == 1
+    assert len(calls) == 2 and len(files) == 1
+    assert note == "ok (1 files; jadx reported errors; 2 matching Java files omitted by the 1-file limit)"
     monkeypatch.setattr(tools, "_run", fake_jadx(calls, ["other.Y"], code=1))
     files, note = tools.jadx_decompile(inputs / "classes.dex", tmp_path / "w2" / "jadx", wanted)
     assert files == [] and note == "failed: ERROR - finished with errors, count: 2"

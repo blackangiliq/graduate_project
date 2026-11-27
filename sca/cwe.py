@@ -219,6 +219,11 @@ _KB = {
                 "Read the specific request fields you need instead of calling extract().",
                 "استخدام extract() على بيانات الطلب يسمح للمهاجم بالكتابة فوق أي متغير محلي.",
                 "اقرأ الحقول المحددة التي تحتاجها بدلاً من استدعاء extract()."),
+    "CWE-322": ("Key Exchange without Entity Authentication", "A02",
+                "A client configured to accept an unverified peer key can establish an encrypted connection to the wrong server.",
+                "Verify the peer against a trusted host-key store or a previously verified public key.",
+                "قد ينشئ العميل الذي يقبل مفتاحاً غير موثّق اتصالاً مشفّراً بخادم آخر.",
+                "تحقّق من مفتاح الخادم باستخدام سجلّ مفاتيح موثوق أو مفتاح عام سبق التحقق منه."),
     "CWE-319": ("Cleartext Transmission of Sensitive Information", "A02",
                 "Encryption of a connection is switched off or optional, so data and credentials can be read on the network.",
                 "Require encryption (TLS) for the connection and reject unencrypted fallbacks.",
@@ -450,7 +455,7 @@ _MOBILE_ROWS = (
     ("M3", "MASVS-PLATFORM", (939,)),            # a deep link that acts without authorization
     ("M4", "MASVS-CODE", (89, 78, 22, 94, 95, 601, 643, 943, 90, 98, 1336, 502, 611)),
     ("M4", "MASVS-PLATFORM", (79, 749)),
-    ("M5", "MASVS-NETWORK", (295, 319, 829)),    # 829: a script loaded over plain HTTP
+    ("M5", "MASVS-NETWORK", (295, 319, 322, 829)),    # 829: a script loaded over plain HTTP
     ("M6", "MASVS-PRIVACY", (200, 359)),
     ("M7", "MASVS-RESILIENCE", (693, 489, 215)),
     ("M8", "MASVS-PLATFORM", (1188, 926, 1021, 250, 732, 276, 942, 614, 1004)),

@@ -1,0 +1,79 @@
+# Local pattern adaptations of GitHub CodeQL queries for Java and Kotlin.
+# These checks match source literals and API names. CodeQL also resolves types and data flow.
+source:
+  name: GitHub CodeQL
+  url: https://github.com/github/codeql
+  license: MIT
+  copyright: Copyright (c) 2006-2025 GitHub, Inc.
+  commit: c6baf479093fafc81d4655dc2014dc583360308e
+rules:
+- id: CODEQL-ANDROID-WEBVIEW-FILE-ACCESS
+  source: java/android/websettings-file-access
+  title: Android WebView allows access to local files
+  languages: [java]
+  cwe: CWE-200
+  severity: medium
+  confidence: 0.82
+  pattern: '\b(?:setAllow(?:UniversalAccessFromFileURLs|FileAccess(?:FromFileURLs)?)\s*\(\s*true\s*\)|allow(?:UniversalAccessFromFileURLs|FileAccess(?:FromFileURLs)?)\s*=\s*true\b)'
+  message: This WebView setting enables local file access. Review the pages the WebView can load and the files it can reach.
+  fix: Disable these file access settings and serve packaged content via WebViewAssetLoader when needed.
+  examples_vulnerable:
+    - 'webView.getSettings().setAllowUniversalAccessFromFileURLs(true);'
+    - 'webView.settings.allowFileAccess = true'
+  examples_safe:
+    - 'settings.setAllowFileAccessFromFileURLs(false);'
+    - 'webView.settings.allowUniversalAccessFromFileURLs = false'
+
+- id: CODEQL-ANDROID-WEBVIEW-JS-BRIDGE
+  source: java/android/webview-addjavascriptinterface
+  title: Android WebView exposes a native JavaScript interface
+  languages: [java]
+  cwe: CWE-749
+  severity: medium
+  confidence: 0.72
+  pattern: '\.\s*addJavascriptInterface\s*\('
+  message: The bridge makes native methods available to scripts in the WebView. Review the methods it exposes and which origins and frames can reach them.
+  fix: Remove the bridge where possible. Use an origin-restricted messaging interface when web content must communicate with the app.
+  examples_vulnerable:
+    - 'webView.addJavascriptInterface(new Bridge(), "bridge");'
+    - 'webView?.addJavascriptInterface(bridge, "bridge")'
+  examples_safe:
+    - 'webView.removeJavascriptInterface("bridge");'
+    - 'webView.settings.javaScriptEnabled = false'
+
+- id: CODEQL-ANDROID-WEBVIEW-DEBUG
+  source: java/android/webview-debugging-enabled
+  title: Android WebView debugging is explicitly enabled
+  languages: [java]
+  cwe: CWE-489
+  severity: medium
+  confidence: 0.78
+  pattern: '\bsetWebContentsDebuggingEnabled\s*\(\s*true\s*\)'
+  exclude: '\bif\s*\(\s*(?:[\w.]+\.)?BuildConfig\.DEBUG\s*\)\s*(?:\{\s*)?(?:[\w.]+\.)?setWebContentsDebuggingEnabled\s*\('
+  message: WebView contents can be inspected when this code runs. Check that the release build cannot enable this setting.
+  fix: Confine WebView debugging to the debug build or pass the app build's debug flag to the setting.
+  examples_vulnerable:
+    - 'WebView.setWebContentsDebuggingEnabled(true);'
+    - 'android.webkit.WebView.setWebContentsDebuggingEnabled( true )'
+  examples_safe:
+    - 'WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);'
+    - 'if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true);'
+
+- id: CODEQL-ANDROID-WEBVIEW-CERTIFICATE
+  source: java/improper-webview-certificate-validation
+  title: Android WebView proceeds after a TLS certificate error
+  languages: [java]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.77
+  pattern: '\.\s*proceed\s*\(\s*\)'
+  near: '\bonReceivedSslError\s*\(|\bSslErrorHandler\b'
+  within: 8
+  message: This code appears to continue a WebView request after a certificate error. The connection can lose the authenticity protections provided by TLS.
+  fix: Cancel the request on certificate errors and configure a valid certificate chain for the server.
+  examples_vulnerable:
+    - 'override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) { handler.proceed() }'
+    - 'public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) { handler.proceed(); }'
+  examples_safe:
+    - 'handler.cancel();'
+    - 'super.onReceivedSslError(view, handler, error);'

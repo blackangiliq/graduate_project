@@ -230,6 +230,24 @@ def test_dvma_registry_and_module_recall(tmp_path):
 
 
 # ------------------------------------------------------------------ command line
+@pytest.mark.parametrize("item_id,collection,field,address", [
+    ("I14", "endpoints", "url", "https://maps.shop-probe.example/geocode?api_key="),
+    ("I15", "paths", "path", "/orders/$orderId/receipt.pdf?access_token=$token"),
+    ("I15", "paths", "path", "/receipt.pdf?access_token="),
+])
+def test_query_template_truth_requires_presence_location_and_no_false_secret_alert(
+        item_id, collection, field, address):
+    match = next(i["match"] for i in truth("api_probe.json")["items"] if i["id"] == item_id)
+    item = {field: address, "alerts": [], "locations": [{"file": "lib/main.dart", "line": 28}]}
+    assert ev.inventory_match(match, {collection: [item]})
+    assert not ev.inventory_match(match, {collection: []})
+    assert not ev.inventory_match(match, {collection: [{**item, "locations": []}]})
+    assert not ev.inventory_match(match, {collection: [{**item, "locations": [{"file": "a.dart", "line": 0}]}]})
+    assert not ev.inventory_match(match, {collection: [{**item, "alerts": ["secret_in_url"]}]})
+    assert not ev.inventory_match(match, {collection: [{**item, field: address + "literalValue"}]})
+    assert not ev.inventory_match(match, {collection: [{**item, field: address.replace("?", "/wrong?")}]})
+
+
 def test_main_writes_both_reports(tmp_path):
     out = tmp_path / "flutter_results"
     assert ev.main(["--no-labs", "--apks", "", "--api-apks", "", "--out", str(out)]) == 0

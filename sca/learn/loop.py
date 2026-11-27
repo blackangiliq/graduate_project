@@ -27,6 +27,7 @@ from ..engines import rules_engine, secrets
 from ..flutter import APP_SUFFIXES, load_app
 from ..flutter.context import ORIGIN_DECODED, ORIGIN_DECOMPILED, ORIGIN_RECOVERED, RULES_ORIGINS
 from ..models import Finding, ScanResult
+from ..splitinput import is_packaged_zip, scan_root
 from ..storage import Storage
 from ..walker import CODE_LANGUAGES, RULE_LANGUAGE, SourceFile, walk_project
 from . import propose, store, validate
@@ -51,11 +52,13 @@ def load_files(target: str, apk_tools: bool = False) -> List[SourceFile]:
     app package: its decoded, recovered and decompiled files (apk_tools as in the scan, so
     that jadx's earlier output is found again)."""
     path = Path(target).expanduser()
-    if path.is_file() and path.suffix.lower() in APP_SUFFIXES:
-        files = [sf for sf in load_app(path, use_tools=apk_tools).files
-                 if sf.origin in APP_ORIGINS]
-    else:
-        files = list(walk_project(target))
+    with scan_root(path) as root:
+        if root.is_file() and (root.suffix.lower() in APP_SUFFIXES or
+                               root.suffix.lower() == ".zip" and is_packaged_zip(root)):
+            files = [sf for sf in load_app(root, use_tools=apk_tools).files
+                     if sf.origin in APP_ORIGINS]
+        else:
+            files = list(walk_project(str(root)))
     secrets.scan(files)
     return files
 

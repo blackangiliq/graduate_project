@@ -264,8 +264,8 @@ MAIN_MANIFEST = "android/app/src/main/AndroidManifest.xml"
 # ------------------------------------------------------------------ catalog
 def test_catalog_lists_every_check_once_with_both_titles():
     ids = [check.id for check in CHECKS]
-    assert len(ids) == len(set(ids)) == len(BY_ID) == 49
-    expected = (["ANDROID-MANIFEST-%03d" % n for n in range(1, 13)]
+    assert len(ids) == len(set(ids)) == len(BY_ID) == 52
+    expected = (["ANDROID-MANIFEST-%03d" % n for n in range(1, 16)]
                 + ["ANDROID-SDK-001", "ANDROID-SDK-002", "ANDROID-FILEPROVIDER-001"]
                 + ["ANDROID-NSC-%03d" % n for n in range(1, 5)]
                 + ["ANDROID-GRADLE-%03d" % n for n in range(1, 5)]
@@ -287,6 +287,56 @@ def test_catalog_lists_every_check_once_with_both_titles():
 
 
 # ------------------------------------------------------------------ manifest: application
+MEMORY_OPTIONS = {
+    "ANDROID-MANIFEST-013": "allowNativeHeapPointerTagging",
+    "ANDROID-MANIFEST-014": "gwpAsanMode",
+    "ANDROID-MANIFEST-015": "memtagMode",
+}
+
+
+@pytest.mark.parametrize("packaged", [False, True], ids=["source", "compiled-xml"])
+def test_explicit_native_memory_opt_outs_point_to_each_attribute(tmp_path, packaged):
+    manifest = manifest_with(
+        '\n        android:allowNativeHeapPointerTagging="false"'
+        '\n        android:gwpAsanMode="%s"\n        android:memtagMode="%s"'
+        % (("0", "0x00000000") if packaged else ("never", "off")))
+    if packaged:
+        ctx = app_context(manifest)
+        findings = run(ctx)
+        rel, text = "AndroidManifest.xml", ctx.files[0].text
+    else:
+        findings = run(*android_project(tmp_path, manifest))
+        rel, text = MAIN_MANIFEST, manifest
+    actual = {f.rule_id: (f.file, f.line) for f in findings if f.rule_id in MEMORY_OPTIONS}
+    assert actual == {rule: (rel, line_of(text, name)) for rule, name in MEMORY_OPTIONS.items()}
+
+
+@pytest.mark.parametrize("attrs", [
+    "",
+    ' android:allowNativeHeapPointerTagging="true" android:memtagMode="async" android:gwpAsanMode="always"',
+    ' android:memtagMode="2" android:gwpAsanMode="-1"',
+    ' android:memtagMode="@integer/mode" android:gwpAsanMode="${gwpMode}"',
+])
+def test_memory_hardening_ignores_safe_absent_and_unresolved_settings(attrs):
+    findings = run(app_context(manifest_with(attrs)))
+    assert not any(f.rule_id in MEMORY_OPTIONS for f in findings)
+
+
+@pytest.mark.parametrize("overlay", [
+    'a:gwpAsanMode="always"',
+    't:remove="a:memtagMode, a:gwpAsanMode"',
+    't:node="replace"',
+])
+def test_release_overlay_supersedes_native_memory_setting(tmp_path, overlay):
+    release = ('<manifest xmlns:a="http://schemas.android.com/apk/res/android" '
+               'xmlns:t="http://schemas.android.com/tools"><application %s/></manifest>' % overlay)
+    main = manifest_with(' android:gwpAsanMode="never"')
+    findings = run(*android_project(tmp_path, main, extra={
+        "android/app/src/release/AndroidManifest.xml": release,
+    }))
+    assert not any(f.rule_id in MEMORY_OPTIONS for f in findings)
+
+
 def test_flutter_template_only_gets_the_backup_default(tmp_path):
     ctx, by_rel = android_project(tmp_path, TEMPLATE_MANIFEST)
     findings = run(ctx, by_rel)
@@ -1596,6 +1646,53 @@ def test_refine_downgrades_firebase_keys_only():
     assert all(f.description.startswith(checks.FIREBASE_NOTE) for f in findings[:4])
     assert [(f.severity, f.confidence) for f in findings[4:]] == [("high", 0.9)] * 3
     assert refine(findings, by_rel, None) == 0                      # already refined
+
+
+@pytest.mark.parametrize("name", ["com.google.android.geo.API_KEY",
+                                  "com.google.android.maps.v2.API_KEY"])
+def test_compiled_maps_client_classification_requires_the_exact_metadata_value(name):
+    key = "AIza" + "T" * 35
+    rel = "AndroidManifest.xml"
+    doc = ('<manifest xmlns:a="http://schemas.android.com/apk/res/android">\n'
+           '  <application>\n'
+           '    <meta-data a:name="%s"\n'
+           '        a:value="%s"/>\n'
+           '    <meta-data a:name="test.other" a:value="%s"/>\n'
+           '    <activity a:name=".Example">\n'
+           '      <meta-data a:name="%s" a:value="%s"/>\n'
+           '    </activity>\n'
+           '  </application>\n'
+           '</manifest>') % (name, key, key, name, key)
+    root, error = parse_xml_text(doc)
+    assert not error
+    by_rel = {rel: SourceFile(Path(rel), rel, "xml", doc)}
+    ctx = MobileContext(kind="apk", root=Path("demo.apk"), manifests=[(rel, root)])
+    findings = [finding_at(rel, n) for n in (3, 4, 5, 7)]
+    findings.append(finding_at(rel, 4, rule="UNRELATED-001"))
+    assert refine(findings, by_rel, ctx) == 1
+    assert findings[1].description == checks.MAPS_CLIENT_NOTE
+    assert findings[1].fix == checks.MAPS_CLIENT_FIX
+    assert [(f.severity, f.confidence) for f in findings] == [
+        ("high", 0.9), ("low", 0.6), ("high", 0.9), ("high", 0.9), ("high", 0.9)]
+    assert refine(findings, by_rel, ctx) == 0
+    ctx.kind = "project"
+    assert refine([finding_at(rel, 4)], by_rel, ctx) == 0  # literal in the source tree
+
+
+def test_minified_manifest_with_two_google_keys_leaves_each_for_review():
+    first, second = ("AIza" + letter * 35 for letter in ("T", "V"))
+    rel = "AndroidManifest.xml"
+    doc = ('<manifest xmlns:android="http://schemas.android.com/apk/res/android">'
+           '<application><meta-data android:name="com.google.android.geo.API_KEY" '
+           'android:value="%s"/><meta-data android:name="other" android:value="%s"/>'
+           '</application></manifest>') % (first, second)
+    root, error = parse_xml_text(doc)
+    assert not error
+    ctx = MobileContext(kind="apk", root=Path("demo.apk"), manifests=[(rel, root)])
+    by_rel = {rel: SourceFile(Path(rel), rel, "xml", doc)}
+    findings = [finding_at(rel, 1), finding_at(rel, 1)]
+    assert refine(findings, by_rel, ctx) == 0
+    assert all(f.severity == "high" for f in findings)
 
 
 # ------------------------------------------------------------------ review fixes (round 2)

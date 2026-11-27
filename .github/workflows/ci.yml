@@ -23,3 +23,41 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pytest tests -q
       - run: python evaluation/evaluate.py
+
+  hosted-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build --wait --wait-timeout 90
+      - run: curl --fail http://127.0.0.1:8501/_stcore/health
+      - run: docker compose exec -T scanner /opt/jadx/bin/jadx --version
+      - run: |
+          docker compose exec -T scanner python - <<'PY'
+          from io import BytesIO
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          from streamlit.testing.v1 import AppTest
+
+          sample = Path("samples/flutter_safe_app")
+          assert (sample / "pubspec.yaml").is_file(), "The container must include its safe upload fixture"
+          buffer = BytesIO()
+          with ZipFile(buffer, "w") as archive:
+              for file in sample.rglob("*"):
+                  if file.is_file():
+                      archive.write(file, file.relative_to(sample.parent))
+          app = AppTest.from_file("app.py", default_timeout=60).run()
+          assert not app.exception, app.exception
+          inputs = next(tab for tab in app.tabs if tab.label == "Scan input")
+          inputs.file_uploader(key="app_upload").set_value(
+              ("sample.zip", buffer.getvalue(), "application/zip")).run()
+          next(button for button in app.button if button.label == "Run scan").click().run()
+          assert not app.exception, app.exception
+          assert app.session_state["result"].app["kind"] == "flutter-project"
+          assert app.session_state["result"].scan_id is None
+          PY
+      - if: failure()
+        run: docker compose logs scanner
+      - if: always()
+        run: docker compose down

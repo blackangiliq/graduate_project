@@ -135,6 +135,8 @@ class SourceFile:
     # "decoded" (manifest, resources), "recovered" (Dart source), "decompiled" (Java),
     # "strings" (dump of a binary) or a "placeholder" that stands for a binary file
     origin: str = ""
+    # Provenance of bounded decoded literals; never executable metadata.
+    derivation: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.lines:

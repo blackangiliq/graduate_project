@@ -3,6 +3,31 @@
 How the analyzer is built and why. Each section can be reused in the design and
 implementation chapters of the thesis.
 
+## Current evidence contract (2026-11-27)
+
+The dashboard has two complementary analysis paths. Static analysis decodes selected
+source/archive inputs without running the application. The separate runtime tab installs
+or attaches to the explicitly selected Android package on a connected lab device and
+records executed operations through Frida. Runtime observations are not automatically
+classified as vulnerabilities.
+
+There are also two representations of static evidence. The analysis result retains masked
+snippets and inventory for existing fingerprints, model prompts and lightweight JSON.
+When `ScanOptions.keep_decoded` is enabled (the dashboard), `decoded_files` and
+`visible_apis` preserve original text and full values for the file viewer, report downloads
+and local history. `presentation.view_result` creates the display/export copy without
+changing the analysis result or sending its original values to a model. An older archived
+scan without retained source cannot recover a removed value; it must be scanned again.
+
+Each location identifies its provenance: a decoded XML/text line, a JADX decompiled line,
+a strings-dump line, a derived Base64 literal, or a runtime journal line. Derived literals
+carry the original encoded span, decoding depth and encoded/decoded SHA256 digests; the
+viewer can open that original span. An exact value found in a retained file is
+a verified literal match, not proof that this line generated the value. Runtime stack
+line numbers are never presented as JADX line numbers. Budgets and unavailable decoders
+or hooks are reported; zero findings and successful completion are not completeness
+claims. See [DYNAMIC_ANALYSIS.md](DYNAMIC_ANALYSIS.md) for runtime setup and limits.
+
 ## 1. Design goals
 
 | Goal | Consequence in the design |
@@ -15,7 +40,7 @@ implementation chapters of the thesis.
 
 ## 2. Data model (`sca/models.py`)
 
-`Finding`: location (`file`, `line`), classification (`rule_id`, `rule_ids`, `cwe`, `owasp`,
+`Finding`: location (`file`, `line`, `column`, `end_line`, `end_column`), classification (`rule_id`, `rule_ids`, `cwe`, `owasp`,
 `severity`), evidence (`snippet`, `context`, `engines`, `tainted`, `evidence`, `tier`),
 belief (`confidence`, `ml_score`, `ai_verdict`, `ai_confidence`, `user_verdict`),
 explanation (`description`, `fix`, `ai_explanation`, `ai_fix`), assessment (`risk_score`,
@@ -46,7 +71,8 @@ walk -> detect -> refine -> merge -> ML -> LLM -> assess -> store
 
 Each engine runs inside a guard: an exception or a missing tool is written to
 `engine_notes` and the scan continues. The secrets engine always runs first, because the
-values it finds are masked in every snippet, report and LLM prompt. When the target is an
+values it finds are masked in the analysis snippets and LLM prompts. The dashboard's
+original-evidence presentation is built separately after analysis. When the target is an
 app package, `walk` decodes it into virtual files instead of reading a folder (section 4.6).
 For a mobile target (app package or Flutter/Android project), the step *API inventory*
 runs after `assess` and adds the API and key inventory to the app facts (section 4.6).
@@ -56,8 +82,8 @@ runs after `assess` and adds the API and key inventory to the app facts (section
 ### 4.1 Pattern rules (`sca/engines/rules_engine.py`)
 
 Rules have four origins: `sca/rules/*.yaml` (built in), `sca/rules/imported/*.yaml`
-(converted from DevSkim and Gitleaks by `tools/import_rules.py`; each file names its source,
-commit and licence), `learned/rules.yaml` (approved learned rules) and `learned/custom.yaml`
+(converted/adapted upstream packs; each file names its source, commit and licence, and
+[RULES.md](RULES.md) records the importer and limitations), `learned/rules.yaml` (approved learned rules) and `learned/custom.yaml`
 (written by the user). Two more files hold the user's changes: `learned/edits.yaml`
 (`{rule id: {field: value}}` for shipped rules, including `enabled`) and
 `learned/overrides.yaml` (approved extra exclusions). `all_rules()` returns every rule with
@@ -84,8 +110,9 @@ are measured on a corpus of real projects; review-only or noisy rules ship with
 `enabled: false` and a `note`. The result of every rule is in
 `evaluation/import_report.json`.
 
-A rule is a regular expression for a vulnerable line plus an optional `exclude`. Comment
-lines, block comments and lines over 600 characters are skipped. `RULE_LANGUAGE` maps
+A rule is a regular expression for a candidate line plus an optional `exclude`. Comment
+and language/origin handling and per-rule budgets are applied by the engine; this does not
+provide whole-program data-flow analysis. `RULE_LANGUAGE` maps
 TypeScript to the JavaScript rules, C++ to C, and Kotlin/Scala/Groovy to the Java API rules.
 
 ### 4.2 Python AST taint engine (`sca/engines/python_ast.py`)
@@ -161,7 +188,7 @@ passwords) so are values made of words joined by `_`, `-`, `:` or `.`
 `scan_file` keeps what it found on the `SourceFile`: `secret_values` and `secret_hits`, a
 list of (line, rule id, secret, title, severity). Masking is scan-wide: after the engines
 ran, every file of a scan masks every secret of the scan (one shared list), so snippets,
-contexts, facts, the API and key inventory, the AI prompts (triage and deep scan) and the
+contexts, analysis facts and inventory, the AI prompts (triage and deep scan) and the
 rule learner mask a secret found in any file (`pipeline.share_secrets`). The values are
 those of the secrets engine (for a `.env` file exactly the ones it reports), the values of
 other credential findings, and the secrets that addresses hold in plain sight
@@ -176,7 +203,8 @@ it is shared with the other files only when it is strong (`inventory.strong_valu
 characters or more, not a single plain word, not only digits, Shannon entropy 2.5 or more.
 So a short or plain value, such as the debug keystore password `android` or the URL
 password `admin`, does not hide that word elsewhere. The inventory (section 4.6) uses `secret_hits` to
-group keys by value; it stores only the masked value.
+group keys by value. The analysis inventory masks them; the separate `visible_apis`
+inventory retains complete values for the dashboard, local evidence archive and exports.
 
 ### 4.5 External adapters (`sca/engines/external.py`)
 
@@ -187,8 +215,10 @@ for app packages.
 ### 4.6 Flutter and Android apps (`sca/flutter/`)
 
 The module analyses Flutter and Android apps as source projects and as built packages
-(`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). It is pure Python: no Android SDK, Flutter
-SDK or Java is needed, and a package is never installed or run. The user-level description,
+(`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). The built-in static decoders are pure Python:
+no Android SDK, Flutter SDK or Java is needed for that path. Optional JADX decompilation
+requires Java. Static scanning never installs or runs the package; the separately
+requested runtime capture does. The user-level description,
 with the checks table and the measured results, is in [FLUTTER.md](FLUTTER.md).
 
 **Contract.** Two loaders build a `MobileContext` (`context.py`) and one function reads it:
@@ -215,13 +245,17 @@ memory. Its `origin` decides which engines read it:
 | `recovered` | `dart/lib/main.dart` from `kernel_blob.bin` | yes | yes | yes | yes |
 | `decompiled` | `jadx/com/example/MainActivity.java` | yes | yes | yes | yes |
 | `strings` | `lib/arm64-v8a/libapp.so`, `classes.dex` | no | yes | no | no |
+| `decoded_literal` | `_decoded_literals/base64/<digest>.txt` | no | yes | no | no |
 | `summary` | `_sca/build.txt`, `_sca/signing.txt`, `_sca/packages.txt` | no | no | no | no |
 | `placeholder` | a keystore found in a project | no | no | no | no |
 
-Paths are deterministic (never a temporary folder), lines are shorter than 600 characters
-and free of control characters, and XML is rendered one attribute per line so that a
-finding names the exact attribute. Strings dumps are capped at 200,000 lines for DEX and
-`libapp.so` and 100,000 for other native libraries. Because the KLOC column counts only
+Paths are deterministic (never a temporary folder), and XML is rendered one attribute
+per line so that a finding names the exact attribute. Original source and string values
+are preserved within the declared budgets; long logical lines are not split into fake
+source lines. The viewer displays a window around a selected match while retaining the
+whole selected literal. Strings dumps are capped at 200,000 lines for each DEX and
+`libapp.so`, and 500,000 unique strings for other native libraries, all within the shared
+text budget. Because the KLOC column counts only
 `decoded`, `recovered` and `decompiled` lines, a release package (no recovered source) has
 few lines, its penalty is divided by the 0.5 KLOC floor, and it often gets a low score.
 No file of an app package is treated as test code: everything in it ships to users.
@@ -229,6 +263,14 @@ No file of an app package is treated as test code: everything in it ships to use
 **Decoders** (each bounds-checks every read, caps sizes and counts, decodes string data
 within a byte budget so that overlapping or oversized tables cannot make it run long, and
 reports anomalies as warnings instead of raising):
+
+`sca/encoded.py` separately recovers canonical, printable UTF-8 Base64/base64url
+literals containing a supported credential candidate or address. It decodes at most
+two whole-string layers, with explicit candidate, token, output-count and byte budgets.
+It does not execute code, infer runtime concatenation or feed decoded content into
+code/taint rules. `SourceFile.derivation` becomes `DecodedFile.derivation` in previews;
+the archive validates the relative path, coordinates, depth and digest fields before
+restoring them. Invalid provenance never creates an arbitrary filesystem navigation.
 
 | Module | Format |
 |---|---|
@@ -259,7 +301,7 @@ functions over `XmlNode`: effective export of a component (the default depends o
 filters and targetSdk), guard strength of a permission, backup and cleartext policies with
 their platform defaults, network security config with inherited domain settings, FileProvider
 paths (resolved as androidx FileProvider resolves them, so `..` that climbs out of the root
-folder is caught). `checks.py` holds the 49 checks (`CHECKS`, used by the dashboard's guide
+folder is caught). `checks.py` holds the 52 checks (`CHECKS`, used by the dashboard's guide
 and the docs), each with a CWE, a severity, a confidence, an area and a target; it also
 fills the facts `permissions`, `components`, `flags`, `endpoints` and `dependency_issues`.
 Each part of `analyze` is guarded, findings are capped at 50 per file and check, and the
@@ -305,7 +347,7 @@ contacts nothing:
 - Keys are not searched again. They come from the findings with a credential CWE (798, 321,
   259, 260, 547), except the file-level finding FLUTTER-APP-006 (a bundled `.env` file),
   whose values are listed as `.env` entries and as keys of their own. The value is taken
-  from `SourceFile.secret_hits`, or for a rule finding from the first literal of its line.
+  from `SourceFile.secret_hits`, or for a rule finding from its matched literal and context.
   Keys are grouped by value, one entry per distinct key even when several keys share a
   line, given the severity of the rule that found them, typed by service, marked public by
   design where they are (Firebase configuration API key, Stripe `pk_`, Mapbox `pk.`,
@@ -320,10 +362,13 @@ contacts nothing:
   `<meta-data>`) and from identifier formats (`_ID_PATTERNS`); `firebase` gathers the
   Firebase project.
 
-Only masked values are stored: keys through `mask_secret`, URLs through `mask_url`
-(passwords, key and token parameters, bot and webhook tokens). Every list is capped (300
-rows, 80 alerts) and `truncated` counts the rest; an item keeps at most 20 places and counts
-all of them in its `count`. The alert texts are English; the dashboard translates them
+The analysis inventory masks keys through `mask_secret` and URLs through `mask_url`
+(passwords, key and token parameters, bot and webhook tokens), with 300 rows per list,
+80 alerts and 20 retained locations per item. The original-evidence inventory instead
+retains complete values, up to 10,000 rows per list and 200 locations per item. `truncated`
+counts omitted rows; each item's `count` counts all observed occurrences. These are
+bounded inventories, not a claim that every possible address or secret was recovered.
+The alert texts are English; the dashboard translates them
 (`sca/ui/i18n.py`).
 
 **Pipeline integration.** For an app target the walk is replaced by `load_app`; for a
@@ -502,27 +547,47 @@ The constants are design choices; a sensitivity analysis is a reasonable thesis 
 
 ## 9. Storage and reports
 
-`sca/storage.py`, SQLite `data/sca.db`: `scans`, `llm_cache`, `feedback`, `rule_candidates`.
+`sca/storage.py`, SQLite `data/sca.db`: `scans`, `llm_cache`, `feedback`, `rule_candidates`,
+`scan_evidence` and `dynamic_sessions`. `scan_evidence` stores compressed original
+snapshots and the full-value inventory separately from the analysis JSON, with a bounded
+128 MiB payload. Runtime sessions are separately validated, compressed and linked to the
+selected static scan, with a bounded 64 MiB report. Raw runtime events also remain in the
+session's JSONL journal. Loading a runtime session is scoped to its owning scan, and a
+scan deletion removes both associated evidence stores. These local data files are
+git-ignored and are not published with the project source.
 `sca/report/`: HTML (self-contained, light and dark, filters by severity and status), PDF
 (Latin text only), JSON, SARIF 2.1.0. For a mobile target the HTML and PDF reports add the
 app facts and an *APIs and keys* section (summary line, alerts, tables; the helpers
 `api_summary`, `api_alerts` and `api_tables` in `html_report.py` also serve the command
 line), SARIF puts the inventory's summary, alerts and `truncated` counts in
 `run.properties.apiInventory`, and the JSON report holds the whole inventory in `app.apis`.
-The HTML and PDF reports say when a list was cut.
+The HTML and PDF reports say when a list was cut. Dashboard downloads use
+`presentation.view_result`, so their snippets and inventory show full retained values;
+the underlying analysis object is unchanged. Runtime JSON/JSONL downloads are separate.
+Hosted mode keeps uploads in temporary workspaces and does not share local scan history;
+it can inspect explicitly imported runtime captures, which are marked as external
+evidence, but it cannot claim live capture without a connected lab.
 
 ## 10. Security of the tool itself
 
-- The dashboard listens on `localhost` only.
-- Scanned code is never executed. External scanners are started with argument lists.
+- The local dashboard listens on `localhost` by default. The hosted container listens
+  inside the container and Compose binds its published port to host loopback by default.
+- Static scans do not execute scanned code. Explicit runtime capture installs/starts or
+  attaches to the selected Android package. External scanners use argument lists.
 - LLM output is parsed as data. Proposed regular expressions run in a killable sandbox
   before they can ever run inside a scan.
-- Secrets detected by the tool are masked in snippets, reports, prompts, the rule learner
-  and the API and key inventory, scan-wide: a secret found in one file is masked in every
+- Secrets detected by the tool are masked in analysis snippets, prompts, the rule learner
+  and the analysis inventory, scan-wide: a secret found in one file is masked in every
   file where it appears (a short or plain value only in its own file, section 4.4).
-  Secrets it does not detect are not masked. The inventory never contacts the
-  addresses it lists.
-- The API key lives in `.env` (git-ignored, mode 600 where supported).
+  Secrets it does not detect are not masked. The file viewer, original-evidence exports
+  and runtime archive deliberately retain full values. Static inventory extraction never
+  contacts the addresses it lists; an application running in the Android lab can make its
+  normal network requests. No automatic credential validity/exploitability probe runs.
+- The configured AI provider key lives in `.env` (git-ignored, mode 600 where supported).
+- APK/source archive extraction bounds bytes, entry counts and paths. Runtime capture
+  requires an explicit device/package and a loopback Frida endpoint whose ADB forwarding
+  is checked against that device. Observer reconnection is restricted to the dedicated
+  `SCA_Dynamic` emulator. The observer does not disable TLS or integrity checks.
 - A model file given to `--ml-model` is a pickle: load only models you trained yourself.
 
 ## 11. Extending

@@ -304,9 +304,9 @@ SECRET_LINES = [
     'const apiKey = "%s";' % FAKE_KEY,
     "password: 'hunter2hunter2'",
     "url = 'postgres://admin:Tr1ckyPass99@db.local:5432/app'",
-    "-----BEGIN RSA PRIVATE KEY-----",
 ]
 NOT_SECRET_LINES = [
+    "-----BEGIN RSA PRIVATE KEY-----",
     'password = os.environ["DB_PASSWORD"]',
     'password = ""',
     'password = "changeme"',

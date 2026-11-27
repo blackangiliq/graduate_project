@@ -1,0 +1,3 @@
+# Optional Android runtime observer; static scans do not require these packages.
+frida==17.28.0
+frida-tools==14.13.2

@@ -30,6 +30,8 @@ from typing import Any, Dict, List, Optional
 
 from . import __version__
 from .models import SEVERITIES, SEVERITY_RANK
+from .sourcearchive import ArchiveError
+from .splitinput import scan_root
 from .walker import strip_bidi
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -167,7 +169,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         **_llm_settings(args))
     try:
         result = run_scan(args.path, options, _progress(args))
-    except (FileNotFoundError, AppError) as exc:
+    except (FileNotFoundError, AppError, ArchiveError) as exc:
         print("Error: %s" % _printable(exc), file=sys.stderr)
         return 2
 
@@ -367,7 +369,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
     from .storage import Storage
 
     if not (args.path or args.bootstrap or args.from_feedback):
-        print("Give a project folder or app package, or --bootstrap <language>, or "
+        print("Give a project folder, source ZIP or app package, or --bootstrap <language>, or "
               "--from-feedback.", file=sys.stderr)
         return 2
     client = _client(args)
@@ -387,7 +389,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
                 lambda: scan_project(args.path, options, _progress(args), storage),
                 rounds=args.rounds, approve=args.auto_approve, max_candidates=args.max_rules,
                 progress=_progress(args))
-        except (FileNotFoundError, AppError) as exc:
+        except (FileNotFoundError, AppError, ArchiveError) as exc:
             print("Error: %s" % _printable(exc), file=sys.stderr)
             return 2
         for entry in report:
@@ -530,9 +532,10 @@ def _files_to_test(path: str) -> List[Any]:
     from .walker import walk_project
 
     target = Path(path).expanduser()
-    if is_app_target(target):
-        return [sf for sf in decode_app(target, False).files if sf.origin in RULES_ORIGINS]
-    return list(walk_project(path))
+    with scan_root(target.resolve()) as root:
+        if is_app_target(root):
+            return [sf for sf in decode_app(root, False).files if sf.origin in RULES_ORIGINS]
+        return list(walk_project(str(root)))
 
 
 def _rulebook_action(args: argparse.Namespace, storage) -> int:
@@ -616,6 +619,7 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
                 print("  warning: %s" % warning)
             return 0
         if action == "test":
+            from .engines.rules_engine import unquoted_code_lines
             rule = rulebook.get(ids[0])
             if len(ids) < 2:
                 print("Give a file or folder to test the rule on.", file=sys.stderr)
@@ -625,8 +629,9 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
                 if not rule.applies_to(sf.rel):
                     skipped += 1
                     continue
+                code = unquoted_code_lines(sf) if rule.code_only else None
                 for number, line in enumerate(sf.lines, start=1):
-                    if rule.matches(line):
+                    if rule.matches(line) and (code is None or rule.pattern.search(code[number - 1])):
                         hits += 1
                         print("%s:%d  %s" % (sf.rel, number, _printable(line.strip()[:140])))
             print("%d line(s) matched by %s." % (hits, rule.id))
@@ -647,7 +652,7 @@ def _rulebook_action(args: argparse.Namespace, storage) -> int:
             elif action == "delete":
                 rulebook.delete(rule_id)
                 print("Deleted %s." % rule_id)
-    except (rulebook.RuleError, OSError, AppError) as exc:
+    except (rulebook.RuleError, OSError, AppError, ArchiveError) as exc:
         print("Error: %s" % exc, file=sys.stderr)
         return 1
     return 0
@@ -816,14 +821,14 @@ def cmd_flutter(args: argparse.Namespace) -> int:
         _print_mobile_tools()
         return 0
     if not args.path:
-        print("Give an app package (.apk, .aab, .apks, .xapk, .apkm) or a project folder.",
+        print("Give an app package, a source ZIP or a project folder.",
               file=sys.stderr)
         return 2
     try:
         ctx, _files, findings, note = inspect_mobile(
             args.path, args.apk_tools, [d for d in args.exclude.split(",") if d],
             key_rules=args.action in ("apis", "info", "decode"))
-    except (FileNotFoundError, AppError) as exc:
+    except (FileNotFoundError, AppError, ArchiveError) as exc:
         print("Error: %s" % _printable(exc), file=sys.stderr)
         return 2
     if ctx is None:
@@ -977,9 +982,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command")
 
-    scan = sub.add_parser("scan", help="scan a project folder or an app package")
-    scan.add_argument("path", help="folder, file or app package (.apk, .aab, .apks, .xapk, "
-                                   ".apkm)")
+    scan = sub.add_parser("scan", help="scan a project folder, source ZIP or app package")
+    scan.add_argument("path", help="Android app package (.apk, .aab, .apks, .xapk, .apkm), "
+                                   "source ZIP, folder or source file")
     scan.add_argument("--out", default="reports", help="report folder (default: reports)")
     scan.add_argument("--format", default="html,json",
                       help="comma list of: html, json, sarif, pdf (default: html,json)")
@@ -1033,7 +1038,7 @@ def build_parser() -> argparse.ArgumentParser:
     config.set_defaults(func=cmd_config)
 
     learn = sub.add_parser("learn", help="let the AI propose new rules")
-    learn.add_argument("path", nargs="?", help="project folder or app package to learn from")
+    learn.add_argument("path", nargs="?", help="project folder, source ZIP or app package")
     learn.add_argument("--bootstrap", metavar="LANGUAGE",
                        help="write rules for the weaknesses this language has no rule for; "
                             "'all' does every language that has a gap")
@@ -1134,7 +1139,7 @@ The options can come before or after the action and the path.""")
                        ("tools", "which optional tools (jadx, apksigner ...) are installed")):
         action = actions.add_parser(name, help=text, description=text)
         if name != "tools":
-            action.add_argument("path", nargs="?", help="app package or project folder")
+            action.add_argument("path", nargs="?", help="app package, source ZIP or project folder")
         _add_flutter_options(action, argparse.SUPPRESS)
     mobile.set_defaults(func=cmd_flutter, path=None)
 

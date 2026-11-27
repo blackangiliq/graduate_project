@@ -1,6 +1,6 @@
-"""Texts shared by the sidebar and the Guide tab, in English and Arabic.
+"""Texts shared by the scan workspace and the Guide tab, in English and Arabic.
 
-Every setting of the dashboard is described once, in SETTINGS: the sidebar shows the text as
+Every setting of the dashboard is described once, in SETTINGS: the workspace shows the text as
 the tooltip of the control, and the Guide tab prints all of them as a table. Keeping one
 source means the help can never disagree with itself.
 """
@@ -20,19 +20,15 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
     },
     "target": {
         "group": ("1. Project or app", "1. المشروع أو التطبيق"),
-        "label": ("Folder or app file", "المجلد أو ملف التطبيق"),
-        "help": ("The project folder to scan, or an Android app file (.apk, .aab, .apks, "
-                 ".xapk, .apkm). Every source file of a folder is read; folders such as "
-                 "node_modules, .git and venv are skipped. An app file is decoded and read, "
-                 "never installed or run.",
-                 "مجلد المشروع المراد فحصه، أو ملف تطبيق Android (‎.apk أو ‎.aab أو ‎.apks أو "
-                 "‎.xapk أو ‎.apkm). تُقرأ كل ملفات الكود داخل المجلد، وتُتجاوز مجلدات مثل "
-                 "node_modules و .git و venv. أما ملف التطبيق فيُفكّ ويُقرأ، ولا يُثبَّت ولا "
-                 "يُشغَّل أبداً."),
+        "label": ("Project path", "مسار المشروع"),
+        "help": ("Enter a source file, a source project, an Android package or a folder containing base.apk and its splits. "
+                 "The scanner skips folders such as node_modules, .git and venv.",
+                 "أدخل مسار ملف أو مشروع مصدري أو حزمة أندرويد أو مجلد يحوي base.apk وأجزاءه. "
+                 "يتجاوز الفاحص مجلدات مثل node_modules و .git و venv."),
     },
     "browse": {
         "group": ("1. Project or app", "1. المشروع أو التطبيق"),
-        "label": ("Browse...", "استعراض..."),
+        "label": ("Choose folder", "اختيار مجلد"),
         "help": ("Opens the folder dialog of your operating system.",
                  "يفتح نافذة اختيار المجلد في نظام التشغيل."),
     },
@@ -69,10 +65,10 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "label": ("Secrets detection", "كشف الأسرار"),
         "help": ("Finds hard-coded passwords, API keys and tokens: known key formats (the "
                  "built-in ones plus those imported from Gitleaks) and sensitive variable "
-                 "names assigned a random-looking value. Found secrets are masked everywhere.",
+                 "names assigned a random-looking value. Open a result to see the value and its source line.",
                  "يجد كلمات المرور والمفاتيح المكتوبة داخل الكود: صيغ المفاتيح المعروفة "
                  "(المدمجة والمستوردة من Gitleaks) والمتغيّرات ذات الأسماء الحساسة المسنَد "
-                 "إليها قيمة عشوائية الشكل. تُحجب الأسرار المكتشفة في كل مكان."),
+                 "إليها قيمة عشوائية الشكل. افتح النتيجة لرؤية القيمة وسطرها في الملف."),
     },
     "use_bandit": {
         "group": ("2. Static engines", "2. المحركات الستاتيكية"),
@@ -285,11 +281,9 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
     },
     "browse_app": {
         "group": ("1. Project or app", "1. المشروع أو التطبيق"),
-        "label": ("Browse app...", "استعراض تطبيق..."),
-        "help": ("Opens the file dialog of your operating system to choose an app file "
-                 "(.apk, .aab, .apks, .xapk, .apkm).",
-                 "يفتح نافذة اختيار الملفات في نظام التشغيل لاختيار ملف تطبيق (‎.apk أو ‎.aab "
-                 "أو ‎.apks أو ‎.xapk أو ‎.apkm)."),
+        "label": ("Choose file", "اختيار ملف"),
+        "help": ("Choose a source file, a ZIP archive or an Android package on this computer.",
+                 "اختر ملف كود مصدري أو أرشيف ZIP أو حزمة أندرويد من الجهاز."),
     },
     "flutter_sample": {
         "group": ("1. Project or app", "1. المشروع أو التطبيق"),
@@ -303,15 +297,12 @@ SETTINGS: Dict[str, Dict[str, Tuple[str, str]]] = {
     },
     "app_upload": {
         "group": ("1. Project or app", "1. المشروع أو التطبيق"),
-        "label": ("App file (.apk, .aab, .apks, .xapk, .apkm)",
-                  "ملف التطبيق (‎.apk أو ‎.aab أو ‎.apks أو ‎.xapk أو ‎.apkm)"),
-        "help": ("Upload an app file from this computer instead of typing its path (up to "
-                 "200 MB; for a larger file type its path). It is kept in the data folder of "
-                 "the tool under a name made from its content, so the History tab groups the "
-                 "scans of the same app.",
-                 "ارفع ملف تطبيق من هذا الحاسوب بدلاً من كتابة مساره (حتى 200 ميغابايت؛ "
-                 "وللملف الأكبر اكتب مساره). يُحفظ في مجلد بيانات الأداة باسم مشتق من "
-                 "محتواه، فيجمع تبويب السجل فحوص التطبيق نفسه معاً."),
+        "label": ("Upload a ZIP, Android package or split APK files",
+                  "رفع أرشيف ZIP أو حزمة أندرويد أو ملفات APK مجزّأة"),
+        "help": ("Choose one ZIP, APK, AAB, APKS, XAPK or APKM. For separate parts of one Android app, "
+                 "select base.apk and its companion APKs together.",
+                 "اختر ملف ZIP أو APK أو AAB أو APKS أو XAPK أو APKM. عند رفع أجزاء تطبيق واحد، "
+                 "حدد ملف base.apk وملفات APK التابعة له معاً."),
     },
     "use_flutter": {
         "group": ("2. Static engines", "2. المحركات الستاتيكية"),
@@ -383,12 +374,11 @@ TABS: List[Tuple[str, str, str, str]] = [
 ]
 
 QUICK_START: List[Tuple[str, str]] = [
-    ("**Choose the project.** Type the folder path in the sidebar, press *Browse...*, or "
-     "press *Use sample* to try the demo application. For an Android app, type the path of "
-     "its .apk or .aab file, press *Browse app...* or upload the file.",
-     "**اختر المشروع.** اكتب مسار المجلد في الشريط الجانبي أو اضغط *استعراض...* أو اضغط "
-     "*استخدم العيّنة* لتجربة التطبيق التجريبي. ولتطبيق Android اكتب مسار ملف ‎.apk أو "
-     "‎.aab الخاص به، أو اضغط *استعراض تطبيق...*، أو ارفع الملف."),
+    ("**Choose the project.** Use *Scan input* to select a folder or file, paste a local path, "
+     "or upload an archive. For a split app, select its folder or upload its APKs together. "
+     "Use the *Samples* tab for a training scan.",
+     "**اختر المشروع.** من تبويب *مصدر الفحص* اختر المجلد أو الملف أو الصق المسار أو ارفع الأرشيف. "
+     "للتطبيق المجزّأ، اختر مجلده أو ارفع ملفاته معاً. تجد تطبيقات التدريب في تبويب *العيّنات*."),
     ("**Choose the engines.** The defaults are right for a first scan. Each option has a "
      "small (?) that explains it.",
      "**اختر المحركات.** الإعدادات الافتراضية مناسبة لأول فحص. بجانب كل خيار علامة (?) "
@@ -735,6 +725,12 @@ A rule is one regular expression that marks a dangerous line, plus the informati
 with the finding. The engine reads each code line (comments and very long generated lines
 are skipped) and reports the line if `pattern` matches and `exclude` does not.
 
+This describes YAML pattern rules, not every analysis engine. A detected setting or
+credential format is evidence to review, not proof of exploitation. Read each rule's
+scope and limitations. The local API inventory and file preview retain full captured
+values and their locations; a runtime-only value is linked to its recorded event unless
+a literal source match has been verified.
+
 | Field | Meaning |
 |---|---|
 | `id` | Unique name, for example `MY-SQLI-001`. |
@@ -749,6 +745,8 @@ are skipped) and reports the line if `pattern` matches and `exclude` does not.
 | `ignore_case` | Match upper and lower case alike. |
 | `near`, `within` | Optional context: the rule fires only if `near` matches a line at most `within` lines above or below. For patterns that are ordinary code on their own. |
 | `requires_taint` | `true` = report only when a variable on the line was filled from user input in the lines above. For rules that name a common function. |
+| `code_only` | Require the API pattern outside quoted text and comments; suitable for call/settings rules that do not need string-literal contents. |
+| `secret_group` | The regex capture group containing the complete credential value; used by `kind: secret` rules. |
 | `message`, `fix` | Optional explanation and advice shown with the finding. |
 | `examples_vulnerable` | Lines the rule must match. Checked every time the rule is saved. |
 | `examples_safe` | Lines the rule must not match. |
@@ -796,6 +794,11 @@ RULE_GUIDE_AR = """
 القاعدة تعبير نمطي واحد يعلّم السطر الخطر، مع المعلومات التي تظهر مع النتيجة. يقرأ المحرك
 كل سطر كود (تُتجاوز التعليقات والأسطر الطويلة جداً المولَّدة آلياً) ويبلّغ عن السطر إذا
 طابقه `pattern` ولم يطابقه `exclude`.
+
+هذا وصف لقواعد YAML وليس لجميع محركات التحليل. رصد إعداد أو صيغة مفتاح دليل للمراجعة
+ولا يثبت قابلية الاستغلال؛ اقرأ نطاق القاعدة وحدودها. يحتفظ جرد API ومعاينة الملفات
+محلياً بالقيم الكاملة ومواضعها. القيمة المرصودة أثناء التشغيل فقط ترتبط بحدث الرصد،
+إلا إذا تم التحقق من تطابق حرفي لها في ملفات المصدر.
 
 | الحقل | المعنى |
 |---|---|
@@ -873,8 +876,8 @@ Each decoded part becomes a file of the scan (`AndroidManifest.xml`, `res/xml/..
 
 #### How to scan an app
 
-1. Type the path of the app file in the sidebar, press **Browse app...**, or upload it
-   under **Upload an app file**.
+1. In **Scan input**, select a local file or folder, paste its path, or upload the files.
+   For a split Android app, select its folder or upload the base and its parts together.
 2. Keep **Flutter / Android checks** on. **Decompile and verify app files** also runs jadx
    and apksigner when they are installed.
 3. The Dashboard tab shows the app panel: package, version, build mode, SDK levels,
@@ -892,12 +895,12 @@ IP addresses, keys in the query of an address, webhook addresses and bot tokens,
 
 | Tab | What it lists |
 |---|---|
-| Keys | type, service, masked value, severity, places, what to do (a key inside an app is public) |
+| Keys | type, service, complete observed value, severity, and source locations |
 | Server addresses, Hosts | every URL and server, its service (Firebase, Supabase, AWS, Stripe ... or the app's own) and alerts |
 | API calls | HTTP, WebSocket and GraphQL calls with method and target (source code and debug builds) |
 | API paths | paths such as `/api/v1/login` that compiled code keeps as texts |
 | Service IDs | Firebase project, app ID, OAuth client ID, AdMob, Sentry ... |
-| .env entries | the values of bundled `.env` files, secrets masked |
+| .env entries | the observed values of bundled `.env` files and their source locations |
 
 A release build keeps no code text, but it keeps every text of the code in `libapp.so`:
 addresses and keys stay readable even with `--obfuscate`. Nothing is contacted: the
@@ -928,8 +931,8 @@ FLUTTER_GUIDE_AR = """
 
 #### كيف تفحص تطبيقاً؟
 
-1. اكتب مسار ملف التطبيق في الشريط الجانبي، أو اضغط **استعراض تطبيق...**، أو ارفعه من
-   **ارفع ملف تطبيق**.
+1. من **مصدر الفحص** اختر ملفاً أو مجلداً أو الصق المسار أو ارفع الملفات.
+   للتطبيق المجزّأ، اختر المجلد الذي يجمعه أو ارفع الملف الأساسي وأجزاءه معاً.
 2. أبقِ **فحوص Flutter و Android** مفعّلة. والخيار **فك ترجمة ملفات التطبيق والتحقق منها**
    يشغّل أيضاً jadx و apksigner إن كانا منصَّبين.
 3. يعرض تبويب اللوحة قسم التطبيق: الحزمة والإصدار ونوع البناء ومستويات SDK والصلاحيات
@@ -947,12 +950,12 @@ FLUTTER_GUIDE_AR = """
 
 | التبويب | ماذا يعرض |
 |---|---|
-| المفاتيح | النوع والخدمة والقيمة مخفيّةً جزئياً والخطورة والمواضع وما العمل (المفتاح داخل التطبيق علني) |
+| المفاتيح | النوع والخدمة والقيمة المكتشفة كاملةً والخطورة ومواضعها في الملفات |
 | عناوين الخوادم والخوادم | كل عنوان وخادم، وخدمته (Firebase و Supabase و AWS و Stripe ... أو خادم التطبيق نفسه) وتنبيهاته |
 | استدعاءات API | استدعاءات HTTP و WebSocket و GraphQL مع الطريقة والهدف (الكود المصدري ونسخ debug) |
 | مسارات API | مسارات مثل `/api/v1/login` يحتفظ بها الكود المترجم كنصوص |
 | معرّفات الخدمات | مشروع Firebase ومعرّف التطبيق ومعرّف عميل OAuth و AdMob و Sentry ... |
-| قيم ملفات env. | قيم ملفات `.env` المضمَّنة، والأسرار منها مخفيّة جزئياً |
+| قيم ملفات env. | القيم المكتشفة في ملفات `.env` المضمَّنة ومواضعها في الملفات |
 
 نسخة release لا تحتفظ بنص الكود، لكنها تحتفظ بكل نصوصه في `libapp.so`: فالعناوين والمفاتيح
 تبقى مقروءة حتى مع `--obfuscate`. ولا يُتصل بأي عنوان: العناوين تُقرأ فقط. والقائمة نفسها

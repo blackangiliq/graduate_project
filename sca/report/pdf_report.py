@@ -79,7 +79,8 @@ def render_pdf(result: ScanResult) -> bytes:
     pdf.ln(3)
 
     if result.app:
-        line("App facts", 12, "B")
+        if result.app.get("kind"):
+            line("App facts", 12, "B")
         for label, text in app_overview(result.app):
             line("%s: %s" % (label, text), 9, "", (30, 30, 30), 4.5)
         for title, columns, rows in app_tables(result.app):
@@ -96,7 +97,9 @@ def render_pdf(result: ScanResult) -> bytes:
         apis = result.app.get("apis")
         if isinstance(apis, dict):
             line("APIs and keys", 12, "B")
-            line(api_summary(apis) + ". Keys are masked; no address was contacted.", 9, "",
+            note = ("Original values are shown; no address was contacted." if apis.get("values_visible")
+                    else "Keys are masked; no address was contacted.")
+            line(api_summary(apis) + ". " + note, 9, "",
                  (30, 30, 30), 4.5)
             if api_truncated(apis):
                 line(api_truncated(apis), 8, "I", (90, 90, 90), 4)
@@ -130,7 +133,7 @@ def render_pdf(result: ScanResult) -> bytes:
     for finding in result.open_findings:
         if finding.owasp_mobile:
             by_risk[finding.owasp_mobile] = by_risk.get(finding.owasp_mobile, 0) + 1
-    if result.app:
+    if result.app.get("kind"):
         line("Findings by OWASP Mobile Top 10 (2024) risk", 12, "B")
         for code in MOBILE_TOP10_2024:
             line("  %3d   %s %s" % (by_risk.get(code, 0), code, mobile_name(code)), 9)
@@ -160,7 +163,8 @@ def render_pdf(result: ScanResult) -> bytes:
             pdf.set_text_color(20, 20, 20)
             pdf.set_fill_color(243, 244, 246)
             pdf.set_x(pdf.l_margin)
-            pdf.multi_cell(width, 4.5, _latin(finding.snippet, 300) or " ", fill=True)
+            limit = 0 if getattr(result, "_original_text_visible", False) else 300
+            pdf.multi_cell(width, 4.5, _latin(finding.snippet, limit) or " ", fill=True)
         if _is_latin(finding.description):
             line(finding.description, 9)
         if _is_latin(finding.fix):

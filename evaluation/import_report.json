@@ -1,5 +1,27 @@
 {
  "date": "2026-11-11",
+ "additional_packs": {
+  "date": "2026-11-26",
+  "documentation": "docs/RULE_EXPANSION_2026_11_26.md",
+  "betterleaks_report": "evaluation/betterleaks_import_report.json",
+  "enabled_additions": {
+   "betterleaks": 80,
+   "gitleaks_compatibility": 3,
+   "codeql_android_extended": 5
+  },
+  "precision_adaptations": [
+   {
+    "date": "2026-11-27",
+    "rule": "DEVSKIM-DS187371",
+    "source_commit": "6997e759b48d9fed457b5399b4e89681e6a4dcd4",
+    "reason": "Restrict bare cipher-mode words to explicit symmetric ECB settings; RSA transformation labels and unrelated authenticated-mode names are not weak symmetric ECB.",
+    "default_enabled": false,
+    "user_overrides_preserved": true,
+    "tests": "tests/test_devskim_cipher_precision.py"
+   }
+  ],
+  "note": "The rules and corpus measurements below remain the original 2026-11-11 import. Additional pack validation is documented separately."
+ },
  "max_noise_per_10k": 0.5,
  "rules": [
   {

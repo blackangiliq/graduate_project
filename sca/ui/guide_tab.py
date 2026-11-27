@@ -22,6 +22,10 @@ IMAGE_LINE = re.compile(r"^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$")
 # the rules of sca/rules/dart.yaml and sca/rules/flutter.yaml, shown on the Flutter page
 MOBILE_RULES = ("DART-", "FLUTTER-")
 DOCUMENTS = [
+    ("docs/VALIDATION_2026_11_27.md", "التحقق والمقارنة المستقلة للتطبيقات", "Independent application validation"),
+    ("docs/UPSTREAM_RULES_2026_11_27.md", "مصادر القواعد وتوسعتها", "Upstream rule sources and expansion"),
+    ("docs/DYNAMIC_ANALYSIS.md", "التحليل أثناء التشغيل وإعداد Windows", "Runtime analysis and Windows setup"),
+    ("docs/EXTERNAL_ENGINES.md", "التحقق بمحركات خارجية", "External engine validation"),
     ("docs/GUIDE_AR.md", "الدليل الكامل بالعربية", "Complete guide (Arabic)"),
     ("docs/SUPERVISOR_AR.md", "وثيقة المشرف", "Supervisor document (Arabic)"),
     ("docs/DIAGRAMS_AR.md", "شرح المخططات مع مثال رقمي", "Diagrams walk-through (Arabic)"),
@@ -84,8 +88,7 @@ def render(t: Callable[[str], str], lang: str, wide: Dict) -> None:
         _image("usage", lang, t("The steps as a diagram"))
 
     with settings:
-        st.caption(t("Every control of the sidebar, what it does and when to change it. The "
-                     "same text appears as the (?) tooltip next to each control."))
+        st.caption(t("The help next to each scan setting explains what it does."))
         groups: Dict[str, list] = {}
         for item in texts.SETTINGS.values():
             groups.setdefault(item["group"][index], []).append(item)

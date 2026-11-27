@@ -24,8 +24,8 @@ SDK levels, Flutter build mode, engine and Dart versions, obfuscation, signing, 
 
 An app package is untrusted. Each part is decoded on its own and a broken or hostile part
 only adds a warning; entries are read into memory with size limits and never written to disk
-under their own names. Lines of virtual files are shorter than 600 characters and hold no
-control characters other than tab.
+under their own names. Virtual text preserves complete logical lines and holds no control
+characters other than tab; decoder byte budgets and the total text budget bound its size.
 """
 from __future__ import annotations
 
@@ -44,20 +44,22 @@ from .context import (BUILD_FILE, ORIGIN_DECODED, ORIGIN_DECOMPILED, ORIGIN_RECO
 from .xmltree import XML_HEADER, XmlNode
 
 APP_SUFFIXES = (".apk", ".aab", ".apks", ".xapk", ".apkm")
-ABI_ORDER = ("arm64-v8a", "armeabi-v7a", "x86_64", "x86")     # the ABI whose code is read
+ABI_ORDER = ("arm64-v8a", "armeabi-v7a", "x86_64", "x86")     # metadata preference; strings cover all ABIs
 
 # caps against hostile packages
-MAX_LINE = 599                    # longest line of a virtual file, in characters
+MAX_LINE = 599                    # presentation width for analyzer-generated summaries only
 MAX_TEXT = 64 << 20               # characters of decoded text kept from one app
 MAX_XML_RESOURCES = 300
 MAX_STRING_RESOURCES = 20_000
+MAX_LOCALIZED_STRING_RESOURCES = 100_000  # qualified values; also share MAX_TEXT
 MAX_ASSETS = 2_000
 MAX_ASSET_BYTES = 1 << 20
+MAX_JS_BUNDLE_BYTES = 32 << 20    # React Native text bundles commonly exceed 1 MiB
 MAX_DEX_FILES = 100
 MAX_DEX_LINES = 200_000           # lines of one DEX strings dump
 MAX_LIBAPP_LINES = 200_000
-MAX_LIB_LINES = 100_000           # lines of the strings dump of another native library
-MAX_OTHER_LIBS = 10
+MAX_LIB_LINES = 500_000           # unique native strings; collected within remaining MAX_TEXT
+MAX_OTHER_LIBS = 128              # total archive/text/byte budgets still apply
 # bytes read from one part for a decoder written in Python (real parts are far smaller)
 MAX_XML_BYTES = 16 << 20          # AndroidManifest.xml or an XML resource (binary XML)
 MAX_TABLE_BYTES = 64 << 20        # resources.arsc, resources.pb
@@ -77,8 +79,9 @@ ISOLATE_SNAPSHOT = "assets/flutter_assets/isolate_snapshot_data"
 NOTICES = ("assets/flutter_assets/NOTICES.Z", "assets/flutter_assets/NOTICES")
 TEXT_EXTENSIONS = {".arb", ".cer", ".cfg", ".conf", ".config", ".crt", ".csv", ".dart",
                    ".env", ".htm", ".html", ".ini", ".js", ".json", ".key", ".md", ".mjs",
-                   ".pem", ".plist", ".properties", ".rules", ".sh", ".sql", ".toml", ".txt",
+                   ".pem", ".plist", ".properties", ".rules", ".sh", ".sql", ".toml", ".txt", ".kml",
                    ".xml", ".yaml", ".yml"}
+JS_BUNDLE_EXTENSIONS = {".bundle", ".jsbundle", ".hbc"}
 # asset lists written by the Flutter tool, not by the app's developers
 FLUTTER_GENERATED = {"AssetManifest.json", "AssetManifest.bin.json", "FontManifest.json",
                      "NativeAssetsManifest.json"}
@@ -139,13 +142,18 @@ def is_app_package(path: Path) -> bool:
     return path.suffix.lower() in APP_SUFFIXES and path.is_file() and zipread.is_zip(path)
 
 
-def load_app(path: Path, use_tools: bool = False) -> MobileContext:
+def load_app(path: Path, use_tools: bool = False, work_dir: Optional[Path] = None
+             ) -> MobileContext:
     """Decode an app package into virtual files and facts. use_tools also runs jadx and
     apksigner when they are installed. Raises AppError when the file is not a readable app
     package."""
     path = Path(path)
     try:
-        container = zipread.open_container(path)
+        if work_dir is None:
+            container = zipread.open_container(path)
+        else:
+            # An upload has a smaller budget and all decompiler output lives with it.
+            container = zipread.open_container(path, limit=128 << 20, total_limit=256 << 20)
     except zipread.ZipError as exc:
         if not path.is_file():
             raise AppError("%s: %s" % (path.name, "not a file" if path.exists() else
@@ -157,7 +165,7 @@ def load_app(path: Path, use_tools: bool = False) -> MobileContext:
             from None
     with container:
         try:
-            return _AppLoader(path, container).run(use_tools)
+            return _AppLoader(path, container).run(use_tools, work_dir)
         except AppError:
             raise
         except Exception as exc:     # outside the guarded steps: a bug or an I/O error
@@ -176,21 +184,16 @@ def clean_line(text: str) -> str:
 
 
 def text_lines(text: str) -> List[str]:
-    """Lines of a text for a virtual file: split as str.splitlines() does, cleaned, and lines
-    longer than MAX_LINE split into pieces."""
-    out: List[str] = []
-    for line in text.splitlines():
-        line = clean_line(line)
-        if len(line) <= MAX_LINE:
-            out.append(line)
-        else:
-            out.extend(line[i:i + MAX_LINE] for i in range(0, len(line), MAX_LINE))
-    return out
+    """Keep complete logical lines, so long URLs/tokens and source coordinates survive."""
+    return [clean_line(line) for line in text.splitlines()]
 
 
 def dump_lines(strings: Iterable[str], limit: int) -> List[str]:
-    """Lines of a strings dump: one string per line; a string with line breaks or longer than
-    MAX_LINE takes several lines; blank lines are dropped. At most limit lines."""
+    """One complete logical line per extracted string; blank lines are dropped.
+
+    Embedded line breaks make several lines. The line cap and decoder byte budgets remain;
+    display wrapping must not split a credential or invent extra source lines.
+    """
     out: List[str] = []
     for text in strings:
         if len(text) <= MAX_LINE and not _SPECIAL.search(text):
@@ -203,11 +206,33 @@ def dump_lines(strings: Iterable[str], limit: int) -> List[str]:
     return out
 
 
+def _native_string_lines(data: bytes, line_limit: int, text_limit: int) -> Tuple[List[str], str]:
+    """Collect complete unique ASCII runs incrementally within both output budgets."""
+    lines: List[str] = []
+    seen: Set[str] = set()
+    used = 0
+    largest = 0
+    for match in re.finditer(rb"[\t\x20-\x7e]{6,}", data):
+        size = match.end() - match.start() + 1
+        if size > text_limit - used and size > largest:
+            return lines, "Native strings decoded text limit reached"
+        value = match.group().decode("ascii")
+        if not value.strip() or value in seen:
+            continue
+        if size > text_limit - used:
+            return lines, "Native strings decoded text limit reached"
+        if len(lines) >= line_limit:
+            return lines, "Native strings line limit reached"
+        seen.add(value)
+        lines.append(value)
+        used += size
+        largest = max(largest, size)
+    return lines, ""
+
+
 def _xml_lines(text: str) -> List[str]:
-    """Lines of rendered XML; a line too long is cut, so attribute lines stay where the
-    tree says they are."""
-    return [line if len(line) <= MAX_LINE else line[:MAX_LINE - 3] + "..."
-            for line in text.splitlines()]
+    """Complete rendered attributes at exactly the lines recorded by the XML tree."""
+    return text.splitlines()
 
 
 def _safe_rel(name: str) -> str:
@@ -231,19 +256,9 @@ def _xml_escape(text: str, attribute: bool = False) -> str:
 
 
 def _string_lines(name: str, value: str) -> List[str]:
-    """`<string name="...">...</string>` on one line, or over several lines (each shorter
-    than MAX_LINE, never cut inside an entity) when the value is long."""
+    """One complete resource per line, without cutting a token or XML entity."""
     line = '    <string name="%s">%s</string>' % (_xml_escape(name, True), _xml_escape(value))
-    pieces, start = [], 0
-    while len(line) - start > MAX_LINE:
-        cut = start + MAX_LINE
-        amp = line.rfind("&", cut - 6, cut)
-        if amp > start and line.find(";", amp, cut) < 0:
-            cut = amp
-        pieces.append(line[start:cut])
-        start = cut
-    pieces.append(line[start:])
-    return pieces
+    return [line]
 
 
 def _decode_text(data: bytes) -> Optional[str]:
@@ -410,8 +425,10 @@ class _AppLoader:
         self.evidence = ""                              # why the build mode is what it is
         self.snapshot_note = ""                         # where a debug build's snapshot is
         self.verified_text = "not checked"
+        self.splits: List[Tuple[str, zipread.ZipArchive]] = []
+        self.incomplete: Dict[zipread.ZipArchive, str] = {}
 
-    def run(self, use_tools: bool) -> MobileContext:
+    def run(self, use_tools: bool, work_dir: Optional[Path] = None) -> MobileContext:
         archive = self.container.archive
         self.facts.update(kind=self.ctx.kind, name=self.path.name, size_bytes=archive.size,
                           sha256=archive.sha256())
@@ -423,12 +440,24 @@ class _AppLoader:
                            ("AndroidManifest.xml", self._manifest),
                            ("res/xml", self._xml_resources),
                            ("res/values/strings.xml", self._strings),
+                           ("localized strings", self._localized_strings),
+                           ("complex resource values", self._complex_strings),
                            ("assets", self._assets), ("Flutter", self._flutter),
                            ("DEX", self._dex), ("signing", self._signing),
                            ("native libraries", self._other_libs)):
             self._guard(part, step)
         if use_tools:
-            self._guard("tools", self._tools)
+            self._guard("tools", lambda: self._tools(work_dir))
+        if self.container.apk_members:
+            base_record = self.container.member_by_archive[self.base]
+            if self.base in self.incomplete and not base_record["reason"]:
+                base_record.update(status="partial", reason=self.incomplete[self.base])
+            self._split_contents()
+        elif self.ctx.kind == "apk" and self.ctx.manifests and self.ctx.manifests[0][1].get("split"):
+            self.facts["base_missing"] = True
+            self.facts["apk_members"] = [{"name": self.path.name, "role": "split",
+                                           "status": "partial", "reason": "The base APK was not supplied"}]
+            self.ctx.warn("This is one split APK. The base APK was not supplied.")
         self._finish()
         self.ctx.files = self.files
         return self.ctx
@@ -438,14 +467,19 @@ class _AppLoader:
         try:
             step()
         except Exception as exc:     # one broken part must not stop the analysis
+            self._incomplete(part, "A decoder could not finish")
             self.ctx.warn("%s: not decoded (%s: %s)" % (part, type(exc).__name__,
                                                         str(exc)[:200]))
+
+    def _incomplete(self, logical: str, reason: str) -> None:
+        owner = self.parts[logical][0] if logical in self.parts else self.base
+        self.incomplete.setdefault(owner, reason)
 
     # -------------------------------------------------------------- package contents
     def _index(self) -> None:
         """Map the files of the package to the names they have in an installed APK: an app
-        bundle's base module (base/manifest/, base/dex/, base/root/ ...); for a split set,
-        the base APK and the native libraries of the splits."""
+        bundle's base module (base/manifest/, base/dex/, base/root/ ...). For an install
+        set, validate the split identities before combining any native libraries."""
         if self.ctx.kind == "aab":
             archive = self.container.archive
             for name in archive.names():
@@ -464,14 +498,200 @@ class _AppLoader:
                     self.ctx.warn("%s: app bundle module %r is not analysed (only the base "
                                   "module is)" % (self.path.name, module))
             return
+        self.parts = {name: (self.base, self.base.get(name)) for name in self.base.names()}
+        if not self.container.apk_members:
+            return
+        self.facts["apk_members"] = self.container.apk_members
+        if self.base is self.container.archive:
+            raise AppError("%s: no AndroidManifest.xml from a base APK" % self.path.name)
+        base_doc = self._member_manifest(self.base)
+        root = base_doc.root if base_doc else None
+        if root is not None and root.get("split"):
+            raise AppError("%s: the selected base APK declares itself a split" % self.path.name)
+        base_record = self.container.member_by_archive[self.base]
+        base_record.update(status="read" if root is not None else "partial",
+                           reason="" if root is not None else "Unreadable base manifest")
+        split_ids: Set[str] = set()
         for label, archive in self.container.apks:
-            is_base = archive is self.base
+            if archive is self.base:
+                continue
+            doc = self._member_manifest(archive)
+            manifest = doc.root if doc else None
+            split_id = manifest.get("split") if manifest is not None else None
+            if manifest is None:
+                reason = "Unreadable split manifest"
+            elif not split_id:
+                reason = "APK has no declared split ID"
+            elif root is None or not root.get("package") or manifest.get("package") != root.get("package"):
+                reason = "APK package does not match the base"
+            elif any(manifest.get(attr) and root.get(attr) and manifest.get(attr) != root.get(attr)
+                     for attr in ("android:versionCode", "android:versionCodeMajor")):
+                reason = "APK version does not match the base"
+            elif split_id in split_ids:
+                reason = "Duplicate split ID"
+            else:
+                reason = ""
+            record = self.container.member_by_archive[archive]
+            if reason:
+                record.update(status="skipped", reason=reason)
+                self.ctx.warn("%s: %s" % (record["name"], reason))
+                continue
+            split_ids.add(split_id)
+            self.splits.append((label, archive))
             for name in archive.names():
-                if is_base or name.startswith("lib/"):
+                if name.startswith("lib/"):
                     self.parts.setdefault(name, (archive, archive.get(name)))
-            if not is_base and not label.startswith("split_config."):
-                self.ctx.warn("%s: %s is a feature split; only the base APK and the native "
-                              "libraries of the splits are analysed" % (self.path.name, label))
+
+    def _member_manifest(self, archive: zipread.ZipArchive) -> Optional[axml.AxmlDocument]:
+        entry = archive.get("AndroidManifest.xml")
+        if entry is not None:
+            try:
+                return axml.decode_axml(archive.read(entry, MAX_XML_BYTES))
+            except (axml.AxmlError, zipread.ZipError):
+                pass
+        return None
+
+    def _split_contents(self) -> None:
+        """Decode each member separately. Identical internal filenames keep distinct locations."""
+        file_members = {}
+        for sf in self.files:
+            if sf.origin != ORIGIN_SUMMARY:
+                owner = self.parts[sf.rel][0] if sf.rel in self.parts else self.base
+                file_members[sf.rel] = self.container.member_by_archive[owner]["name"]
+        self.facts["apk_file_members"] = file_members
+        for index, (label, archive) in enumerate(self.splits, 1):
+            record = self.container.member_by_archive[archive]
+            child = _AppLoader(self.path, zipread.Container(self.container.path, "apk", archive,
+                                                           [("base", archive)]))
+            child._index()
+            # The main loader already used the selected ABI's Flutter snapshot and
+            # native strings from every ABI. Do not decode the same native entry twice.
+            child.parts = {path: part for path, part in child.parts.items()
+                           if not (path.startswith("lib/")
+                                   and self.parts.get(path) == part)}
+            child.text_total = self.text_total
+            child._guard("resources.arsc", child._resources)
+            child._guard("AndroidManifest.xml", child._manifest)
+            for part, step in (("res/xml", child._xml_resources), ("strings", child._strings),
+                               ("localized strings", child._localized_strings), ("assets", child._assets),
+                               ("complex resource values", child._complex_strings),
+                               ("DEX", lambda: child._dex(max(0, MAX_DEX_FILES - len(self.ctx.dex)))),
+                               ("Flutter", child._flutter), ("native libraries", child._other_libs)):
+                child._guard(part, step)
+            prefix = "splits/" + _safe_rel(label + ".apk") + "/"
+            if prefix + "AndroidManifest.xml" in self.rels:
+                prefix = f"splits/{index}-" + _safe_rel(label + ".apk") + "/"
+            record["prefix"] = prefix
+            self.text_total = child.text_total
+            self.full = self.full or child.full
+            for sf in child.files:
+                sf.rel = prefix + sf.rel
+                sf.path = Path(sf.rel)
+                self.files.append(sf)
+                self.rels.add(sf.rel)
+                file_members[sf.rel] = record["name"]
+            self.ctx.strings_files.extend(prefix + rel for rel in child.ctx.strings_files)
+            self.ctx.manifests.extend((prefix + rel, node) for rel, node in child.ctx.manifests)
+            self.ctx.xml_resources.update({prefix + rel: node for rel, node in child.ctx.xml_resources.items()})
+            for ref, rel in child.ctx.resource_files.items():
+                self.ctx.resource_files[prefix + ref] = prefix + rel
+            for parsed in child.ctx.dex:
+                parsed.name = prefix + parsed.name
+                self.ctx.dex.append(parsed)
+            for message in child.ctx.warnings:
+                self.ctx.warn("%s: %s" % (record["name"], message))
+            reason = self.incomplete.get(archive) or child.incomplete.get(archive, "")
+            if child.ctx.dex and "tools" in self.facts:
+                reason = reason or "Optional Java decompilation covers the base APK"
+            record.update(status="partial" if reason else "read", reason=reason)
+        if self.ctx.dex:
+            self.facts["dex"] = {"files": len(self.ctx.dex),
+                                 "classes": sum(len(d.class_defs()) for d in self.ctx.dex),
+                                 "strings": sum(len(d.strings()) for d in self.ctx.dex)}
+
+    def _localized_strings(self) -> None:
+        """Preserve qualified values from the base or a split under separate resource paths."""
+        if self.table is None:
+            return
+        configs: Dict[str, List[str]] = {}
+        count = 0
+        reserved = 0
+        limited = False
+        wrapper_size = sum(len(line) + 1 for line in (XML_HEADER, "<resources>", "</resources>"))
+        for entry in self.table.entries():
+            if entry.type != "string":
+                continue
+            for value in entry.values:
+                if value.config and value.data_type == arsc.TYPE_STRING:
+                    rendered = _string_lines(entry.name, value.text)
+                    size = sum(len(line) + 1 for line in rendered)
+                    if value.config not in configs:
+                        size += wrapper_size
+                    if self.text_total + reserved + size > MAX_TEXT:
+                        self._incomplete("resources.arsc", "Localized resource text limit reached")
+                        self.ctx.warn("Localized resource text limit reached")
+                        limited = True
+                        break
+                    lines = configs.setdefault(value.config, [XML_HEADER, "<resources>"])
+                    lines.extend(rendered)
+                    reserved += size
+                    count += 1
+                    if count == MAX_LOCALIZED_STRING_RESOURCES:
+                        self._incomplete("resources.arsc", "Localized string resource limit reached")
+                        self.ctx.warn("Localized string resource limit reached")
+                        limited = True
+                        break
+            if limited:
+                break
+        for config, lines in configs.items():
+            lines.append("</resources>")
+            self._add(_safe_rel("res/values-%s/strings.xml" % config), lines, ORIGIN_DECODED, "config")
+
+    def _complex_strings(self) -> None:
+        """Retain literal string members of arrays/plurals/styles under their resource IDs.
+
+        This is a decoded evidence representation, not reconstructed application
+        source. Reference-valued members are already represented by their string
+        definitions; no referenced value is invented at the reference's location.
+        """
+        if self.table is None:
+            return
+        configurations: Dict[str, List[str]] = {}
+        reserved, members, resources = 0, 0, 0
+        wrapper = [XML_HEADER, "<resources>"]
+        wrapper_size = sum(len(line) + 1 for line in wrapper + ["</resources>"])
+        for bag in self.table.bags:
+            entry = self.table.lookup(bag.resource_id)
+            if entry is None:
+                continue
+            strings = [item for item in bag.items if item.data_type == arsc.TYPE_STRING]
+            if not strings:
+                continue
+            block = ['  <resource type="%s" name="%s" id="0x%08x">' %
+                     (_xml_escape(entry.type, True), _xml_escape(entry.name, True), entry.id)]
+            block.extend('    <item name="0x%08x">%s</item>' % (item.name, _xml_escape(item.text))
+                         for item in strings)
+            block.append("  </resource>")
+            needed = sum(len(line) + 1 for line in block)
+            if bag.config not in configurations:
+                needed += wrapper_size
+            if self.text_total + reserved + needed > MAX_TEXT:
+                self._incomplete("resources.arsc", "Complex resource text limit reached")
+                self.ctx.warn("Complex resource text limit reached; remaining values were not retained")
+                break
+            configurations.setdefault(bag.config, list(wrapper)).extend(block)
+            reserved += needed
+            members += len(strings)
+            resources += 1
+        for config, lines in configurations.items():
+            lines.append("</resources>")
+            folder = "values-" + config if config else "values"
+            self._add(_safe_rel("res/%s/complex_resources.xml" % folder), lines, ORIGIN_DECODED, "config")
+        if resources:
+            self.facts["complex_resources"] = {
+                "resources_with_string_members": resources, "string_members": members,
+                "scope": "Literal string members of arrays, plurals and styles in every configuration",
+            }
 
     def _read(self, logical: str, limit: int, head: bool = False) -> Optional[bytes]:
         """At most limit bytes of a part (head: only its first bytes are wanted); None when
@@ -483,6 +703,7 @@ class _AppLoader:
         try:
             return archive.read(entry, limit, head)
         except zipread.ZipError as exc:
+            self._incomplete(logical, "An archive entry could not be read within the scan limits")
             self.ctx.warn(str(exc))
             return None
 
@@ -494,6 +715,7 @@ class _AppLoader:
             return None
         size = sum(len(line) + 1 for line in lines)
         if not force and self.text_total + size > MAX_TEXT:
+            self._incomplete(rel, "Decoded text limit reached")
             if not self.full:
                 self.ctx.warn("the decoded text reached %d MiB; %s and later parts are left "
                               "out" % (MAX_TEXT >> 20, rel))
@@ -522,6 +744,7 @@ class _AppLoader:
             else:
                 doc = axml.decode_axml(data, self.table.name_of if self.table else None)
         except axml.AxmlError as exc:               # aabproto.ProtoError included
+            self._incomplete(rel, "An XML resource could not be decoded")
             self.ctx.warn("%s: not decoded (%s)" % (rel, exc))
             return None
         for warning in doc.warnings:
@@ -568,6 +791,7 @@ class _AppLoader:
                     found.append((_safe_rel(name), name,
                                   match.group(2) if match.group(1) == "xml" else "", 0))
         if len(found) > MAX_XML_RESOURCES:
+            self._incomplete("resources.arsc", "XML resource count limit reached")
             self.ctx.warn("%d XML resources; only the first %d are decoded"
                           % (len(found), MAX_XML_RESOURCES))
         # configurations of a resource can name the same file: it is decoded once
@@ -607,6 +831,7 @@ class _AppLoader:
             return
         items = list(strings.items())
         if len(items) > MAX_STRING_RESOURCES:
+            self._incomplete("resources.arsc", "String resource count limit reached")
             self.ctx.warn("%d string resources; only the first %d are listed"
                           % (len(items), MAX_STRING_RESOURCES))
         lines = [XML_HEADER, "<resources>"]
@@ -616,34 +841,47 @@ class _AppLoader:
         self._add("res/values/strings.xml", lines, ORIGIN_DECODED, "config")
 
     def _assets(self) -> None:
-        """Text assets (a text file extension or a .env name, at most MAX_ASSET_BYTES) under
-        their own paths; NOTICES gives package names."""
+        """Bounded text assets and res/raw resources under their own paths."""
         count = 0
         for name in sorted(self.parts):
-            if not name.startswith("assets/"):
+            if not name.startswith("assets/") and not re.match(r"^res/raw(?:-[^/]+)?/", name):
                 continue
             if name in NOTICES:
                 self._notices(name)
                 continue
             base = name.rsplit("/", 1)[-1]
-            if not (base.lower().startswith(".env")
-                    or PurePosixPath(base).suffix.lower() in TEXT_EXTENSIONS):
+            extension = PurePosixPath(base).suffix.lower()
+            js_bundle = extension in JS_BUNDLE_EXTENSIONS
+            if not (base.lower().startswith(".env") or js_bundle
+                    or extension in TEXT_EXTENSIONS):
                 continue
             if name.startswith("assets/flutter_assets/") and base in FLUTTER_GENERATED:
                 continue
-            if self.parts[name][1].size > MAX_ASSET_BYTES:
+            byte_limit = MAX_JS_BUNDLE_BYTES if js_bundle else MAX_ASSET_BYTES
+            if self.parts[name][1].size > byte_limit:
+                self._incomplete(name, "Text asset size limit reached")
+                self.ctx.warn("%s: text asset exceeds the %d-byte limit" % (name, byte_limit))
                 continue
             count += 1
             if count > MAX_ASSETS:
+                self._incomplete(name, "Text asset count limit reached")
                 self.ctx.warn("more than %d text assets; the rest are not read" % MAX_ASSETS)
                 return
-            data = self._read(name, MAX_ASSET_BYTES)
+            data = self._read(name, byte_limit)
             text = _decode_text(data) if data is not None else None
             if text is None:
+                if js_bundle and data is not None:
+                    rel = _safe_rel(name)
+                    strings = snapshot.ascii_strings(data, limit=MAX_DEX_LINES)
+                    if self._add(rel, dump_lines(strings, MAX_DEX_LINES), ORIGIN_STRINGS, "config"):
+                        self.ctx.strings_files.append(rel)
+                    reason = "Binary JavaScript bundle: only embedded strings were inspected"
+                    self._incomplete(name, reason)
+                    self.ctx.warn("%s: %s" % (name, reason))
                 continue
             rel = _safe_rel(name)
             self._add(rel, text_lines(text), ORIGIN_DECODED,
-                      detect_language(Path(rel)) or "config")
+                      "javascript" if js_bundle else detect_language(Path(rel)) or "config")
 
     def _notices(self, name: str) -> None:
         data = self._read(name, MAX_NOTICES_CHARS, head=True)
@@ -748,12 +986,14 @@ class _AppLoader:
                                    "found_in": found_in}
 
     # -------------------------------------------------------------- DEX
-    def _dex(self) -> None:
+    def _dex(self, limit: Optional[int] = None) -> None:
         names = sorted((name for name in self.parts if _DEX_NAME.match(name)), key=_dex_order)
-        if len(names) > MAX_DEX_FILES:
-            self.ctx.warn("%d DEX files; only the first %d are read" % (len(names), MAX_DEX_FILES))
+        limit = MAX_DEX_FILES if limit is None else limit
+        if len(names) > limit:
+            self._incomplete(names[limit], "DEX count limit reached")
+            self.ctx.warn("%d DEX files; only the first %d are read" % (len(names), limit))
         plugins: Set[str] = set()
-        for name in names[:MAX_DEX_FILES]:
+        for name in names[:limit]:
             data = self._read(name, MAX_DEX_BYTES)
             if data is None:
                 continue
@@ -813,27 +1053,60 @@ class _AppLoader:
 
     # -------------------------------------------------------------- other native code
     def _other_libs(self) -> None:
-        """ASCII strings of the other native libraries of the ABI that is read."""
-        names = sorted(name for name in self.libs.get(self.abi, {})
-                       if name not in ("libapp.so", "libflutter.so")
-                       and not name.startswith("libVkLayer"))
+        """Bounded native strings from every ABI, not just the metadata preference.
+
+        The selected Flutter snapshot has already been parsed. Other libapp copies
+        still carry independently compiled strings and must be inspected. Flutter
+        engine and Vulkan validation libraries retain their explicit metadata-only
+        scope rather than silently appearing to have full string coverage.
+        """
+        all_libraries = [self.libs[abi][name] for abi in sorted(self.libs, key=_abi_order)
+                         for name in sorted(self.libs[abi])]
+        metadata_only = [logical for logical in all_libraries
+                         if logical.rsplit("/", 1)[-1] == "libflutter.so"
+                         or logical.rsplit("/", 1)[-1].startswith("libVkLayer")]
+        names = [logical for logical in all_libraries
+                 if logical not in metadata_only and logical not in self.rels
+                 and logical != "lib/%s/libapp.so" % self.abi]
+        coverage = self.facts["native_string_coverage"] = {
+            "metadata_abi": self.abi, "abis": sorted(self.libs, key=_abi_order),
+            "libraries_present": len(all_libraries),
+            "libraries_read": [logical for logical in all_libraries if logical in self.rels],
+            "metadata_only": metadata_only,
+            "libraries_omitted": [],
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only",
+        }
+        preferred_snapshot = "lib/%s/libapp.so" % self.abi
+        if preferred_snapshot in all_libraries and preferred_snapshot not in self.rels:
+            coverage["libraries_omitted"].append({"file": preferred_snapshot,
+                "reason": "Preferred Flutter snapshot was not retained within decoder limits"})
         if len(names) > MAX_OTHER_LIBS:
+            for skipped in names[MAX_OTHER_LIBS:]:
+                self._incomplete(skipped, "Native library count limit reached")
+                coverage["libraries_omitted"].append({"file": skipped, "reason": "Native library count limit reached"})
             self.ctx.warn("%d other native libraries; only the first %d are read"
                           % (len(names), MAX_OTHER_LIBS))
-        for name in names[:MAX_OTHER_LIBS]:
-            logical = self.libs[self.abi][name]
+        for logical in names[:MAX_OTHER_LIBS]:
             data = self._read(logical, MAX_OTHER_LIB_BYTES)
             if data is None:
+                coverage["libraries_omitted"].append({"file": logical, "reason": "Library could not be read within byte limits"})
                 continue
-            strings = dict.fromkeys(snapshot.ascii_strings(data, limit=MAX_LIB_LINES))
+            lines, reason = _native_string_lines(data, MAX_LIB_LINES,
+                                                max(0, MAX_TEXT - self.text_total))
+            if reason:
+                self._incomplete(logical, reason)
+                self.ctx.warn("%s: %s" % (logical, reason))
+                coverage["libraries_omitted"].append({"file": logical, "reason": reason})
             rel = _safe_rel(logical)
-            if self._add(rel, dump_lines(strings, MAX_LIB_LINES), ORIGIN_STRINGS, "config"):
+            if self._add(rel, lines, ORIGIN_STRINGS, "config"):
                 self.ctx.strings_files.append(rel)
+                coverage["libraries_read"].append(logical)
 
     # -------------------------------------------------------------- optional tools
-    def _tools(self) -> None:
+    def _tools(self, work_dir: Optional[Path]) -> None:
         notes = self.facts.setdefault("tools", {})
-        work = data_dir() / "apps" / self.facts["sha256"][:12]
+        work = (data_dir() / "apps" / self.facts["sha256"][:12]
+                if work_dir is None else work_dir / "app-tools")
         available = tools.availability()
         if self.ctx.kind == "aab":
             notes["apksigner"] = "not run: apksigner reads APK files only"
@@ -892,6 +1165,11 @@ class _AppLoader:
     def _decompile(self, work: Path) -> str:
         """Decompile the app's own classes with jadx and add them as Java files."""
         wanted = self._wanted_classes()
+        coverage = self.facts["java_decompilation"] = {
+            "scope": "Base APK: manifest package and declared component classes",
+            "requested_classes": wanted, "file_limit": tools.MAX_JAVA_FILES,
+            "time_limit_seconds": tools.JADX_TIMEOUT, "reported_files": 0, "loaded_files": 0,
+        }
         exact = {name for name in wanted if not name.endswith(".*")}
         prefixes = tuple(name[:-1] for name in wanted if name.endswith(".*"))
 
@@ -901,7 +1179,8 @@ class _AppLoader:
 
         inputs = [parsed.name for parsed in self.ctx.dex if defines_wanted(parsed)]
         if not inputs:
-            return "ok (no class of the app in the DEX files)"
+            coverage["status"] = "ok (no class of the app in the DEX files)"
+            return coverage["status"]
         folder = work / "jadx-input"
         shutil.rmtree(folder, ignore_errors=True)
         folder.mkdir(parents=True, exist_ok=True)
@@ -913,6 +1192,7 @@ class _AppLoader:
             files, note = tools.jadx_decompile(folder, work / "jadx", wanted)
         finally:
             shutil.rmtree(folder, ignore_errors=True)
+        coverage.update(status=note, reported_files=len(files))
         for path in files:
             rel = _safe_rel("jadx/" + path.relative_to(work / "jadx").as_posix())
             try:
@@ -920,7 +1200,8 @@ class _AppLoader:
             except OSError as exc:
                 self.ctx.warn("%s: not read (%s)" % (rel, exc))
                 continue
-            self._add(rel, text_lines(text), ORIGIN_DECOMPILED, "java")
+            if self._add(rel, text_lines(text), ORIGIN_DECOMPILED, "java") is not None:
+                coverage["loaded_files"] += 1
         return note
 
     # -------------------------------------------------------------- facts and summaries

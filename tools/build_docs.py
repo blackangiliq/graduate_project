@@ -94,17 +94,28 @@ def cli_block(lang: str) -> str:
                      if " rules " in item[0] or item[0].endswith("coverage"))
 
 
+def current_pack_table(lang: str) -> str:
+    """Current shipped definitions; deliberately excludes local edits and learned rules."""
+    groups = collections.defaultdict(list)
+    for rule in rules_engine.all_rules(include_user=False):
+        groups[rule.file if rule.origin == "imported" else "Built-in YAML / القواعد المدمجة"].append(rule)
+    rows = [("| Shipped pack | Definitions | Enabled by default |" if lang == "en" else
+             "| المجموعة المرفقة | التعريفات | المفعّلة افتراضياً |"), "|---|---:|---:|"]
+    for name, rules in sorted(groups.items()):
+        rows.append("| %s | %d | %d |" % (name, len(rules), sum(r.enabled for r in rules)))
+    return "\n".join(rows)
+
+
 def rules_md() -> str:
-    counts = rulebook.summary()
-    origins = counts["by_origin"]
+    rules = rules_engine.all_rules(include_user=False)
+    imported = [rule for rule in rules if rule.origin == "imported"]
     total_lines = sum(REPORT["corpus"]["lines_by_language"].values())
     projects = len(REPORT["corpus"]["projects"])
     numbers = {
-        "total": counts["total"], "enabled": counts["enabled"],
-        "builtin": origins["builtin"]["total"], "imported": origins["imported"]["total"],
-        "imported_on": origins["imported"]["enabled"],
-        "secret": sum(1 for r in rules_engine.all_rules(False)
-                      if r.kind == "secret" and r.origin == "imported"),
+        "total": len(rules), "enabled": sum(rule.enabled for rule in rules),
+        "builtin": len(rules) - len(imported), "imported": len(imported),
+        "imported_on": sum(rule.enabled for rule in imported),
+        "secret": sum(rule.kind == "secret" for rule in imported),
         "lines": format(total_lines, ","), "projects": projects,
         "noise": REPORT["max_noise_per_10k"], "date": REPORT["date"],
     }
@@ -120,18 +131,34 @@ The tool ships **%(total)d rules, %(enabled)d of them active**: %(builtin)d buil
 imported rules are credential formats and run inside the secrets engine. Rules learned from
 the AI and rules you write yourself are added on top.
 
+Counts are generated from the shipped YAML, excluding local enable/disable overrides.
+They count detector definitions, not distinct vulnerabilities or proven coverage. Structural
+Android checks, Python AST analysis and runtime observers are separate from this YAML count.
+See [the 2026-11-27 source review and additions](UPSTREAM_RULES_2026_11_27.md) and
+[the earlier 2026-11-26 expansion](RULE_EXPANSION_2026_11_26.md).
+
+%(packs)s
+
 ![Rules tab](images/ui-rules.png)
 
 ## Imported rules
 
-The imported rules come from two MIT-licensed projects (licence texts in
-`THIRD_PARTY_NOTICES.md`):
+The imported rule sources use the MIT licence. See [Third-party notices](../THIRD_PARTY_NOTICES.md).
 
 - **Microsoft DevSkim** - regular-expression rules for many languages, each with its own
   "must match" and "must not match" examples.
 - **Gitleaks** - regular expressions for the key and token formats of about 200 services.
+- **Betterleaks** - reviewed prefix and contextual credential detectors; unsupported
+  association/filter requirements are explicitly excluded and no validation code is executed.
+- **GitHub CodeQL** - narrow Android/Java/Kotlin syntax adaptations in two packs.
+  The packs keep the original query identifiers. They are tested independently of the imports
+  below. [CodeQL query documentation](https://codeql.github.com/codeql-query-help/java/)
 
-`tools/import_rules.py` converts them (import of %(date)s). A rule is accepted only if it
+### Historical DevSkim/Gitleaks import baseline
+
+The following import and corpus tables describe the %(date)s baseline only. Later packs
+have their own reports and tests linked above; they have not all been evaluated against
+this historical corpus. `tools/import_rules.py` converts DevSkim and Gitleaks. A rule is accepted only if it
 converts to this engine, compiles in Python, finishes on stress lines, passes its own
 examples (DevSkim) or matches a string built from its own expression (Gitleaks), and stays
 silent on the known-safe sample code. Accepted rules were then run on %(lines)s code lines
@@ -141,13 +168,15 @@ rule, when it fired more than %(noise)s times per 10,000 lines, or when its matc
 read by hand and found harmless; a Gitleaks rule ships disabled when it matched any product
 code. Every disabled rule carries the reason in its `note` and can be switched on.
 
-""" % numbers + import_table("en") + "\n\n" + skipped_table("en") + """
+""" % {**numbers, "packs": current_pack_table("en")} + import_table("en") + "\n\n" + skipped_table("en") + """
 
 Lines of real code the rules were measured on:
 
 """ + corpus_table("en") + """
 
-Active pattern rules per language after the import (Python's main engine is the AST taint
+### Current pattern coverage by language
+
+Active pattern rules per language in the current shipped catalog (Python's main engine is the AST taint
 analysis, so it has few built-in pattern rules):
 
 """ + coverage_table("en") + """
@@ -195,17 +224,34 @@ Rules tab → **Try an expression**: paste code and see which lines an expressio
 صيغة مفتاح تعمل داخل محرك الأسرار. وتُضاف فوقها القواعد المتعلَّمة من الذكاء الاصطناعي
 والقواعد التي تكتبها أنت.
 
+تُحسب الأعداد من ملفات YAML المرفقة، دون تعديلات التفعيل المحلية. هي عدد تعريفات
+الكواشف وليست عدد الثغرات أو ضماناً للتغطية. فحوص Android البنيوية ومحرك Python AST
+ورصد التشغيل مستقلة عن هذا العدد. راجع [مراجعة المصادر وإضافات 2026-11-27](UPSTREAM_RULES_2026_11_27.md)
+و[توسعة 2026-11-26](RULE_EXPANSION_2026_11_26.md).
+
+%(packs)s
+
 ![تبويب القواعد بالعربية](images/ui-arabic-rules.png)
 
 ## القواعد المستوردة
 
-جاءت القواعد المستوردة من مشروعين برخصة MIT (نص الرخصة في `THIRD_PARTY_NOTICES.md`):
+مصادر القواعد المستوردة مرخّصة برخصة MIT. [إشعارات تراخيص المشاريع](../THIRD_PARTY_NOTICES.md)
 
 - **Microsoft DevSkim**: قواعد بتعابير نمطية للغات كثيرة، ومع كل قاعدة أمثلتها: ما يجب أن
   تطابقه وما يجب ألّا تطابقه.
 - **Gitleaks**: تعابير نمطية لصيغ مفاتيح ورموز نحو 200 خدمة.
+- **Betterleaks**: مجموعة مدققة لصيغ مفاتيح وسياقات مزودي الخدمات، مع توثيق الاستبعادات
+  وعدم تنفيذ تعبيرات التحقق أو الإلغاء الشبكية.
+- **GitHub CodeQL**: تكييفات نحوية محدودة لـ Android وJava وKotlin في مجموعتين.
+  تحتفظ المجموعتان بمعرّفات الاستعلامات الأصلية ولهما اختبارات مستقلة.
+  [توثيق استعلامات CodeQL](https://codeql.github.com/codeql-query-help/java/)
 
-السكربت `tools/import_rules.py` يحوّلها (استيراد بتاريخ %(date)s). لا تُقبل القاعدة إلا إذا
+### خط الأساس التاريخي لاستيراد DevSkim وGitleaks
+
+جداول الاستيراد والكود المقاس التالية تخص استيراد %(date)s فقط. للمجموعات اللاحقة
+تقارير واختبارات منفصلة في الروابط أعلاه، ولم تُقَس كلها على هذا الكود التاريخي.
+السكربت `tools/import_rules.py` يحوّل قواعد DevSkim وGitleaks.
+لا تُقبل القاعدة إلا إذا
 أمكن تحويلها إلى هذا المحرك، وتُرجمت في بايثون، وانتهت على أسطر الإجهاد، ونجحت في أمثلتها
 (DevSkim) أو طابقت نصاً مولَّداً من تعبيرها نفسه (Gitleaks)، وبقيت صامتة على الكود المعروف
 أنه آمن. بعد ذلك شُغّلت القواعد المقبولة على %(lines)s سطر كود من %(projects)d مشروعاً
@@ -214,13 +260,15 @@ Rules tab → **Try an expression**: paste code and see which lines an expressio
 مرة لكل 10,000 سطر، أو إذا قُرئت مطابقاتها يدوياً وتبيّن أنها غير مفيدة. وتأتي قاعدة Gitleaks
 معطَّلة إذا طابقت أي كود إنتاجي. كل قاعدة معطَّلة تحمل السبب في حقل `note` ويمكن تفعيلها.
 
-""" % numbers + import_table("ar") + "\n\n" + skipped_table("ar") + """
+""" % {**numbers, "packs": current_pack_table("ar")} + import_table("ar") + "\n\n" + skipped_table("ar") + """
 
 أسطر الكود الحقيقي التي قيست عليها القواعد:
 
 """ + corpus_table("ar") + """
 
-قواعد الأنماط لكل لغة بعد الاستيراد (المحرك الأساسي لبايثون هو تحليل AST، ولهذا قواعد الأنماط
+### التغطية الحالية للغات
+
+قواعد الأنماط لكل لغة في الكتالوج المرفق الحالي (المحرك الأساسي لبايثون هو تحليل AST، ولهذا قواعد الأنماط
 المدمجة لها قليلة):
 
 """ + coverage_table("ar") + """

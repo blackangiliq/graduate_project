@@ -1,0 +1,7 @@
+{
+  "name": "sca-android-runtime-observer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Explicit runtime observation hooks; no TLS or integrity bypasses",
+  "dependencies": {"frida-java-bridge": "7.1.0"}
+}

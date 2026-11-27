@@ -1,0 +1,2965 @@
+{
+  "schema_version": 1,
+  "reviewed_utc": "2026-11-27T11:51:38.837046+00:00",
+  "method": "Independent Android SDK AAPT2, direct APK bytes and DEX string-table reference; selected manifest/resource/literal review followed by exact values and retained-coordinate comparison. Not exhaustive manual code review or exploitability validation.",
+  "scope": "Provided Android app sets. Candidate addresses include documentation, templates and metadata; address match counts are not endpoint completeness or vulnerability recall.",
+  "sources": [
+    "https://developer.android.com/tools/aapt2",
+    "https://source.android.com/docs/core/runtime/dex-format"
+  ],
+  "apps": [
+    {
+      "app": "01_AynIQ",
+      "input_apks": 5,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 31301460,
+          "sha256": "691eb571641f32081e1e6c33b5734fcbf8451f3f9da68bb4a10a6e8708240dde"
+        },
+        {
+          "name": "split_config.ar.apk",
+          "size": 24985,
+          "sha256": "da8b7e7773ae9a1b79415b9563efec7ecae7925bb5fe714bf51e13fe66247794"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 55563582,
+          "sha256": "ad69fea99ab254d0e04efd95f75fbc5d7dad940495d9f6f6f3eed3494baf4225"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 49561,
+          "sha256": "9df350835490fb9481ef1cc32a951213b334924d12716b024b28af7884aef7c4"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 177034,
+          "sha256": "47e9725031072862f2bd6555e0b1f333677803587ffed8085e88aa497fcf8316"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 128,
+          "findings": 26,
+          "keys": 2,
+          "endpoints": 66,
+          "displayed_address_rows": 66,
+          "config": 6,
+          "api_calls": 0,
+          "api_paths": 6,
+          "baseline_counts": {
+            "files": 123,
+            "findings": 26,
+            "keys": 2,
+            "endpoints": 66,
+            "calls": 0,
+            "paths": 6
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 58,
+          "candidate_address_matches": 48,
+          "template_reference": 7,
+          "template_matches": 7,
+          "displayed_url_templates": 7,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 5
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 4
+            },
+            "keys": {
+              "literal_exact": 4
+            },
+            "endpoints": {
+              "literal_exact": 70
+            },
+            "config": {
+              "literal_exact": 9
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 47561,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 7,
+            "string_members": 32,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 13,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 12,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 68,
+            "pattern_line_limit": 600,
+            "strings_files": 15,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 49,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 172,
+          "findings": 26,
+          "keys": 2,
+          "endpoints": 66,
+          "displayed_address_rows": 66,
+          "config": 7,
+          "api_calls": 0,
+          "api_paths": 6,
+          "baseline_counts": {
+            "files": 167,
+            "findings": 26,
+            "keys": 2,
+            "endpoints": 66,
+            "calls": 0,
+            "paths": 6
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 58,
+          "candidate_address_matches": 48,
+          "template_reference": 7,
+          "template_matches": 7,
+          "displayed_url_templates": 7,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "known_service_configuration": 5
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 4
+            },
+            "keys": {
+              "literal_exact": 4
+            },
+            "endpoints": {
+              "literal_exact": 70
+            },
+            "config": {
+              "literal_exact": 10
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 48996,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 7,
+            "string_members": 32,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 13,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 12,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 44,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 68,
+            "pattern_line_limit": 600,
+            "strings_files": 15,
+            "decompiled_files": 44
+          }
+        }
+      }
+    },
+    {
+      "app": "02_Careem",
+      "input_apks": 3,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 86561701,
+          "sha256": "50947560623dcf073ca514730056f7ba1e7062a2b0c956ab7764c9a6c69828a7"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 2622235,
+          "sha256": "ef897f9bfce7e7ce26bd53d1e02759798b4e20c135c2df377d7fce386fa061b1"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 1661513,
+          "sha256": "e018a41caa7bb5dc6df64abddd127e39677520c5c0c6c157f345f547b76114a2"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 168,
+          "findings": 41,
+          "keys": 4,
+          "endpoints": 513,
+          "displayed_address_rows": 513,
+          "config": 20,
+          "api_calls": 1,
+          "api_paths": 238,
+          "baseline_counts": {
+            "files": 161,
+            "findings": 41,
+            "keys": 4,
+            "endpoints": 507,
+            "calls": 1,
+            "paths": 238
+          },
+          "provider_format_reference": 4,
+          "provider_format_matches": 4,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 381,
+          "candidate_address_matches": 370,
+          "template_reference": 23,
+          "template_matches": 23,
+          "displayed_url_templates": 24,
+          "manually_selected_sdk_configuration_reference": 3,
+          "manually_selected_sdk_configuration_matches": 3,
+          "configuration_classifications": {
+            "credential_candidate": 4,
+            "known_service_configuration": 17
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 5
+            },
+            "keys": {
+              "literal_exact": 5
+            },
+            "endpoints": {
+              "literal_exact": 694
+            },
+            "config": {
+              "literal_exact": 25
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 122570,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 152,
+            "string_members": 683,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 8,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 8,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 750,
+            "pattern_line_limit": 600,
+            "strings_files": 17,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 50,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 1181,
+          "findings": 48,
+          "keys": 4,
+          "endpoints": 513,
+          "displayed_address_rows": 513,
+          "config": 20,
+          "api_calls": 144,
+          "api_paths": 340,
+          "baseline_counts": {
+            "files": 1174,
+            "findings": 48,
+            "keys": 4,
+            "endpoints": 507,
+            "calls": 144,
+            "paths": 340
+          },
+          "provider_format_reference": 4,
+          "provider_format_matches": 4,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 381,
+          "candidate_address_matches": 370,
+          "template_reference": 23,
+          "template_matches": 23,
+          "displayed_url_templates": 24,
+          "manually_selected_sdk_configuration_reference": 3,
+          "manually_selected_sdk_configuration_matches": 3,
+          "configuration_classifications": {
+            "credential_candidate": 4,
+            "known_service_configuration": 17
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 5
+            },
+            "keys": {
+              "literal_exact": 5
+            },
+            "endpoints": {
+              "literal_exact": 712
+            },
+            "config": {
+              "literal_exact": 25
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 152425,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 152,
+            "string_members": 683,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 8,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 8,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 1013,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 788,
+            "pattern_line_limit": 600,
+            "strings_files": 17,
+            "decompiled_files": 1013
+          }
+        }
+      }
+    },
+    {
+      "app": "03_Baly",
+      "input_apks": 3,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 74119168,
+          "sha256": "187016db6b15f76cf00f9cee023ccb34d3e3750d5775bde8be6a8e99773f10e9"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 34292786,
+          "sha256": "bab4a2c06ab74508499c30fee1efbea0821e467e1ecb97308ac6fccfbbf73298"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 4281674,
+          "sha256": "2217ace677d20f567764e0bf69aac6bcbc39ddde05aa9615d99b90d17fedeb17"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "932c86c432161eab67b880d412bc93e44d126351bf9c16df6a768efeac5d373f",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 116,
+          "findings": 33,
+          "keys": 3,
+          "endpoints": 253,
+          "displayed_address_rows": 253,
+          "config": 13,
+          "api_calls": 0,
+          "api_paths": 178,
+          "baseline_counts": {
+            "files": 110,
+            "findings": 33,
+            "keys": 3,
+            "endpoints": 248,
+            "calls": 0,
+            "paths": 178
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 1,
+          "complete_pem_matches": 1,
+          "candidate_address_reference": 220,
+          "candidate_address_matches": 200,
+          "template_reference": 9,
+          "template_matches": 9,
+          "displayed_url_templates": 10,
+          "manually_selected_sdk_configuration_reference": 4,
+          "manually_selected_sdk_configuration_matches": 4,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "sdk_client_identifier": 3,
+            "known_service_configuration": 9
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 3,
+              "pem_body_equivalent": 1
+            },
+            "keys": {
+              "literal_exact": 3,
+              "pem_body_equivalent": 1
+            },
+            "endpoints": {
+              "literal_exact": 369
+            },
+            "config": {
+              "literal_exact": 15
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 201462,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 1000000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 93,
+            "string_members": 324,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 9,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 9,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 3,
+            "pattern_line_limit": 600,
+            "strings_files": 20,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 61,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "932c86c432161eab67b880d412bc93e44d126351bf9c16df6a768efeac5d373f",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 205,
+          "findings": 33,
+          "keys": 3,
+          "endpoints": 253,
+          "displayed_address_rows": 253,
+          "config": 13,
+          "api_calls": 3,
+          "api_paths": 178,
+          "baseline_counts": {
+            "files": 199,
+            "findings": 33,
+            "keys": 3,
+            "endpoints": 248,
+            "calls": 3,
+            "paths": 178
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 1,
+          "complete_pem_matches": 1,
+          "candidate_address_reference": 220,
+          "candidate_address_matches": 200,
+          "template_reference": 9,
+          "template_matches": 9,
+          "displayed_url_templates": 10,
+          "manually_selected_sdk_configuration_reference": 4,
+          "manually_selected_sdk_configuration_matches": 4,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "sdk_client_identifier": 3,
+            "known_service_configuration": 9
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 3,
+              "pem_body_equivalent": 1
+            },
+            "keys": {
+              "literal_exact": 3,
+              "pem_body_equivalent": 1
+            },
+            "endpoints": {
+              "literal_exact": 369
+            },
+            "config": {
+              "literal_exact": 15
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 205878,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 1000000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 93,
+            "string_members": 324,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 9,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 9,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 89,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 30,
+            "pattern_line_limit": 600,
+            "strings_files": 20,
+            "decompiled_files": 89
+          }
+        }
+      }
+    },
+    {
+      "app": "05_oodi",
+      "input_apks": 5,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 50575179,
+          "sha256": "9882890d55a8d0cd418376d9cb85f467613cb2ed0c7348a294312b44ca091a84"
+        },
+        {
+          "name": "split_config.ar.apk",
+          "size": 28882,
+          "sha256": "336994228cba842a02d03b0cdc920becfa5635b9d223d51e7b50b4fe2220fd13"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 49026908,
+          "sha256": "62c8591010b1215032382c3ac7a8153e184f324da345a994af08a8a51b870eec"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 45266,
+          "sha256": "152dcc5c240fd8730b1194a10a2b064196c02a7fd3352686c6fed6ced7733542"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 170969,
+          "sha256": "623031e49c9f322bb6ed7560983bcbf1e1a5adc93a0907fc76f61940b6545184"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "932c86c432161eab67b880d412bc93e44d126351bf9c16df6a768efeac5d373f",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 75,
+          "findings": 39,
+          "keys": 2,
+          "endpoints": 146,
+          "displayed_address_rows": 146,
+          "config": 21,
+          "api_calls": 29,
+          "api_paths": 8,
+          "baseline_counts": {
+            "files": 74,
+            "findings": 39,
+            "keys": 2,
+            "endpoints": 136,
+            "calls": 29,
+            "paths": 8
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 106,
+          "candidate_address_matches": 86,
+          "template_reference": 10,
+          "template_matches": 10,
+          "displayed_url_templates": 11,
+          "manually_selected_sdk_configuration_reference": 1,
+          "manually_selected_sdk_configuration_matches": 1,
+          "configuration_classifications": {
+            "credential_candidate": 10,
+            "known_service_configuration": 11
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 4
+            },
+            "keys": {
+              "literal_exact": 4
+            },
+            "endpoints": {
+              "literal_exact": 157
+            },
+            "config": {
+              "literal_exact": 21
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 136804,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 1000000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 7,
+            "string_members": 25,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 22,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 21,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 2619,
+            "pattern_line_limit": 600,
+            "strings_files": 25,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 62,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "932c86c432161eab67b880d412bc93e44d126351bf9c16df6a768efeac5d373f",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 163,
+          "findings": 39,
+          "keys": 2,
+          "endpoints": 146,
+          "displayed_address_rows": 146,
+          "config": 22,
+          "api_calls": 29,
+          "api_paths": 8,
+          "baseline_counts": {
+            "files": 162,
+            "findings": 39,
+            "keys": 2,
+            "endpoints": 136,
+            "calls": 29,
+            "paths": 8
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 106,
+          "candidate_address_matches": 86,
+          "template_reference": 10,
+          "template_matches": 10,
+          "displayed_url_templates": 11,
+          "manually_selected_sdk_configuration_reference": 1,
+          "manually_selected_sdk_configuration_matches": 1,
+          "configuration_classifications": {
+            "credential_candidate": 11,
+            "known_service_configuration": 11
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 4
+            },
+            "keys": {
+              "literal_exact": 4
+            },
+            "endpoints": {
+              "literal_exact": 157
+            },
+            "config": {
+              "literal_exact": 22
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 139423,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 1000000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 7,
+            "string_members": 25,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 22,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 21,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 88,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 2629,
+            "pattern_line_limit": 600,
+            "strings_files": 25,
+            "decompiled_files": 88
+          }
+        }
+      }
+    },
+    {
+      "app": "06_Qi_Services",
+      "input_apks": 3,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 78457487,
+          "sha256": "c8ca3cc720fbaa4b0e5eee623995631a56395875244a6fde886a61116277cf0d"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 22619467,
+          "sha256": "846ae23a309fd3dab90b030f4f7dd0d66f808f499b363f4c0f55bc8ea2d57dc2"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 2887285,
+          "sha256": "cd9d47a78ca01238af81bf353e4f0190c9fde190ec7292d8a4e4c11f864e0489"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 218,
+          "findings": 23,
+          "keys": 5,
+          "endpoints": 119,
+          "displayed_address_rows": 120,
+          "config": 12,
+          "api_calls": 0,
+          "api_paths": 15,
+          "baseline_counts": {
+            "files": 136,
+            "findings": 23,
+            "keys": 5,
+            "endpoints": 113,
+            "calls": 0,
+            "paths": 15
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 2,
+          "complete_pem_matches": 2,
+          "candidate_address_reference": 110,
+          "candidate_address_matches": 85,
+          "template_reference": 19,
+          "template_matches": 19,
+          "displayed_url_templates": 20,
+          "manually_selected_sdk_configuration_reference": 1,
+          "manually_selected_sdk_configuration_matches": 1,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 11
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 4,
+              "pem_body_equivalent": 2
+            },
+            "keys": {
+              "literal_exact": 4,
+              "pem_body_equivalent": 2
+            },
+            "endpoints": {
+              "literal_exact": 129
+            },
+            "config": {
+              "literal_exact": 13
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 95309,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 116,
+            "string_members": 341,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 13,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 13,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 17,
+            "pattern_line_limit": 600,
+            "strings_files": 22,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 53,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 313,
+          "findings": 26,
+          "keys": 5,
+          "endpoints": 119,
+          "displayed_address_rows": 120,
+          "config": 13,
+          "api_calls": 4,
+          "api_paths": 15,
+          "baseline_counts": {
+            "files": 231,
+            "findings": 26,
+            "keys": 5,
+            "endpoints": 113,
+            "calls": 4,
+            "paths": 15
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 2,
+          "complete_pem_matches": 2,
+          "candidate_address_reference": 110,
+          "candidate_address_matches": 85,
+          "template_reference": 19,
+          "template_matches": 19,
+          "displayed_url_templates": 20,
+          "manually_selected_sdk_configuration_reference": 1,
+          "manually_selected_sdk_configuration_matches": 1,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "known_service_configuration": 11
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 4,
+              "pem_body_equivalent": 2
+            },
+            "keys": {
+              "literal_exact": 4,
+              "pem_body_equivalent": 2
+            },
+            "endpoints": {
+              "literal_exact": 130
+            },
+            "config": {
+              "literal_exact": 14
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 100322,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 116,
+            "string_members": 341,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 13,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 13,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 95,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 48,
+            "pattern_line_limit": 600,
+            "strings_files": 22,
+            "decompiled_files": 95
+          }
+        }
+      }
+    },
+    {
+      "app": "07_Qi_PhonePay",
+      "input_apks": 4,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 62166214,
+          "sha256": "7f8d4b705a09056259b9014aa80a2e8443bcd9e0e425d594b5cb36c1c09b34e3"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 65581877,
+          "sha256": "f4712c6a059c6489b8c93ae28393fe73ba7cb63ee7b5ace9fc0dea61f5b41ca7"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 82329,
+          "sha256": "402e79432f58d1915b022a670d53bac95cf1f592d51a8b6743572c6b8540bd83"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 363414,
+          "sha256": "635c9184c6b9adc3a40159dfd0d96255e2c1c94d7d3f6bd0a1166bb320bf20de"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 45,
+          "findings": 13,
+          "keys": 1,
+          "endpoints": 1773,
+          "displayed_address_rows": 1773,
+          "config": 0,
+          "api_calls": 0,
+          "api_paths": 1,
+          "baseline_counts": {
+            "files": 43,
+            "findings": 13,
+            "keys": 1,
+            "endpoints": 1772,
+            "calls": 0,
+            "paths": 1
+          },
+          "provider_format_reference": 0,
+          "provider_format_matches": 0,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 1,
+          "complete_pem_matches": 1,
+          "candidate_address_reference": 38,
+          "candidate_address_matches": 31,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {},
+          "source_location_checks": {
+            "secret_hits": {
+              "pem_body_equivalent": 1
+            },
+            "keys": {
+              "pem_body_equivalent": 1
+            },
+            "endpoints": {
+              "literal_exact": 1791
+            },
+            "config": {}
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 91080,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 21,
+            "string_members": 36,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 6,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 6,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 5,
+            "pattern_line_limit": 600,
+            "strings_files": 13,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 54,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 72,
+          "findings": 13,
+          "keys": 1,
+          "endpoints": 1773,
+          "displayed_address_rows": 1773,
+          "config": 0,
+          "api_calls": 3,
+          "api_paths": 1,
+          "baseline_counts": {
+            "files": 70,
+            "findings": 13,
+            "keys": 1,
+            "endpoints": 1772,
+            "calls": 3,
+            "paths": 1
+          },
+          "provider_format_reference": 0,
+          "provider_format_matches": 0,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 1,
+          "complete_pem_matches": 1,
+          "candidate_address_reference": 38,
+          "candidate_address_matches": 31,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {},
+          "source_location_checks": {
+            "secret_hits": {
+              "pem_body_equivalent": 1
+            },
+            "keys": {
+              "pem_body_equivalent": 1
+            },
+            "endpoints": {
+              "literal_exact": 1791
+            },
+            "config": {}
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 92894,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 21,
+            "string_members": 36,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 6,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 6,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 27,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 8,
+            "pattern_line_limit": 600,
+            "strings_files": 13,
+            "decompiled_files": 27
+          }
+        }
+      }
+    },
+    {
+      "app": "08_SuperQi",
+      "input_apks": 3,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 125634812,
+          "sha256": "ebe8371565354cc421ae2f637deb72fe78d0fbb8d12a57e083874da4292095ed"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 125790047,
+          "sha256": "9416efdf5e5e70cee2f60be3e74f435063d6433ae4bb0256bb087ccff600ce8e"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 1128134,
+          "sha256": "7bdfbdfb1ab602503b8701e7785d590395ec33aadf75306006ba1455b7e2de43"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "932c86c432161eab67b880d412bc93e44d126351bf9c16df6a768efeac5d373f",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 314,
+          "findings": 46,
+          "keys": 2,
+          "endpoints": 278,
+          "displayed_address_rows": 278,
+          "config": 8,
+          "api_calls": 0,
+          "api_paths": 52,
+          "baseline_counts": {
+            "files": 232,
+            "findings": 46,
+            "keys": 2,
+            "endpoints": 273,
+            "calls": 0,
+            "paths": 52
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 264,
+          "candidate_address_matches": 230,
+          "template_reference": 13,
+          "template_matches": 13,
+          "displayed_url_templates": 13,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 7
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 3
+            },
+            "keys": {
+              "literal_exact": 3
+            },
+            "endpoints": {
+              "literal_exact": 333
+            },
+            "config": {
+              "literal_exact": 10
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 375689,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 1000000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 118,
+            "string_members": 499,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 20,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 20,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 36,
+            "pattern_line_limit": 600,
+            "strings_files": 30,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 63,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "932c86c432161eab67b880d412bc93e44d126351bf9c16df6a768efeac5d373f",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 514,
+          "findings": 47,
+          "keys": 2,
+          "endpoints": 278,
+          "displayed_address_rows": 278,
+          "config": 9,
+          "api_calls": 1,
+          "api_paths": 52,
+          "baseline_counts": {
+            "files": 432,
+            "findings": 47,
+            "keys": 2,
+            "endpoints": 273,
+            "calls": 1,
+            "paths": 52
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 264,
+          "candidate_address_matches": 230,
+          "template_reference": 13,
+          "template_matches": 13,
+          "displayed_url_templates": 13,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "known_service_configuration": 7
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 3
+            },
+            "keys": {
+              "literal_exact": 3
+            },
+            "endpoints": {
+              "literal_exact": 336
+            },
+            "config": {
+              "literal_exact": 12
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 393425,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 1000000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 118,
+            "string_members": 499,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 20,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 20,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 3,
+          "member_statuses": {
+            "read": 3
+          },
+          "java_decompiled_files": 200,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 238,
+            "pattern_line_limit": 600,
+            "strings_files": 30,
+            "decompiled_files": 200
+          }
+        }
+      }
+    },
+    {
+      "app": "09_SNTAT",
+      "input_apks": 4,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 33631718,
+          "sha256": "2d24e0fdd41f4c6e6dbc247c6997a1c8b64473144c38e74a224716146aa0adfd"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 12739159,
+          "sha256": "e5a8a566348c8a6ff06146bb01f413f283d24996520ffbc747998ab2996709ad"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 57753,
+          "sha256": "20f92cc0c306b380e31adc0ae1afdb36e9f23e1ec5db866d0d7e8cbe47286415"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 36679836,
+          "sha256": "f5c5864f02735c233ffc0f4c91cd421ab1eaefe25b4a406abb7bd28950f30e77"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 65,
+          "findings": 25,
+          "keys": 1,
+          "endpoints": 99,
+          "displayed_address_rows": 99,
+          "config": 8,
+          "api_calls": 0,
+          "api_paths": 312,
+          "baseline_counts": {
+            "files": 61,
+            "findings": 25,
+            "keys": 1,
+            "endpoints": 96,
+            "calls": 0,
+            "paths": 312
+          },
+          "provider_format_reference": 1,
+          "provider_format_matches": 1,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 83,
+          "candidate_address_matches": 71,
+          "template_reference": 5,
+          "template_matches": 5,
+          "displayed_url_templates": 6,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 7
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 2
+            },
+            "keys": {
+              "literal_exact": 2
+            },
+            "endpoints": {
+              "literal_exact": 104
+            },
+            "config": {
+              "literal_exact": 9
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 61120,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 34,
+            "string_members": 80,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 3,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 3,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 2,
+            "pattern_line_limit": 600,
+            "strings_files": 6,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 56,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 869,
+          "findings": 25,
+          "keys": 1,
+          "endpoints": 99,
+          "displayed_address_rows": 99,
+          "config": 9,
+          "api_calls": 379,
+          "api_paths": 319,
+          "baseline_counts": {
+            "files": 865,
+            "findings": 25,
+            "keys": 1,
+            "endpoints": 96,
+            "calls": 379,
+            "paths": 319
+          },
+          "provider_format_reference": 1,
+          "provider_format_matches": 1,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 83,
+          "candidate_address_matches": 71,
+          "template_reference": 5,
+          "template_matches": 5,
+          "displayed_url_templates": 6,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "known_service_configuration": 7
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 2
+            },
+            "keys": {
+              "literal_exact": 2
+            },
+            "endpoints": {
+              "literal_exact": 151
+            },
+            "config": {
+              "literal_exact": 10
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 112768,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 34,
+            "string_members": 80,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 3,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 3,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 804,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 148,
+            "pattern_line_limit": 600,
+            "strings_files": 6,
+            "decompiled_files": 804
+          }
+        }
+      }
+    },
+    {
+      "app": "10_Ministry_of_Communications",
+      "input_apks": 4,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 3944796,
+          "sha256": "6fe2d489b1ca95d53b876b41b0c4ddbb23f690ef57e20478acdacb07b72d945d"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 19260046,
+          "sha256": "f117a1e3a6d0af4017c48d09a81bb50e54c5d9cddb98b0ea99ffe4ac7aa8447e"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 61849,
+          "sha256": "60da16f3e9e762e5ff8db4a79e2bdcaf19a5997cd9725ed67986fe3d8d1ebfd2"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 128650,
+          "sha256": "7109d13c8153618a45e32e1410f60a2cfbcf1eb43aec73dd600d4e78298af654"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 26,
+          "findings": 7,
+          "keys": 0,
+          "endpoints": 6,
+          "displayed_address_rows": 6,
+          "config": 0,
+          "api_calls": 0,
+          "api_paths": 0,
+          "baseline_counts": {
+            "files": 25,
+            "findings": 7,
+            "keys": 0,
+            "endpoints": 6,
+            "calls": 0,
+            "paths": 0
+          },
+          "provider_format_reference": 0,
+          "provider_format_matches": 0,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 10,
+          "candidate_address_matches": 5,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {},
+          "source_location_checks": {
+            "secret_hits": {},
+            "keys": {},
+            "endpoints": {
+              "literal_exact": 6
+            },
+            "config": {}
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 12947,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 1,
+            "string_members": 1,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 4,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 3,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 0,
+            "pattern_line_limit": 600,
+            "strings_files": 5,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 57,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 41,
+          "findings": 7,
+          "keys": 0,
+          "endpoints": 6,
+          "displayed_address_rows": 6,
+          "config": 0,
+          "api_calls": 0,
+          "api_paths": 0,
+          "baseline_counts": {
+            "files": 40,
+            "findings": 7,
+            "keys": 0,
+            "endpoints": 6,
+            "calls": 0,
+            "paths": 0
+          },
+          "provider_format_reference": 0,
+          "provider_format_matches": 0,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 10,
+          "candidate_address_matches": 5,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {},
+          "source_location_checks": {
+            "secret_hits": {},
+            "keys": {},
+            "endpoints": {
+              "literal_exact": 6
+            },
+            "config": {}
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 13142,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 1,
+            "string_members": 1,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 4,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 3,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 15,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 0,
+            "pattern_line_limit": 600,
+            "strings_files": 5,
+            "decompiled_files": 15
+          }
+        }
+      }
+    },
+    {
+      "app": "11_UrukTech",
+      "input_apks": 5,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 16934102,
+          "sha256": "6e8ae2933c5ae2558b341329ff7b1bd54feb7e98e410ccfbc3b950e9f7337e9e"
+        },
+        {
+          "name": "split_config.ar.apk",
+          "size": 24985,
+          "sha256": "fbffbe179af3024ae8b6cd30bf8263210ed247a01a5c2515e10316d8fc242e7e"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 29135731,
+          "sha256": "ac67b37e74088f7a90aa57baa499f20851c42443f2f9c6666e35d871fef89cc7"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 37273,
+          "sha256": "9c62e1e6129ce33976e823859d15ae52154ae13b91e52e702c156409a8176db9"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 693121,
+          "sha256": "e958fa5accafa49e857c7bfa171132f8043266ca8819ed86e1adcbc7c901ce51"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 31,
+          "findings": 15,
+          "keys": 2,
+          "endpoints": 18,
+          "displayed_address_rows": 18,
+          "config": 3,
+          "api_calls": 0,
+          "api_paths": 12,
+          "baseline_counts": {
+            "files": 29,
+            "findings": 14,
+            "keys": 1,
+            "endpoints": 18,
+            "calls": 0,
+            "paths": 12
+          },
+          "provider_format_reference": 1,
+          "provider_format_matches": 1,
+          "external_encoded_provider_reference": 1,
+          "external_encoded_provider_matches": 1,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 19,
+          "candidate_address_matches": 13,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "known_service_configuration": 3
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 2
+            },
+            "keys": {
+              "literal_exact": 2
+            },
+            "endpoints": {
+              "literal_exact": 18
+            },
+            "config": {
+              "literal_exact": 3
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {
+            "independent_base64_roundtrip_exact": 1
+          },
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 34702,
+            "decoded_files": 1,
+            "decoded_bytes": 39,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 2,
+            "string_members": 2,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 7,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 6,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 6,
+            "pattern_line_limit": 600,
+            "strings_files": 7,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 58,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 76,
+          "findings": 15,
+          "keys": 2,
+          "endpoints": 18,
+          "displayed_address_rows": 18,
+          "config": 3,
+          "api_calls": 0,
+          "api_paths": 12,
+          "baseline_counts": {
+            "files": 74,
+            "findings": 14,
+            "keys": 1,
+            "endpoints": 18,
+            "calls": 0,
+            "paths": 12
+          },
+          "provider_format_reference": 1,
+          "provider_format_matches": 1,
+          "external_encoded_provider_reference": 1,
+          "external_encoded_provider_matches": 1,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 19,
+          "candidate_address_matches": 13,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "known_service_configuration": 3
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 2
+            },
+            "keys": {
+              "literal_exact": 2
+            },
+            "endpoints": {
+              "literal_exact": 18
+            },
+            "config": {
+              "literal_exact": 3
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {
+            "independent_base64_roundtrip_exact": 1
+          },
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 36024,
+            "decoded_files": 1,
+            "decoded_bytes": 39,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 2,
+            "string_members": 2,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 7,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 6,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 45,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 6,
+            "pattern_line_limit": 600,
+            "strings_files": 7,
+            "decompiled_files": 45
+          }
+        }
+      }
+    },
+    {
+      "app": "13_Taqaudi",
+      "input_apks": 4,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 47203283,
+          "sha256": "d0d3c35306c43095f5ebabb1d27bd2a41256f02d0e3aaa49a59f7990ca0104e4"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 6956053,
+          "sha256": "ec3f96b8da941b713478c081b543290bf3b24fb498bae70c6bfb5ac4da14dc2a"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 57753,
+          "sha256": "19117f8b0aed5611f01de69cf0a6351f356b1b2a7de84ce1357cc0f3db031df8"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 87636,
+          "sha256": "7516100cf8205a73867578d48bebf22ec0d4efe8138df9231f94bfceb96a8405"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 50,
+          "findings": 13,
+          "keys": 2,
+          "endpoints": 52,
+          "displayed_address_rows": 52,
+          "config": 9,
+          "api_calls": 0,
+          "api_paths": 1,
+          "baseline_counts": {
+            "files": 48,
+            "findings": 13,
+            "keys": 2,
+            "endpoints": 52,
+            "calls": 0,
+            "paths": 1
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 52,
+          "candidate_address_matches": 29,
+          "template_reference": 1,
+          "template_matches": 1,
+          "displayed_url_templates": 1,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 8
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 3
+            },
+            "keys": {
+              "literal_exact": 3
+            },
+            "endpoints": {
+              "literal_exact": 65
+            },
+            "config": {
+              "literal_exact": 11
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 86903,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 38,
+            "string_members": 174,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 9,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 9,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 6,
+            "pattern_line_limit": 600,
+            "strings_files": 13,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 59,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 281,
+          "findings": 13,
+          "keys": 2,
+          "endpoints": 52,
+          "displayed_address_rows": 52,
+          "config": 10,
+          "api_calls": 4,
+          "api_paths": 1,
+          "baseline_counts": {
+            "files": 279,
+            "findings": 13,
+            "keys": 2,
+            "endpoints": 52,
+            "calls": 4,
+            "paths": 1
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 52,
+          "candidate_address_matches": 29,
+          "template_reference": 1,
+          "template_matches": 1,
+          "displayed_url_templates": 1,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 2,
+            "known_service_configuration": 8
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 3
+            },
+            "keys": {
+              "literal_exact": 3
+            },
+            "endpoints": {
+              "literal_exact": 69
+            },
+            "config": {
+              "literal_exact": 12
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 103167,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 38,
+            "string_members": 174,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 9,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 9,
+          "native_libraries_metadata_only": 0,
+          "native_libraries_omitted": 0,
+          "members": 4,
+          "member_statuses": {
+            "read": 4
+          },
+          "java_decompiled_files": 231,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 25,
+            "pattern_line_limit": 600,
+            "strings_files": 13,
+            "decompiled_files": 231
+          }
+        }
+      }
+    },
+    {
+      "app": "14_alwatani",
+      "input_apks": 5,
+      "same_input_hashes_as_previous_audit": true,
+      "inputs": [
+        {
+          "name": "base.apk",
+          "size": 58147907,
+          "sha256": "4f3cbf2f209323da9c2bc7779b541edb9c56dd3fc82b424a8eab135574704a7e"
+        },
+        {
+          "name": "split_config.ar.apk",
+          "size": 28882,
+          "sha256": "948adfe51c8fde4bf2787e6cccbc7bc9b83da10ff16403e7c93b5aeca6403b82"
+        },
+        {
+          "name": "split_config.arm64_v8a.apk",
+          "size": 13468516,
+          "sha256": "c707b2f7c6664aa4e39cf6c716af72df11f6423308a936d461acecaa87682008"
+        },
+        {
+          "name": "split_config.en.apk",
+          "size": 78034,
+          "sha256": "605720a0cab1af96515aa77b4f64aa2ed8452f8e9b5892261eabf3d6401cee16"
+        },
+        {
+          "name": "split_config.xxxhdpi.apk",
+          "size": 66138,
+          "sha256": "f20746de675617080c7f9e7c98cc6db838622fb438e8dbe0119ae760bf6e6ae8"
+        }
+      ],
+      "reference_entry_read_limits": 0,
+      "phases": {
+        "updated": {
+          "status": "ok",
+          "archive_scan_id": null,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": false,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 40,
+          "findings": 36,
+          "keys": 2,
+          "endpoints": 128,
+          "displayed_address_rows": 128,
+          "config": 6,
+          "api_calls": 6,
+          "api_paths": 82,
+          "baseline_counts": {
+            "files": 39,
+            "findings": 36,
+            "keys": 2,
+            "endpoints": 127,
+            "calls": 6,
+            "paths": 82
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 113,
+          "candidate_address_matches": 94,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 5
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 2
+            },
+            "keys": {
+              "literal_exact": 2
+            },
+            "endpoints": {
+              "literal_exact": 141
+            },
+            "config": {
+              "literal_exact": 6
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 72483,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 26,
+            "string_members": 62,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 9,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 8,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 0,
+          "java_decompilation_limits": {
+            "file_limit": null,
+            "time_limit_seconds": null
+          },
+          "java_decompilation_cache_reused": false,
+          "java_decompilation_original_status_available": true,
+          "analysis_coverage": {
+            "pattern_long_lines": 10,
+            "pattern_line_limit": 600,
+            "strings_files": 12,
+            "decompiled_files": 0
+          }
+        },
+        "deep": {
+          "status": "ok",
+          "archive_scan_id": 60,
+          "scan_identity": {
+            "schema": 1,
+            "detectors_sha256": "d8f697b9e39f83284b7db0e0182f2b3ce0ae36b914bde58312958063f44aea7e",
+            "apk_tools": true,
+            "ml": false,
+            "llm": false,
+            "feedback": false
+          },
+          "files": 77,
+          "findings": 36,
+          "keys": 2,
+          "endpoints": 128,
+          "displayed_address_rows": 128,
+          "config": 6,
+          "api_calls": 6,
+          "api_paths": 82,
+          "baseline_counts": {
+            "files": 76,
+            "findings": 36,
+            "keys": 2,
+            "endpoints": 127,
+            "calls": 6,
+            "paths": 82
+          },
+          "provider_format_reference": 2,
+          "provider_format_matches": 2,
+          "external_encoded_provider_reference": 0,
+          "external_encoded_provider_matches": 0,
+          "complete_pem_reference": 0,
+          "complete_pem_matches": 0,
+          "candidate_address_reference": 113,
+          "candidate_address_matches": 94,
+          "template_reference": 0,
+          "template_matches": 0,
+          "displayed_url_templates": 0,
+          "manually_selected_sdk_configuration_reference": 0,
+          "manually_selected_sdk_configuration_matches": 0,
+          "configuration_classifications": {
+            "credential_candidate": 1,
+            "known_service_configuration": 5
+          },
+          "source_location_checks": {
+            "secret_hits": {
+              "literal_exact": 2
+            },
+            "keys": {
+              "literal_exact": 2
+            },
+            "endpoints": {
+              "literal_exact": 141
+            },
+            "config": {
+              "literal_exact": 6
+            }
+          },
+          "source_location_issues": 0,
+          "derived_evidence_source_checks": {},
+          "derived_evidence_source_issues": 0,
+          "base64_coverage": {
+            "candidates_checked": 73638,
+            "decoded_files": 0,
+            "decoded_bytes": 0,
+            "limits_reached": [],
+            "max_candidates": 200000,
+            "max_files": 2000,
+            "max_decoded_bytes": 4194304,
+            "max_token_characters": 16384,
+            "max_depth": 2
+          },
+          "inventory_limits": {},
+          "complex_resources": {
+            "resources_with_string_members": 26,
+            "string_members": 62,
+            "scope": "Literal string members of arrays, plurals and styles in every configuration"
+          },
+          "native_string_coverage": {
+            "abis": [
+              "arm64-v8a"
+            ],
+            "libraries_present": 9,
+            "scope": "ASCII strings, all application native ABIs; engine/validation libraries metadata only"
+          },
+          "native_libraries_read": 8,
+          "native_libraries_metadata_only": 1,
+          "native_libraries_omitted": 0,
+          "members": 5,
+          "member_statuses": {
+            "read": 5
+          },
+          "java_decompiled_files": 37,
+          "java_decompilation_limits": {
+            "file_limit": 2000,
+            "time_limit_seconds": 300
+          },
+          "java_decompilation_cache_reused": true,
+          "java_decompilation_original_status_available": false,
+          "analysis_coverage": {
+            "pattern_long_lines": 11,
+            "pattern_line_limit": 600,
+            "strings_files": 12,
+            "decompiled_files": 37
+          }
+        }
+      }
+    }
+  ],
+  "totals": {
+    "updated": {
+      "files": 1276,
+      "findings": 317,
+      "keys": 26,
+      "endpoints": 3451,
+      "displayed_address_rows": 3452,
+      "config": 106,
+      "api_calls": 36,
+      "api_paths": 905,
+      "provider_format_reference": 20,
+      "provider_format_matches": 20,
+      "external_encoded_provider_reference": 1,
+      "external_encoded_provider_matches": 1,
+      "complete_pem_reference": 4,
+      "complete_pem_matches": 4,
+      "candidate_address_reference": 1454,
+      "candidate_address_matches": 1262,
+      "template_reference": 87,
+      "template_matches": 87,
+      "manually_selected_sdk_configuration_reference": 9,
+      "manually_selected_sdk_configuration_matches": 9,
+      "source_location_issues": 0,
+      "derived_evidence_source_issues": 0,
+      "java_decompiled_files": 0,
+      "completed_apps": 12
+    },
+    "deep": {
+      "files": 3964,
+      "findings": 328,
+      "keys": 26,
+      "endpoints": 3451,
+      "displayed_address_rows": 3452,
+      "config": 112,
+      "api_calls": 573,
+      "api_paths": 1014,
+      "provider_format_reference": 20,
+      "provider_format_matches": 20,
+      "external_encoded_provider_reference": 1,
+      "external_encoded_provider_matches": 1,
+      "complete_pem_reference": 4,
+      "complete_pem_matches": 4,
+      "candidate_address_reference": 1454,
+      "candidate_address_matches": 1262,
+      "template_reference": 87,
+      "template_matches": 87,
+      "manually_selected_sdk_configuration_reference": 9,
+      "manually_selected_sdk_configuration_matches": 9,
+      "source_location_issues": 0,
+      "derived_evidence_source_issues": 0,
+      "java_decompiled_files": 2688,
+      "completed_apps": 12
+    }
+  },
+  "verification": {
+    "apps": 12,
+    "phases": {
+      "updated": 12,
+      "deep": 12
+    },
+    "complete_requested_phases": true,
+    "location_issues": 0,
+    "derived_source_issues": 0,
+    "input_hashes_match": true
+  }
+}

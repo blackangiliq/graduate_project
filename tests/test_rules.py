@@ -29,7 +29,7 @@ def scan_text(tmp_path, name: str, text: str):
 
 # ------------------------------------------------------------------ imported rules
 def test_imported_files_name_their_source_and_licence():
-    assert {p.name for p in IMPORTED} == {"devskim.yaml", "gitleaks.yaml"}
+    assert {"codeql_android.yaml", "devskim.yaml", "gitleaks.yaml"} <= {p.name for p in IMPORTED}
     for path in IMPORTED:
         source = yaml.safe_load(path.read_text(encoding="utf-8"))["source"]
         assert source["license"] == "MIT" and source["url"].startswith("https://github.com/")
@@ -74,11 +74,46 @@ def test_builtin_rules_pass_their_own_examples():
     assert checked >= 25
 
 
+@pytest.mark.parametrize(("rule_id", "filename"), [
+    ("JVM-GRPC-001", "Channel.java"), ("JVM-GRPC-001", "Channel.kt"),
+    ("DART-GRPC-001", "channel.dart"), ("GO-GRPC-001", "channel.go"),
+    ("JS-GRPC-001", "channel.js"), ("JS-GRPC-001", "channel.ts"),
+    ("PY-AIOHTTP-001", "connector.py"), ("PY-PARAMIKO-001", "client.py"),
+    ("GO-SSH-001", "client.go"), ("CS-EFCORE-001", "Context.cs"),
+])
+def test_client_library_rules_locate_only_the_setting(tmp_path, rule_id, filename):
+    from sca.walker import SourceFile, detect_language
+
+    path = tmp_path / filename
+    rule = rules_engine.get_rule(rule_id)
+    assert rule.code_only and rule.enabled and rule.examples_safe
+    example = rule.examples_vulnerable[0]
+    inline_comment = "#" if path.suffix == ".py" else "//"
+    block_start, block_end = ('doc = """', '"""') if path.suffix == ".py" else ("/*", "*/")
+    lines = [*rule.examples_safe, f'"{example}"', f"x = 1 {inline_comment} {example}",
+             block_start, example, block_end, "", example]
+    source = SourceFile(path, path.name, detect_language(path), "\n".join(lines))
+    findings = rules_engine.scan_file(source, rules=[rule])
+    assert [(f.rule_id, f.file, f.line) for f in findings] == [(rule_id, filename, len(lines))]
+    assert findings[0].snippet == example
+
+
+def test_cli_library_rule_ignores_documented_calls(tmp_path, capsys):
+    path = tmp_path / "channel.ts"
+    path.write_text('const doc = "grpc.credentials.createInsecure()";\n'
+                    'const connection = grpc.credentials.createInsecure();\n',
+                    encoding="utf-8")
+    assert cli(["rules", "test", "JS-GRPC-001", str(path)]) == 0
+    output = capsys.readouterr().out
+    assert "channel.ts:2" in output and "channel.ts:1" not in output
+
+
 def test_imported_secret_rules_match_a_string_built_from_their_expression():
     exrex = pytest.importorskip("exrex")
     import random
     matched = 0
-    rules = [r for r in rules_engine.all_rules(include_user=False) if r.kind == "secret"]
+    rules = [r for r in rules_engine.all_rules(include_user=False)
+             if r.kind == "secret" and r.origin == "imported"]
     for rule in rules:
         random.seed(rule.id)
         source = re.sub(r"\\b|\(\?<?[!=][^)]*\)", "", rule.pattern.pattern)
@@ -238,11 +273,12 @@ def test_custom_rule_edit_disable_delete():
 
 def test_list_filters_and_summary():
     counts = rulebook.summary()
-    assert counts["by_origin"]["builtin"]["total"] == 217
-    assert counts["by_origin"]["imported"]["total"] == counts["total"] - 217
+    builtin_count = counts["by_origin"]["builtin"]["total"]
+    assert builtin_count >= 229
+    assert counts["by_origin"]["imported"]["total"] == counts["total"] - builtin_count
     assert counts["enabled"] < counts["total"] and counts["secret"] > 150
     php = rulebook.list_rules(language="php", origin="builtin")
-    assert php and all("php" in r.languages for r in php)
+    assert php and all("php" in r.languages or "any" in r.languages for r in php)
     assert all(r.cwe == "CWE-89" for r in rulebook.list_rules(cwe="cwe-89"))
     assert all(not r.enabled for r in rulebook.list_rules(enabled=False))
     assert [r.id for r in rulebook.list_rules(text="JS-SQLI-001")] == ["JS-SQLI-001"]

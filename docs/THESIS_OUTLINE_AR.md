@@ -321,6 +321,6 @@
 ## الملاحق
 
 - **ملحق أ**: دليل التنصيب والاستخدام (من `GUIDE_AR.md`).
-- **ملحق ب**: قائمة القواعد المدمجة الـ 217 (من `sca/rules/`) والقواعد المستوردة الـ 300 مع سجل فحصها (من `sca/rules/imported/` و `evaluation/import_report.json`) والقواعد التي تعلّمتها المنصة عندك (من `learned/rules.yaml`)، وجدول الفحوص البنيوية الـ 49 لتطبيقات Flutter و Android (من `docs/FLUTTER_AR.md`).
+- **ملحق ب**: قائمة القواعد المدمجة الـ 217 (من `sca/rules/`) والقواعد المستوردة الـ 300 مع سجل فحصها (من `sca/rules/imported/` و `evaluation/import_report.json`) والقواعد التي تعلّمتها المنصة عندك (من `learned/rules.yaml`)، وجدول الفحوص البنيوية الـ 52 لتطبيقات Flutter و Android (من `docs/FLUTTER_AR.md`).
 - **ملحق ج**: نصوص التعليمات المرسلة للنموذج اللغوي (من `sca/ai/llm.py` و `sca/learn/propose.py`).
 - **ملحق د**: نموذج تقرير كامل.

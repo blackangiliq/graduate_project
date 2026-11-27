@@ -1517,20 +1517,25 @@ rules:
   examples_safe: []
 - id: DEVSKIM-DS187371
   source: DS187371
-  title: A weak cipher mode of operation was used
+  title: Explicit symmetric encryption in ECB mode
   languages:
   - any
   cwe: CWE-327
   severity: medium
   confidence: 0.55
-  pattern: '\b(?:(ECB|OFB|CFB|CTS|PCBC|GMAC|XCBC|IACBC|IAPM|EAX|OCB|CWC|AEAD|LRW|XEX|XTS|CMC|EME|CBCMAC|OMAC|PMAC))\b'
-  message: A potentially weak cipher mode of operation was used.
-  fix: Consider using CBC, CTR, or GCM.
+  pattern: '\bCipherMode\s*\.\s*ECB\b|["\x27](?i:(?:AES|DES|DESede|Blowfish|RC2)/ECB/[A-Za-z0-9][A-Za-z0-9_-]*)["\x27]'
+  message: An explicit symmetric ECB setting is present. ECB can expose repeated plaintext patterns; review whether this configuration is used for sensitive data. RSA transformation names are not classified as symmetric ECB.
+  fix: Use an appropriate authenticated encryption construction, such as AES-GCM with correct nonce management, and review the surrounding key and data handling.
   examples_vulnerable:
   - tdes.Mode = CipherMode.ECB;
-  examples_safe: []
+  - 'Cipher.getInstance("AES/ECB/PKCS5Padding");'
+  examples_safe:
+  - 'Cipher.getInstance("RSA/ECB/PKCS1Padding");'
+  - 'Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");'
+  - 'Cipher.getInstance("AES/GCM/NoPadding");'
+  - 'int EAX = 0; String modeName = "AEAD";'
   enabled: false
-  note: 'Checked by hand on real code: its short cipher-mode names (EAX, CTS, ...) also match unrelated identifiers such as CPU register names.'
+  note: 'Local precision adaptation on 2026-11-27 of DevSkim DS187371 at commit 6997e759b48d9fed457b5399b4e89681e6a4dcd4 (MIT). The original word-only cipher-mode expression matched RSA transformation names, valid authenticated modes and unrelated identifiers. Restricted to explicit symmetric ECB settings; RSA is excluded by each match rather than excluding an entire line. The shipped disabled flag and user enable overrides are preserved.'
 - id: DEVSKIM-DS182720
   source: DS182720
   title: A weak cipher mode of operation was used

@@ -2,3 +2,5 @@
 # stored with Windows line endings so that the ZIP download runs as-is
 *.bat -text
 *.sh text eol=lf
+# Frida packages contain byte-counted sections; CRLF conversion corrupts offsets.
+sca/dynamic/agent/observer.bundle.js -text

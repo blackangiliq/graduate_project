@@ -32,6 +32,7 @@ A rule looks like this:
       near: '<optional expression>'  # the rule only fires if this matches a neighbouring line
       within: 5                      # ... at most this many lines above or below (default 5)
       requires_taint: false          # true = report only when user input is traced to the line
+      code_only: false               # require the pattern in code outside comments and strings
       examples_vulnerable: [...]     # optional lines the rule must match
       examples_safe: [...]           # optional lines the rule must not match
 
@@ -61,7 +62,7 @@ ORIGINS = ("builtin", "imported", "learned", "custom")
 # the fields a user may change through learned/edits.yaml
 EDITABLE = ("title", "languages", "files", "cwe", "severity", "confidence", "pattern",
             "exclude", "ignore_case", "message", "fix", "enabled", "near", "within",
-            "requires_taint")
+            "requires_taint", "code_only")
 DEFAULT_WITHIN = 5
 # text that is not code: the strings dump of a binary, the stand-in for a binary file
 SKIPPED_ORIGINS = ("strings", "placeholder")
@@ -104,6 +105,7 @@ class Rule:
     near: Optional["re.Pattern[str]"] = None      # must match a line close to the match
     within: int = DEFAULT_WITHIN                  # how close, in lines
     requires_taint: bool = False                  # only report when input is traced
+    code_only: bool = False                       # ignore calls quoted in strings or comments
     files: List[str] = field(default_factory=list)  # only files matching these patterns
 
     def applies_to(self, rel: str) -> bool:
@@ -146,7 +148,7 @@ class Rule:
             "examples_vulnerable": list(self.examples_vulnerable),
             "examples_safe": list(self.examples_safe), "file": self.file,
             "near": self.near.pattern if self.near else "", "within": self.within,
-            "requires_taint": self.requires_taint,
+            "requires_taint": self.requires_taint, "code_only": self.code_only,
         }
 
     def near_ok(self, lines: List[str], number: int) -> bool:
@@ -205,6 +207,7 @@ def parse_rule(raw: Dict, origin: str = "builtin", meta: Optional[Dict] = None,
         near=re.compile(raw["near"], flags) if raw.get("near") else None,
         within=max(0, min(60, int(raw.get("within", DEFAULT_WITHIN) or 0))),
         requires_taint=bool(raw.get("requires_taint")),
+        code_only=bool(raw.get("code_only")),
         files=file_patterns(raw.get("files")),
     )
 
@@ -365,6 +368,9 @@ def rules_for(language: str, rules: Optional[List[Rule]] = None,
             and r.enabled and r.kind == "pattern"]
 
 
+_ASSIGNED_PYTHON_STRING = re.compile(r"""^[\w.]+(?:\s*:\s*[\w.]+)?\s*=\s*[rRbBuUfF]*(?P<quote>'''|\"\"\")""")
+
+
 def code_lines(sf: SourceFile) -> Iterable[Tuple[int, str]]:
     """Yield (line number, text) for the lines a rule may be applied to: no blank lines,
     no comments, no over-long (minified) lines."""
@@ -383,6 +389,11 @@ def code_lines(sf: SourceFile) -> Iterable[Tuple[int, str]]:
                 if opener not in stripped.lstrip("rRbBuUfF")[3:]:
                     docstring = opener
                 continue
+            # Otherwise an assigned multiline string's closing delimiter looks like a
+            # new docstring, hiding real statements that follow it.
+            assigned = _ASSIGNED_PYTHON_STRING.match(stripped)
+            if assigned and assigned["quote"] not in stripped[assigned.end():]:
+                docstring = assigned["quote"]
         if not stripped or len(line) > MAX_LINE_LENGTH:
             continue
         if in_block_comment:
@@ -419,6 +430,29 @@ def script_lines(sf: SourceFile) -> Set[int]:
     return lines
 
 
+# Strip documentation and other non-executable text for opt-in library API checks.
+# Retaining line breaks keeps the coordinates in the original file. A literal becomes
+# a sentinel so, for example, a string argument cannot turn into a no-argument call.
+_QUOTES = (
+    r"""'''[\s\S]*?(?:'''|\Z)|""" + r'"""[\s\S]*?(?:"""|\Z)|'
+    r"""'(?:\\.|[^'\\\n])*(?:'|$)|"(?:\\.|[^"\\\n])*(?:"|$)"""
+)
+_C_STYLE_TEXT = re.compile(r'@"(?:[^"]|"")*(?:"|\Z)|' + _QUOTES
+                           + r"|\x60(?:\\[\s\S]|[^\x60\\])*(?:\x60|\Z)"
+                           + r"|//[^\n]*|/\*[\s\S]*?(?:\*/|\Z)", re.MULTILINE)
+_PYTHON_TEXT = re.compile(_QUOTES + r"|\#[^\n]*", re.MULTILINE)
+
+
+def unquoted_code_lines(sf: SourceFile) -> List[str]:
+    """Keep code tokens and line coordinates for rules written against API calls."""
+    pattern = _PYTHON_TEXT if sf.language == "python" else _C_STYLE_TEXT
+
+    def blank(match: re.Match) -> str:
+        return "\0" + "\n" * match[0].count("\n")
+
+    return pattern.sub(blank, "\n".join(sf.lines)).split("\n")
+
+
 def scan_file(sf: SourceFile, disabled: Optional[Set[str]] = None,
               rules: Optional[List[Rule]] = None) -> List[Finding]:
     if sf.origin in SKIPPED_ORIGINS:
@@ -439,12 +473,18 @@ def scan_file(sf: SourceFile, disabled: Optional[Set[str]] = None,
                  and own not in r.languages and "any" not in r.languages}
     scripts = script_lines(sf) if page_only else set()
     findings: List[Finding] = []
+    source_code = None
     for number, line in code_lines(sf):
         for rule in active:
             if rule.id in page_only and number not in scripts:
                 continue
             if not rule.matches(line) or not rule.near_ok(sf.lines, number):
                 continue
+            if rule.code_only:
+                if source_code is None:
+                    source_code = unquoted_code_lines(sf)
+                if not rule.pattern.search(source_code[number - 1]):
+                    continue
             traced = False
             if rule.requires_taint:        # a sink rule: silent unless input reaches the line
                 traced = taint_lite.is_traced(sf, number)

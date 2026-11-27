@@ -870,7 +870,7 @@
 - id: DART-SECRET-003
   kind: secret
   title: Supabase secret key (sb_secret_) in the app
-  languages: [dart]
+  languages: [any]  # format also retained in APK string tables, resources and JVM code
   cwe: CWE-798
   severity: critical
   confidence: 0.85

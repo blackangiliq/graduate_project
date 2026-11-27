@@ -5,23 +5,48 @@ the dashboard and from `evaluation/import_report.json`.
 
 ## The rule set
 
-The tool ships **517 rules, 470 of them active**: 217 built in and
-300 imported from open-source rule sets (253 active). 205 of the
+The tool ships **666 rules, 619 of them active**: 253 built in and
+413 imported from open-source rule sets (366 active). 309 of the
 imported rules are credential formats and run inside the secrets engine. Rules learned from
 the AI and rules you write yourself are added on top.
+
+Counts are generated from the shipped YAML, excluding local enable/disable overrides.
+They count detector definitions, not distinct vulnerabilities or proven coverage. Structural
+Android checks, Python AST analysis and runtime observers are separate from this YAML count.
+See [the 2026-11-27 source review and additions](UPSTREAM_RULES_2026_11_27.md) and
+[the earlier 2026-11-26 expansion](RULE_EXPANSION_2026_11_26.md).
+
+| Shipped pack | Definitions | Enabled by default |
+|---|---:|---:|
+| Built-in YAML / القواعد المدمجة | 253 | 253 |
+| betterleaks.yaml | 80 | 80 |
+| betterleaks_contextual.yaml | 21 | 21 |
+| codeql_android.yaml | 4 | 4 |
+| codeql_android_extended.yaml | 5 | 5 |
+| devskim.yaml | 95 | 49 |
+| gitleaks.yaml | 205 | 204 |
+| gitleaks_compatibility.yaml | 3 | 3 |
 
 ![Rules tab](images/ui-rules.png)
 
 ## Imported rules
 
-The imported rules come from two MIT-licensed projects (licence texts in
-`THIRD_PARTY_NOTICES.md`):
+The imported rule sources use the MIT licence. See [Third-party notices](../THIRD_PARTY_NOTICES.md).
 
 - **Microsoft DevSkim** - regular-expression rules for many languages, each with its own
   "must match" and "must not match" examples.
 - **Gitleaks** - regular expressions for the key and token formats of about 200 services.
+- **Betterleaks** - reviewed prefix and contextual credential detectors; unsupported
+  association/filter requirements are explicitly excluded and no validation code is executed.
+- **GitHub CodeQL** - narrow Android/Java/Kotlin syntax adaptations in two packs.
+  The packs keep the original query identifiers. They are tested independently of the imports
+  below. [CodeQL query documentation](https://codeql.github.com/codeql-query-help/java/)
 
-`tools/import_rules.py` converts them (import of 2026-11-11). A rule is accepted only if it
+### Historical DevSkim/Gitleaks import baseline
+
+The following import and corpus tables describe the 2026-11-11 baseline only. Later packs
+have their own reports and tests linked above; they have not all been evaluated against
+this historical corpus. `tools/import_rules.py` converts DevSkim and Gitleaks. A rule is accepted only if it
 converts to this engine, compiles in Python, finishes on stress lines, passes its own
 examples (DevSkim) or matches a string built from its own expression (Gitleaks), and stays
 silent on the known-safe sample code. Accepted rules were then run on 2,384,751 code lines
@@ -73,25 +98,27 @@ Lines of real code the rules were measured on:
 | sql | 75 |
 | **total** | **2,384,751** |
 
-Active pattern rules per language after the import (Python's main engine is the AST taint
+### Current pattern coverage by language
+
+Active pattern rules per language in the current shipped catalog (Python's main engine is the AST taint
 analysis, so it has few built-in pattern rules):
 
 | Language | Built in | Imported, enabled | Imported, disabled |
 |---|---:|---:|---:|
 | c (+ cpp) | 8 | 9 | 15 |
 | config | 8 | 3 | 1 |
-| csharp | 16 | 13 | 13 |
-| dart | 47 | 0 | 6 |
+| csharp | 18 | 13 | 13 |
+| dart | 51 | 0 | 6 |
 | elixir | 0 | 0 | 6 |
-| go | 12 | 1 | 7 |
+| go | 14 | 1 | 7 |
 | html | 2 | 0 | 6 |
-| java (+ kotlin, scala, groovy) | 31 | 3 | 11 |
-| javascript (+ typescript) | 38 | 2 | 10 |
+| java (+ kotlin, scala, groovy) | 51 | 12 | 11 |
+| javascript (+ typescript) | 39 | 2 | 10 |
 | lua | 0 | 0 | 6 |
 | perl | 0 | 0 | 6 |
 | php | 24 | 7 | 8 |
 | powershell | 3 | 6 | 11 |
-| python | 2 | 6 | 11 |
+| python | 5 | 6 | 11 |
 | ruby | 17 | 2 | 8 |
 | rust | 3 | 1 | 7 |
 | shell | 6 | 3 | 6 |
@@ -110,6 +137,12 @@ A rule is one regular expression that marks a dangerous line, plus the informati
 with the finding. The engine reads each code line (comments and very long generated lines
 are skipped) and reports the line if `pattern` matches and `exclude` does not.
 
+This describes YAML pattern rules, not every analysis engine. A detected setting or
+credential format is evidence to review, not proof of exploitation. Read each rule's
+scope and limitations. The local API inventory and file preview retain full captured
+values and their locations; a runtime-only value is linked to its recorded event unless
+a literal source match has been verified.
+
 | Field | Meaning |
 |---|---|
 | `id` | Unique name, for example `MY-SQLI-001`. |
@@ -124,6 +157,8 @@ are skipped) and reports the line if `pattern` matches and `exclude` does not.
 | `ignore_case` | Match upper and lower case alike. |
 | `near`, `within` | Optional context: the rule fires only if `near` matches a line at most `within` lines above or below. For patterns that are ordinary code on their own. |
 | `requires_taint` | `true` = report only when a variable on the line was filled from user input in the lines above. For rules that name a common function. |
+| `code_only` | Require the API pattern outside quoted text and comments; suitable for call/settings rules that do not need string-literal contents. |
+| `secret_group` | The regex capture group containing the complete credential value; used by `kind: secret` rules. |
 | `message`, `fix` | Optional explanation and advice shown with the finding. |
 | `examples_vulnerable` | Lines the rule must match. Checked every time the rule is saved. |
 | `examples_safe` | Lines the rule must not match. |
@@ -183,6 +218,7 @@ an update of the tool, and **Restore original** removes it.
   near: ''                        # optional: only fire if this matches a neighbouring line
   within: 5                       # ... at most this many lines above or below
   requires_taint: false           # true = report only when user input is traced to the line
+  code_only: false                # require the pattern in code outside comments and strings
   message: Why this line is dangerous.
   fix: How to write it safely.
   examples_vulnerable:            # lines the rule MUST match (checked when you save)
@@ -230,22 +266,48 @@ python -m sca coverage                                         # Rules per langu
 
 ## مجموعة القواعد
 
-تأتي الأداة مع **517 قاعدة، منها 470 فعّالة**: 217 مدمجة و 300
-مستوردة من مجموعات قواعد مفتوحة المصدر (253 منها فعّالة). من المستوردة 205
+تأتي الأداة مع **666 قاعدة، منها 619 فعّالة**: 253 مدمجة و 413
+مستوردة من مجموعات قواعد مفتوحة المصدر (366 منها فعّالة). من المستوردة 309
 صيغة مفتاح تعمل داخل محرك الأسرار. وتُضاف فوقها القواعد المتعلَّمة من الذكاء الاصطناعي
 والقواعد التي تكتبها أنت.
+
+تُحسب الأعداد من ملفات YAML المرفقة، دون تعديلات التفعيل المحلية. هي عدد تعريفات
+الكواشف وليست عدد الثغرات أو ضماناً للتغطية. فحوص Android البنيوية ومحرك Python AST
+ورصد التشغيل مستقلة عن هذا العدد. راجع [مراجعة المصادر وإضافات 2026-11-27](UPSTREAM_RULES_2026_11_27.md)
+و[توسعة 2026-11-26](RULE_EXPANSION_2026_11_26.md).
+
+| المجموعة المرفقة | التعريفات | المفعّلة افتراضياً |
+|---|---:|---:|
+| Built-in YAML / القواعد المدمجة | 253 | 253 |
+| betterleaks.yaml | 80 | 80 |
+| betterleaks_contextual.yaml | 21 | 21 |
+| codeql_android.yaml | 4 | 4 |
+| codeql_android_extended.yaml | 5 | 5 |
+| devskim.yaml | 95 | 49 |
+| gitleaks.yaml | 205 | 204 |
+| gitleaks_compatibility.yaml | 3 | 3 |
 
 ![تبويب القواعد بالعربية](images/ui-arabic-rules.png)
 
 ## القواعد المستوردة
 
-جاءت القواعد المستوردة من مشروعين برخصة MIT (نص الرخصة في `THIRD_PARTY_NOTICES.md`):
+مصادر القواعد المستوردة مرخّصة برخصة MIT. [إشعارات تراخيص المشاريع](../THIRD_PARTY_NOTICES.md)
 
 - **Microsoft DevSkim**: قواعد بتعابير نمطية للغات كثيرة، ومع كل قاعدة أمثلتها: ما يجب أن
   تطابقه وما يجب ألّا تطابقه.
 - **Gitleaks**: تعابير نمطية لصيغ مفاتيح ورموز نحو 200 خدمة.
+- **Betterleaks**: مجموعة مدققة لصيغ مفاتيح وسياقات مزودي الخدمات، مع توثيق الاستبعادات
+  وعدم تنفيذ تعبيرات التحقق أو الإلغاء الشبكية.
+- **GitHub CodeQL**: تكييفات نحوية محدودة لـ Android وJava وKotlin في مجموعتين.
+  تحتفظ المجموعتان بمعرّفات الاستعلامات الأصلية ولهما اختبارات مستقلة.
+  [توثيق استعلامات CodeQL](https://codeql.github.com/codeql-query-help/java/)
 
-السكربت `tools/import_rules.py` يحوّلها (استيراد بتاريخ 2026-11-11). لا تُقبل القاعدة إلا إذا
+### خط الأساس التاريخي لاستيراد DevSkim وGitleaks
+
+جداول الاستيراد والكود المقاس التالية تخص استيراد 2026-11-11 فقط. للمجموعات اللاحقة
+تقارير واختبارات منفصلة في الروابط أعلاه، ولم تُقَس كلها على هذا الكود التاريخي.
+السكربت `tools/import_rules.py` يحوّل قواعد DevSkim وGitleaks.
+لا تُقبل القاعدة إلا إذا
 أمكن تحويلها إلى هذا المحرك، وتُرجمت في بايثون، وانتهت على أسطر الإجهاد، ونجحت في أمثلتها
 (DevSkim) أو طابقت نصاً مولَّداً من تعبيرها نفسه (Gitleaks)، وبقيت صامتة على الكود المعروف
 أنه آمن. بعد ذلك شُغّلت القواعد المقبولة على 2,384,751 سطر كود من 21 مشروعاً
@@ -296,25 +358,27 @@ python -m sca coverage                                         # Rules per langu
 | sql | 75 |
 | **المجموع** | **2,384,751** |
 
-قواعد الأنماط لكل لغة بعد الاستيراد (المحرك الأساسي لبايثون هو تحليل AST، ولهذا قواعد الأنماط
+### التغطية الحالية للغات
+
+قواعد الأنماط لكل لغة في الكتالوج المرفق الحالي (المحرك الأساسي لبايثون هو تحليل AST، ولهذا قواعد الأنماط
 المدمجة لها قليلة):
 
 | اللغة | مدمجة | مستوردة ومفعّلة | مستوردة ومعطّلة |
 |---|---:|---:|---:|
 | c (+ cpp) | 8 | 9 | 15 |
 | config | 8 | 3 | 1 |
-| csharp | 16 | 13 | 13 |
-| dart | 47 | 0 | 6 |
+| csharp | 18 | 13 | 13 |
+| dart | 51 | 0 | 6 |
 | elixir | 0 | 0 | 6 |
-| go | 12 | 1 | 7 |
+| go | 14 | 1 | 7 |
 | html | 2 | 0 | 6 |
-| java (+ kotlin, scala, groovy) | 31 | 3 | 11 |
-| javascript (+ typescript) | 38 | 2 | 10 |
+| java (+ kotlin, scala, groovy) | 51 | 12 | 11 |
+| javascript (+ typescript) | 39 | 2 | 10 |
 | lua | 0 | 0 | 6 |
 | perl | 0 | 0 | 6 |
 | php | 24 | 7 | 8 |
 | powershell | 3 | 6 | 11 |
-| python | 2 | 6 | 11 |
+| python | 5 | 6 | 11 |
 | ruby | 17 | 2 | 8 |
 | rust | 3 | 1 | 7 |
 | shell | 6 | 3 | 6 |
@@ -332,6 +396,11 @@ python -m sca coverage                                         # Rules per langu
 القاعدة تعبير نمطي واحد يعلّم السطر الخطر، مع المعلومات التي تظهر مع النتيجة. يقرأ المحرك
 كل سطر كود (تُتجاوز التعليقات والأسطر الطويلة جداً المولَّدة آلياً) ويبلّغ عن السطر إذا
 طابقه `pattern` ولم يطابقه `exclude`.
+
+هذا وصف لقواعد YAML وليس لجميع محركات التحليل. رصد إعداد أو صيغة مفتاح دليل للمراجعة
+ولا يثبت قابلية الاستغلال؛ اقرأ نطاق القاعدة وحدودها. يحتفظ جرد API ومعاينة الملفات
+محلياً بالقيم الكاملة ومواضعها. القيمة المرصودة أثناء التشغيل فقط ترتبط بحدث الرصد،
+إلا إذا تم التحقق من تطابق حرفي لها في ملفات المصدر.
 
 | الحقل | المعنى |
 |---|---|

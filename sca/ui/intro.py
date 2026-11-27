@@ -370,21 +370,19 @@ def _start(lang: str) -> None:
     left, right = st.columns([3, 2])
     with left:
         st.markdown(_(lang,
-            "1. In the sidebar, type the folder of the project or the path of an app file "
-            "(.apk, .aab), or press **Browse**.\n"
+            "1. In **Scan input**, choose a folder or file or upload the package.\n"
             "2. Keep the static engines on and press **Run scan**: each step appears live.\n"
             "3. Read the score on the **Dashboard**, each issue with its fix under "
             "**Findings**, and download the report under **Reports**.\n"
             "4. Mark findings as real or false: the tool learns from your reviews.\n"
-            "5. Later, connect an AI provider in section 3 of the sidebar for reviews, deep "
+            "5. Later, connect an AI provider in **Scan settings** for reviews, deep "
             "scans and new rules.",
-            "1. في الشريط الجانبي اكتب مجلد المشروع أو مسار ملف تطبيق (‎.apk أو ‎.aab)، أو "
-            "اضغط **استعراض**.\n"
+            "1. من تبويب **مصدر الفحص** اختر المجلد أو الملف أو ارفع الحزمة.\n"
             "2. أبقِ المحركات الستاتيكية مفعّلة واضغط **ابدأ الفحص**: تظهر كل خطوة مباشرةً.\n"
             "3. اقرأ الدرجة في **اللوحة**، وكل ثغرة مع إصلاحها في **النتائج**، ونزّل التقرير من "
             "**التقارير**.\n"
             "4. علِّم النتائج بأنها حقيقية أو كاذبة: الأداة تتعلم من مراجعاتك.\n"
-            "5. لاحقاً اربط مزوّد ذكاء اصطناعي من القسم 3 في الشريط الجانبي للمراجعة والفحص "
+            "5. لاحقاً اربط مزوّد ذكاء اصطناعي من **خيارات الفحص** للمراجعة والفحص "
             "العميق وتعلّم قواعد جديدة."))
         st.write("")
         sample = str(ROOT / "samples" / "vulnerable_app")

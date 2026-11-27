@@ -228,6 +228,29 @@ def test_firebase_key_in_string_resources_is_lowered(tmp_path):
     assert "lowered to low severity" in result.engine_notes["flutter"]
 
 
+@pytest.mark.parametrize("with_other_copy", [False, True])
+def test_maps_client_key_keeps_location_and_restriction_review(tmp_path, with_other_copy):
+    metadata = ('        <meta-data android:name="com.google.android.geo.API_KEY"\n'
+                '            android:value="%s" />\n' % GOOGLE_KEY)
+    manifest = kit.MANIFEST.replace("    </application>", metadata + "    </application>")
+    assets = {"flutter_assets/assets/other.json": '{"key":"%s"}' % GOOGLE_KEY} \
+        if with_other_copy else {}
+    path = write_app(tmp_path, kit.build_apk(manifest=manifest, assets=assets))
+    result, files = scan_project(str(path), ScanOptions(**QUIET))
+    finding = next(f for f in result.findings if f.file == "AndroidManifest.xml"
+                   and f.rule_id == "SECRET-GOOGLE-001")
+    assert (finding.severity, finding.tier) == ("low", "probable")
+    assert "restrictions require verification" in finding.description
+    manifest_file = next(sf for sf in files if sf.rel == finding.file)
+    assert GOOGLE_KEY in manifest_file.lines[finding.line - 1]
+    item = next(k for k in result.app["apis"]["keys"] if k["rule_id"] == finding.rule_id)
+    assert {"file": finding.file, "line": finding.line} in item["locations"]
+    assert item["advice"] == "google"
+    assert item["public"] == (not with_other_copy)
+    assert item["severity"] == ("high" if with_other_copy else "low")
+    assert GOOGLE_KEY not in json.dumps(result.to_dict())
+
+
 def test_llm_never_sees_summaries_or_strings_dumps(tmp_path, monkeypatch):
     class Client:
         label, is_local, requests, base_url = "fake/model", True, 0, "http://127.0.0.1"

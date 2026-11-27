@@ -23,6 +23,7 @@ from sca.flutter.inventory import jwt_claims, mask_url, service_of
 from sca.models import Finding
 from sca.pipeline import ScanOptions, inspect_mobile, run_scan
 from sca.report import write_reports
+from sca.walker import SourceFile
 
 ROOT = Path(__file__).resolve().parent.parent
 API_DIR = Path(os.environ.get("SCA_FLUTTER_API_DIR", "") or "missing")
@@ -160,6 +161,8 @@ def test_mask_url_hides_the_secrets_that_addresses_carry():
     hook = "https://discord.com/api/webhooks/123456789/" + "A" * 30
     assert "A" * 30 not in mask_url(hook)
     assert mask_url("https://h.example/v1/?key=$apiKey") == "https://h.example/v1/?key=$apiKey"
+    assert mask_url("books?token=x&password=abc") == "books?token=*&password=a**"
+    assert mask_url("books?token=%2Fencoded") == "books?token=" + inventory.mask_secret("%2Fencoded")
 
 
 def test_jwt_claims_and_services():
@@ -207,6 +210,68 @@ def test_secrets_engine_finds_webhooks_bot_tokens_and_env_values():
     assert found == []
 
 
+def test_native_fuel_calls_keep_method_and_location():
+    kotlin = SourceFile(Path("Orders.kt"), "Orders.kt", "kotlin",
+                        'Fuel.post("https://api.orders.example/v1/orders")\n'
+                        'fuelGauge.get("reading")\n')
+    java = SourceFile(Path("Orders.java"), "Orders.java", "java",
+                      'Fuel.INSTANCE.get("https://api.orders.example/v1/items");\n',
+                      origin="decompiled")
+    apis = inventory.build(None, [kotlin, java], [])
+    assert {(call["file"], call["line"], call["method"], call["target"])
+            for call in apis["calls"]} == {
+                ("Orders.kt", 1, "POST", "https://api.orders.example/v1/orders"),
+                ("Orders.java", 1, "GET", "https://api.orders.example/v1/items"),
+            }
+
+
+def test_api_calls_keep_their_own_uri_and_target_line():
+    code = source("lib/location.dart",
+                  "http.get(Uri.https('first.example', 'v1/read')); "
+                  "http.post(Uri.https('second.example', '/v2/write'));\n"
+                  "http.get(\n"
+                  "  Uri.parse(\n"
+                  "    'https://third.example/v1/list'));\n"
+                  "http.put(\n"
+                  "  Uri.https('fourth.example', 'v1/change'));\n"
+                  "final separate = Uri.https('fifth.example', '/'); "
+                  "http.delete(dynamicTarget);\n"
+                  "http.get(Uri.https('sixth.example', dynamicPath));\n"
+                  "http.get(Uri.https('seventh.example', '/v1', {'token': 'fixture-sensitive'}));\n")
+    apis = inventory.build(None, [code], [])
+    assert {(c["line"], c.get("target_line"), c["method"], c["target"]) for c in apis["calls"]} == {
+        (1, None, "GET", "https://first.example/v1/read"),
+        (1, None, "POST", "https://second.example/v2/write"),
+        (2, 4, "GET", "https://third.example/v1/list"),
+        (5, 6, "PUT", "https://fourth.example/v1/change"),
+        (7, None, "-", "https://fifth.example/"),
+        (7, None, "DELETE", "dynamicTarget"),
+        (8, None, "GET", "Uri.https(…)"),
+        (9, None, "GET", "Uri.https(…)"),
+    }
+    assert endpoint(apis, "https://third.example/v1/list")["locations"] == [
+        {"file": code.rel, "line": 4}]
+    assert "fixture-sensitive" not in json.dumps(apis)
+
+
+def test_declared_routes_keep_their_spelling_and_locations():
+    code = source("src/Library.kt",
+                  '@GET("books/{id}")\n@OPTIONS("/v1/books")\n'
+                  '@POST(value = "/v1/books")\n@GET("books?token=fixture1234567")\n'
+                  'val icon = "icons/book.png"\n', "kotlin")
+    asset = source("assets/names.txt", '"books/{id}"\n@GET("icons/book.png")\n', "config")
+    apis = inventory.build(None, [code, asset], [])
+    paths = {p["path"]: p for p in apis["paths"]}
+    assert set(paths) == {"books/{id}", "/v1/books",
+                          "books?token=" + inventory.mask_secret("fixture1234567")}
+    assert paths["books/{id}"]["locations"] == [{"file": code.rel, "line": 1}]
+    assert paths["/v1/books"]["count"] == 2
+    assert paths["/v1/books"]["locations"] == [{"file": code.rel, "line": 2},
+                                               {"file": code.rel, "line": 3}]
+    assert any(c["method"] == "OPTIONS" and c["line"] == 2 for c in apis["calls"])
+    assert "fixture1234567" not in json.dumps(apis)
+
+
 # ------------------------------------------------------------------ a Flutter project
 def test_inventory_of_a_flutter_project(tmp_path):
     project = shop_project(tmp_path / "shop")
@@ -235,7 +300,7 @@ def test_inventory_of_a_flutter_project(tmp_path):
     assert not any("token" in target for _, target in calls)        # prefs.get is no request
     paths = {p["path"]: p for p in apis["paths"]}
     assert "/api/v1/orders" in paths
-    assert paths["/receipt.pdf?access_token=$saved"]["alerts"] == ["secret_in_url"]
+    assert paths["/receipt.pdf?access_token=$saved"]["alerts"] == []
 
     keys = {k["advice"]: k for k in apis["keys"]}
     stripe = keys["stripe"]
@@ -256,7 +321,7 @@ def test_inventory_of_a_flutter_project(tmp_path):
 
     found = codes(apis)
     for code in ("keys_in_source", "cleartext", "dev_host", "private_ip", "webhook",
-                 "secret_in_url", "env_asset", "firebase_db", "storage_bucket"):
+                 "env_asset", "firebase_db", "storage_bucket"):
         assert code in found, code
     levels = [inventory.LEVEL_RANK[a["level"]] for a in apis["alerts"]]
     assert levels == sorted(levels)                                 # the most serious first
@@ -336,7 +401,7 @@ def test_inventory_of_a_release_apk(tmp_path):
     assert apis["firebase"]["storage_buckets"] == ["kit-demo.appspot.com"]
     found = codes(apis)
     for code in ("keys_in_app", "key", "cleartext", "tunnel", "webhook", "telegram",
-                 "password_in_url", "dev_host", "secret_in_url", "env_file", "firebase_db",
+                 "password_in_url", "dev_host", "env_file", "firebase_db",
                  "strings_visible", "services"):
         assert code in found, code
     assert apis["calls"] == []                                      # no code text in release

@@ -589,6 +589,8 @@ class Container:
     apks: List[Tuple[str, ZipArchive]] = field(default_factory=list)
     modules: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    apk_members: List[Dict[str, str]] = field(default_factory=list)
+    member_by_archive: Dict[ZipArchive, Dict[str, str]] = field(default_factory=dict)
 
     def close(self) -> None:
         for _, archive in self.apks:
@@ -650,18 +652,35 @@ def _modules(names: Iterable[str]) -> List[str]:
 def _open_splits(container: Container, limit: int) -> None:
     archive = container.archive
     entries = [e for e in archive.entries if e.name.lower().endswith(".apk")]
-    if any(e.name.startswith("splits/") for e in entries):
-        # bundletool sets: standalone and instant APKs repeat the content of the splits
-        entries = [e for e in entries if e.name.startswith("splits/")]
-    if len(entries) > MAX_INNER_APKS:
-        container.warnings.append(f"{archive.name}: {len(entries)} APKs inside; only the first "
+    bundletool = any(e.name.startswith("splits/") for e in entries)
+    eligible = [e for e in entries if not bundletool or e.name.startswith("splits/")]
+    # Prioritize the base even when a large set was written in another order.
+    eligible.sort(key=lambda e: _split_label(e.name) != "base")
+    selected = {id(e) for e in eligible[:MAX_INNER_APKS]}
+    if len(eligible) > MAX_INNER_APKS:
+        container.warnings.append(f"{archive.name}: {len(eligible)} APKs inside; only the first "
                                   f"{MAX_INNER_APKS} are read")
-        entries = entries[:MAX_INNER_APKS]
     opened: List[Tuple[str, ZipArchive]] = []
     inflated = 0
-    for entry in entries:
+    seen_names = set()
+    for entry in sorted(entries, key=lambda e: _split_label(e.name) != "base"):
         label = _short(entry.name)
+        alternative = bundletool and not entry.name.startswith("splits/")
+        record = {"name": label, "role": "alternative" if alternative else "split",
+                  "status": "skipped", "reason": ""}
+        if id(entry) not in selected:
+            record["reason"] = "Alternative installation variant" if alternative else "APK count limit"
+            if len(container.apk_members) < 4 * MAX_INNER_APKS:
+                container.apk_members.append(record)
+            continue
+        container.apk_members.append(record)
+        if entry.name.casefold() in seen_names:
+            record["reason"] = "Duplicate APK member filename"
+            container.warnings.append(f"{archive.name}: duplicate APK filename {label}; skipped")
+            continue
+        seen_names.add(entry.name.casefold())
         if entry.size > limit:
+            record["reason"] = "APK size limit"
             container.warnings.append(f"{archive.name}: {label} is larger than the read limit "
                                       f"of {limit} bytes; skipped")
             continue
@@ -669,6 +688,7 @@ def _open_splits(container: Container, limit: int) -> None:
             if entry.method != DEFLATED:
                 inner = _stored_apk(archive, entry, label)
             elif entry.size > MAX_INFLATED_APK or inflated + entry.size > MAX_INFLATED_APKS:
+                record["reason"] = "Compressed APK size limit"
                 container.warnings.append(
                     f"{archive.name}: {label} is compressed and {entry.size} bytes large; "
                     f"compressed APKs are inflated into memory, at most {MAX_INFLATED_APK} "
@@ -679,9 +699,11 @@ def _open_splits(container: Container, limit: int) -> None:
                 inflated += len(data)
                 inner = ZipArchive(data, name=entry.name, budget=archive._budget)
         except ZipError as exc:
+            record["reason"] = "Unreadable APK archive"
             container.warnings.append(f"{archive.name}: {label} is not readable: {exc}")
             continue
         opened.append((_split_label(entry.name), inner))
+        container.member_by_archive[inner] = record
     if not any(label == "base" for label, _ in opened):
         # an .xapk names its base APK after the package: the one APK that is not a split
         index = next((i for i, (label, _) in enumerate(opened)
@@ -691,7 +713,12 @@ def _open_splits(container: Container, limit: int) -> None:
     used: Dict[str, int] = {}
     for label, inner in sorted(opened, key=lambda pair: (pair[0] != "base", pair[0])):
         used[label] = used.get(label, 0) + 1
+        if label == "base" and used[label] == 1:
+            container.member_by_archive[inner]["role"] = "base"
         container.apks.append((label if used[label] == 1 else f"{label}-{used[label]}", inner))
+    if len(container.apk_members) < len(entries):
+        container.warnings.append(f"{archive.name}: {len(entries) - len(container.apk_members)} "
+                                  "more skipped APK names omitted from the member list")
     if not container.apks:
         container.warnings.append(f"{archive.name}: no readable APK inside")
 

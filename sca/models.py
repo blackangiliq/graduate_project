@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from .decoded import CredentialEvidence, DecodedFile
 
 SEVERITIES = ["critical", "high", "medium", "low", "info"]
 SEVERITY_RANK = {"info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -32,6 +35,8 @@ class Finding:
     confidence: float = 0.6        # 0..1, how sure the analyzer is that this is real
     engines: List[str] = field(default_factory=list)
     end_line: int = 0
+    column: int = 0                # 1-based, 0 when no exact column is known
+    end_column: int = 0            # 1-based exclusive end of the matched value
     snippet: str = ""              # the flagged line
     context: str = ""              # a few lines around it
     language: str = ""
@@ -105,6 +110,14 @@ class ScanResult:
     steps: List[str] = field(default_factory=list)
     # facts about a scanned app package or mobile project (sca.flutter); empty otherwise
     app: Dict[str, Any] = field(default_factory=dict)
+    # Original evidence is separate from the analysis JSON. The local archive stores it
+    # separately so reopening a scan can restore its source previews and visible values.
+    decoded_files: Dict[str, "DecodedFile"] = field(default_factory=dict, repr=False,
+                                                     compare=False)
+    # Original inventory values, separate from analysis/model inputs.
+    visible_apis: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+    credential_evidence: Optional["CredentialEvidence"] = field(default=None, repr=False,
+                                                                compare=False)
 
     @property
     def open_findings(self) -> List[Finding]:

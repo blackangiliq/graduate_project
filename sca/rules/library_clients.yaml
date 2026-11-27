@@ -1,0 +1,143 @@
+# These rules identify explicit library settings. Their findings describe the setting
+# selected in source. The destination, release reachability and traffic remain unknown.
+
+# https://grpc.github.io/grpc-java/javadoc/io/grpc/InsecureChannelCredentials.html
+- id: JVM-GRPC-001
+  code_only: true
+  title: gRPC client creates plaintext channel credentials
+  languages: [java]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.75
+  pattern: '\bInsecureChannelCredentials\s*\.\s*create\s*\(\s*\)'
+  message: A channel using these credentials sends RPCs without gRPC transport encryption. Check where the channel is used and which data it carries.
+  fix: Use TlsChannelCredentials for connections carrying sensitive data.
+  examples_vulnerable:
+    - 'val creds = InsecureChannelCredentials.create()'
+  examples_safe:
+    - 'ChannelCredentials creds = TlsChannelCredentials.create();'
+    - 'val creds = CustomInsecureChannelCredentials.create()'
+
+# https://pub.dev/documentation/grpc/latest/grpc/ChannelCredentials-class.html
+- id: DART-GRPC-001
+  code_only: true
+  title: Dart gRPC client selects plaintext channel credentials
+  languages: [dart]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.75
+  pattern: '\bChannelCredentials\s*\.\s*insecure\s*\('
+  message: The selected gRPC credentials disable TLS. Check whether production requests using this channel carry sensitive data.
+  fix: Use ChannelCredentials.secure with a suitable trust store for remote services.
+  examples_vulnerable:
+    - 'credentials: const ChannelCredentials.insecure(),'
+  examples_safe:
+    - 'credentials: const ChannelCredentials.secure(),'
+    - 'final builder = ChannelCredentials.insecure;'
+
+# https://pkg.go.dev/google.golang.org/grpc/credentials/insecure
+- id: GO-GRPC-001
+  code_only: true
+  title: gRPC client explicitly disables transport security
+  languages: [go]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.75
+  pattern: '\bgrpc\s*\.\s*WithTransportCredentials\s*\(\s*insecure\s*\.\s*NewCredentials\s*\(\s*\)\s*\)'
+  message: This dial option selects an unencrypted gRPC transport. Review the target and the data sent with this option.
+  fix: Pass credentials.NewTLS with a verified server identity for remote services.
+  examples_vulnerable:
+    - 'opt := grpc.WithTransportCredentials(insecure.NewCredentials())'
+  examples_safe:
+    - 'opt := grpc.WithTransportCredentials(credentials.NewTLS(cfg))'
+    - 'opt := grpc.WithTransportCredentials(credentials.NewCredentials())'
+
+# https://github.com/grpc/grpc-node/blob/master/packages/grpc-js/src/channel-credentials.ts
+- id: JS-GRPC-001
+  code_only: true
+  title: Node gRPC client creates plaintext channel credentials
+  languages: [javascript]
+  cwe: CWE-319
+  severity: medium
+  confidence: 0.75
+  pattern: '\bgrpc\s*\.\s*credentials\s*\.\s*createInsecure\s*\(\s*\)'
+  message: These channel credentials select plaintext transport for a gRPC client. Review the deployment and the data sent using this client.
+  fix: Use grpc.credentials.createSsl with the appropriate trusted certificate authorities.
+  examples_vulnerable:
+    - 'const client = new Service(address, grpc.credentials.createInsecure());'
+  examples_safe:
+    - 'const client = new Service(address, grpc.credentials.createSsl());'
+    - 'const factory = grpc.credentials.createInsecure;'
+
+# https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.TCPConnector
+- id: PY-AIOHTTP-001
+  code_only: true
+  title: aiohttp connector disables TLS certificate verification
+  languages: [python]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.85
+  pattern: '\baiohttp\s*\.\s*TCPConnector\s*\(\s*(?:\w+\s*=\s*\w+\s*,\s*)*ssl\s*=\s*False\s*[,)]'
+  message: By default this connector accepts unverified HTTPS server certificates. A request can explicitly override the connector setting.
+  fix: Keep the default TLS checks or pass a verifying SSLContext that trusts the service CA.
+  examples_vulnerable:
+    - 'connector = aiohttp.TCPConnector(ssl=False)'
+    - 'connector = aiohttp.TCPConnector(limit=32, ssl=False, use_dns_cache=True)'
+  examples_safe:
+    - 'connector = aiohttp.TCPConnector(ssl=context)'
+    - 'connector = aiohttp.TCPConnector(ssl=False if testing else context)'
+    - 'connector = other.TCPConnector(ssl=False)'
+
+# https://docs.paramiko.org/en/stable/api/client.html#paramiko.client.AutoAddPolicy
+- id: PY-PARAMIKO-001
+  code_only: true
+  title: Paramiko accepts previously unknown SSH host keys automatically
+  languages: [python]
+  cwe: CWE-322
+  severity: medium
+  confidence: 0.8
+  pattern: '\.\s*set_missing_host_key_policy\s*\(\s*(?:paramiko\s*\.\s*(?:client\s*\.\s*)?)?AutoAddPolicy\s*\(\s*\)\s*\)'
+  message: This policy trusts a host key on first contact. A client that lacks a trusted entry cannot verify that first connection's server identity independently.
+  fix: Provision the expected SSH host keys and use RejectPolicy for unknown hosts.
+  examples_vulnerable:
+    - 'client.set_missing_host_key_policy(paramiko.AutoAddPolicy())'
+    - 'client.set_missing_host_key_policy(AutoAddPolicy())'
+  examples_safe:
+    - 'client.set_missing_host_key_policy(paramiko.RejectPolicy())'
+    - 'client.set_missing_host_key_policy(user_selected_policy)'
+
+# https://pkg.go.dev/golang.org/x/crypto/ssh#InsecureIgnoreHostKey
+- id: GO-SSH-001
+  code_only: true
+  title: Go SSH client configures a host-key callback that accepts any host
+  languages: [go]
+  cwe: CWE-322
+  severity: high
+  confidence: 0.85
+  pattern: '\bHostKeyCallback\s*[:=]\s*ssh\s*\.\s*InsecureIgnoreHostKey\s*\(\s*\)'
+  message: This SSH client callback accepts the server's presented host key without checking its identity.
+  fix: Set HostKeyCallback to a trusted knownhosts.New callback or pin a previously verified key with ssh.FixedHostKey.
+  examples_vulnerable:
+    - 'cfg.HostKeyCallback = ssh.InsecureIgnoreHostKey()'
+    - 'HostKeyCallback: ssh.InsecureIgnoreHostKey(),'
+  examples_safe:
+    - 'cfg.HostKeyCallback = ssh.FixedHostKey(expectedKey)'
+    - 'cfg.HostKeyCallback = trustedCallback'
+
+# https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/simple-logging#sensitive-data
+- id: CS-EFCORE-001
+  code_only: true
+  title: Entity Framework Core enables logging of sensitive data values
+  languages: [csharp]
+  cwe: CWE-532
+  severity: medium
+  confidence: 0.75
+  pattern: '\.\s*EnableSensitiveDataLogging\s*\(\s*(?:(?:sensitiveDataLoggingEnabled\s*:\s*)?true\s*)?\)'
+  message: EF Core diagnostics can include application data values when this option is enabled. Review which environments use the configuration and who can read their logs.
+  fix: Keep sensitive data logging disabled for production contexts.
+  examples_vulnerable:
+    - 'options.EnableSensitiveDataLogging();'
+    - 'options.EnableSensitiveDataLogging(sensitiveDataLoggingEnabled: true);'
+  examples_safe:
+    - 'options.EnableSensitiveDataLogging(false);'
+    - 'options.EnableSensitiveDataLogging(environment.IsDevelopment());'

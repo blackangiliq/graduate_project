@@ -6,7 +6,7 @@ Gradle files, key.properties, keystores, Info.plist files and pubspec.yaml / pub
 a project; for an app package also the summaries _sca/build.txt, _sca/signing.txt and
 _sca/packages.txt and the strings dump of libapp.so. It returns the findings and the engine
 note, and fills the app facts permissions, components, flags, endpoints and
-dependency_issues. refine() runs before the merge and downgrades Firebase API keys.
+dependency_issues. refine() runs before the merge and contextualizes client API keys.
 
 Where a finding points (samples/flutter_ground_truth.json relies on it):
 - manifest and XML resources: the line of the offending attribute; for an implicit default
@@ -41,12 +41,13 @@ from ..engines.secrets import PLACEHOLDER
 from ..models import Finding
 from ..walker import SourceFile, is_test_path
 from . import pubspec
-from .android import (EXPOSE_APP_DATA, EXPOSE_FILESYSTEM, EXPOSE_NARROW_ROOT, EXPOSE_PARENT,
+from .android import (ANDROID_URI, EXPOSE_APP_DATA, EXPOSE_FILESYSTEM, EXPOSE_NARROW_ROOT,
+                      EXPOSE_PARENT,
                       GUARD_NONE, GUARD_STRONG, GUARD_UNDEFINED, GUARD_WEAK, LOOPBACK_HOSTS,
-                      PRIVATE_KINDS, SOURCE_CONFIG, SOURCE_DEFAULT, STANDARD_SCHEMES,
+                      MAPS_KEY_METADATA, PRIVATE_KINDS, SOURCE_CONFIG, SOURCE_DEFAULT, STANDARD_SCHEMES,
                       WEB_SCHEMES, Component, FileProviderPaths, ManifestInfo,
                       NetworkSecurityConfig, backup_policy, cleartext_policy, is_dangerous,
-                      is_normal, is_own_affinity, is_special, parse_bool)
+                      is_normal, is_own_affinity, is_special, parse_bool, parse_int)
 from .context import BUILD_FILE, PACKAGES_FILE, SIGNING_FILE, MobileContext
 from .xmltree import XmlNode, parse_xml_text
 
@@ -124,6 +125,15 @@ CHECKS: Tuple[Check, ...] = (
     Check("ANDROID-MANIFEST-012", "WebView Safe Browsing switched off (EnableSafeBrowsing)",
           "إيقاف التصفح الآمن (Safe Browsing) في WebView عبر EnableSafeBrowsing",
           "CWE-1188", "low", 0.8, "manifest", "both"),
+    Check("ANDROID-MANIFEST-013", "Application disables native heap pointer tagging",
+          "التطبيق يعطّل وسم مؤشرات الذاكرة الأصلية",
+          "CWE-693", "low", 0.9, "manifest", "both"),
+    Check("ANDROID-MANIFEST-014", "Application default disables GWP-ASan",
+          "إعداد التطبيق يعطّل فحص الذاكرة باستخدام GWP-ASan",
+          "CWE-693", "low", 0.9, "manifest", "both"),
+    Check("ANDROID-MANIFEST-015", "Application default disables hardware memory tagging (MTE)",
+          "إعداد التطبيق يعطّل وسم الذاكرة العتادي (MTE)",
+          "CWE-693", "info", 0.9, "manifest", "both"),
     Check("ANDROID-SDK-001", "Runs on Android versions before 7.0 (minSdk below 24)",
           "يعمل على إصدارات Android أقدم من 7.0 (قيمة minSdk أقل من 24)",
           "CWE-693", "low", 0.7, "manifest", "both"),
@@ -211,8 +221,8 @@ CHECKS: Tuple[Check, ...] = (
     Check("FLUTTER-APP-007", "Cleartext HTTP endpoint in the compiled app",
           "عنوان HTTP غير مشفّر داخل التطبيق المُترجَم",
           "CWE-319", "medium", 0.6, "app", "app"),
-    Check("FLUTTER-APP-008", "SQL query built by joining strings in the compiled app",
-          "استعلام SQL مبني بدمج النصوص داخل التطبيق المُترجَم",
+    Check("FLUTTER-APP-008", "SQL string fragment requiring query review",
+          "مقطع نص SQL يحتاج إلى مراجعة بناء الاستعلام",
           "CWE-89", "low", 0.45, "app", "app"),
     Check("FLUTTER-APP-009", "Malformed app package (anti-analysis tricks)",
           "حزمة تطبيق مشوَّهة البنية (حيل لإعاقة التحليل)",
@@ -252,6 +262,11 @@ FIREBASE_FILES = ("google-services.json", "GoogleService-Info.plist", "firebase_
                   "firebase-messaging-sw.js", "firebase-messaging-sw.ts")
 _FIREBASE_STRING = re.compile(r'name="(?:google|firebase|gcm)_\w*"')   # google_api_key ...
 _GOOGLE_KEY = re.compile(r"AIza[0-9A-Za-z_\-]{35}")
+MAPS_CLIENT_NOTE = ("The packaged manifest declares a Google Maps Android client key. "
+                    "Its Google Cloud application and API restrictions require verification "
+                    "by the project owner.")
+MAPS_CLIENT_FIX = ("In Google Cloud, restrict the key to the Android package and signing "
+                   "certificate and to the required Maps APIs.")
 # the other values of a Firebase configuration, compiled into libapp.so next to the key
 _FIREBASE_MARKERS = re.compile(r"firebaseio\.com|appspot\.com|firebasestorage\.app"
                                r"|messagingSenderId|googleapis")
@@ -346,18 +361,29 @@ def refine(findings: Sequence[Finding], by_rel: Mapping[str, SourceFile],
     web/index.html) to low severity and confidence 0.4: they identify a project and are not
     secrets. The same holds for the copy that firebase_options.dart leaves in the strings
     dump of libapp.so when the dump also holds the other Firebase values (database URL,
-    storage bucket, messagingSenderId). The files decide, so the same call serves projects
-    and app packages (`ctx` is part of the pipeline's call and not needed here). Returns the
-    number of findings changed."""
+    storage bucket, messagingSenderId). In a compiled manifest, a known Maps SDK metadata
+    value is an expected client key whose server-side restrictions are unknown. Returns
+    the number of findings changed."""
     changed = 0
     firebase_dump: Dict[str, bool] = {}
+    maps_values = _packaged_maps_values(ctx)
     for finding in findings:
-        if canonical(finding.cwe) != "CWE-798" or FIREBASE_NOTE in finding.description:
+        if canonical(finding.cwe) != "CWE-798" or FIREBASE_NOTE in finding.description \
+                or MAPS_CLIENT_NOTE in finding.description:
             continue
         sf = by_rel.get(finding.file)
         text = sf.lines[finding.line - 1] if sf and 1 <= finding.line <= len(sf.lines) \
             else finding.snippet
         if not _GOOGLE_KEY.search(text):
+            continue
+        maps_value = maps_values.get((finding.file, finding.line))
+        if finding.rule_id == "SECRET-GOOGLE-001" and maps_value \
+                and _GOOGLE_KEY.findall(text) == [maps_value]:
+            finding.severity = "low"
+            finding.confidence = 0.6
+            finding.description = MAPS_CLIENT_NOTE
+            finding.fix = MAPS_CLIENT_FIX
+            changed += 1
             continue
         name = posixpath.basename(finding.file)
         if name not in FIREBASE_FILES and not _firebase_place(finding.file, sf, text,
@@ -369,6 +395,30 @@ def refine(findings: Sequence[Finding], by_rel: Mapping[str, SourceFile],
         finding.fix = FIREBASE_FIX
         changed += 1
     return changed
+
+
+def _packaged_maps_values(ctx: Optional[MobileContext]) -> Dict[Tuple[str, int], str]:
+    """Literal values at the Maps SDK manifest metadata, indexed for contextual review."""
+    values = {}
+    if ctx is None or not ctx.is_app:
+        return values
+    for rel, root in ctx.manifests:
+        if root is None:
+            continue
+        info = ManifestInfo.from_node(root)
+        # Binary XML decoders normalize qualified names and render the namespace
+        # declaration separately. A source declaration, when present, must agree.
+        if root.get("xmlns:" + info.attr_prefix[:-1]) not in (None, ANDROID_URI):
+            continue
+        attr = info.attr_prefix + "value"
+        for meta_name in MAPS_KEY_METADATA:
+            entry = info.app_meta_data.get(meta_name)
+            if entry is not None:
+                _, node = entry
+                value = node.get(attr) or ""
+                if _GOOGLE_KEY.fullmatch(value):
+                    values[rel, node.line_of(attr)] = value
+    return values
 
 
 def _firebase_place(rel: str, sf: Optional[SourceFile], text: str,
@@ -506,6 +556,7 @@ class _Manifest:
     sf: SourceFile
     info: ManifestInfo
     main: bool                    # the app package's manifest or src/main (else an overlay)
+    installed_split: bool = False
 
 
 @dataclass
@@ -534,9 +585,13 @@ class _Module:
         overlay wins over src/main."""
         found = None
         for manifest in self.manifests:
+            if manifest.installed_split:
+                continue    # split components are additive, not release application overlays
             value = manifest.info.app_attr(name)
             if value is not None:
                 found = (value, manifest)
+            elif found is not None and manifest.info.drops_inherited_app_attr(name):
+                found = None
         return found
 
     def attr(self, name: str) -> Optional[str]:
@@ -613,14 +668,17 @@ def _modules(run: _Run) -> List[_Module]:
                 group.library = bool(group.gradle and group.gradle.library)
         if rel in libraries:
             group.library = True
+        if run.ctx.facts.get("base_missing"):
+            group.library = True   # an isolated split cannot establish app-wide defaults
         hint = ""
         if group.gradle is not None:
             hint = group.gradle.application_id or group.gradle.namespace
         fact_package = str(run.ctx.facts.get("package") or "")
         if not hint and "." in fact_package:
             hint = fact_package
+        split = run.ctx.is_app and rel.startswith("splits/")
         group.manifests.append(_Manifest(rel, sf, ManifestInfo.from_node(root, package_hint=hint),
-                                         source_set == "main"))
+                                         source_set == "main" and not split, split))
     for group in modules.values():
         group.manifests.sort(key=lambda m: not m.main)
     return [group for group in modules.values() if group.manifests]
@@ -683,10 +741,34 @@ def _application_checks(run: _Run, module: _Module) -> None:
                     confidence=confidence)
     if main.info.application is None:
         return
+    _native_memory_checks(run, module)
     _backup_check(run, module)
     config = _network_config(run, module)
     _cleartext_check(run, module, config)
     _app_affinity_check(run, module)
+
+
+def _native_memory_checks(run: _Run, module: _Module) -> None:
+    """Report explicit application defaults. A compiled manifest can store an enum as 0."""
+    for name, check_id, disabled, description, fix in (
+        ("allowNativeHeapPointerTagging", "ANDROID-MANIFEST-013", "false",
+         "The application opts out of heap pointer tagging on supported 64-bit devices. "
+         "That removes a check for native code that drops or changes a pointer tag.",
+         "Review native libraries for pointer manipulation and test with the default tagging enabled."),
+        ("gwpAsanMode", "ANDROID-MANIFEST-014", "never",
+         "Processes inheriting this setting disable GWP-ASan's sampling of native allocations, "
+         "including the recoverable checks available by default on Android 14 and later.",
+         "Remove the explicit opt-out or enable GWP-ASan after testing native dependencies."),
+        ("memtagMode", "ANDROID-MANIFEST-015", "off",
+         "The application explicitly selects off for processes inheriting its hardware memory "
+         "tagging setting. MTE can check native heap accesses on supported Arm devices.",
+         "Review the opt-out and test native libraries on an MTE-capable device."),
+    ):
+        found = module.effective(name)
+        if found is not None:
+            value, manifest = found
+            if value.strip().lower() == disabled or parse_int(value) == 0:
+                run.add(check_id, manifest.sf, manifest.info.app_line(name), description, fix)
 
 
 def _backup_check(run: _Run, module: _Module) -> None:
@@ -751,8 +833,16 @@ def _resource(run: _Run, manifest: _Manifest, ref: str, root_tag: str
     in a project, through the loader's resource map in an app package. An unresolved
     reference (@0x7f...) falls back to the only resource with the expected root element."""
     ref = ref.strip()
+    def expected(node: XmlNode) -> bool:
+        return node.tag == root_tag or (root_tag == "paths" and
+                                        bool(FileProviderPaths.from_node(node).paths))
     match = re.fullmatch(r"@(?:[\w.]+:)?(\w+)/([\w.]+)", ref)
     candidates: List[str] = []
+    if manifest.installed_split:
+        folder = manifest.rel.rsplit("/", 1)[0] + "/"
+        same_member = run.ctx.resource_files.get(folder + ref)
+        if same_member:
+            candidates.append(same_member)
     if match:
         kind, name = match.groups()
         if not run.ctx.is_app:
@@ -768,11 +858,11 @@ def _resource(run: _Run, manifest: _Manifest, ref: str, root_tag: str
     for rel in dict.fromkeys(candidates):
         if rel in run.files or rel in run.ctx.xml_resources:
             node = run.xml(rel)
-            if node is not None and node.tag == root_tag:
+            if node is not None and expected(node):
                 return rel, node
     if not match and run.ctx.is_app:
         only = [(rel, node) for rel, node in run.ctx.xml_resources.items()
-                if node is not None and node.tag == root_tag]
+                if node is not None and expected(node)]
         if len(only) == 1:
             return only[0]
     return None
@@ -2091,6 +2181,9 @@ def _endpoint(raw: str) -> Optional[Tuple[str, bool]]:
     if re.search(r"(?i)/licen[cs]e", parts.path) or _SDK_LINK.match(url) \
             or _SPEC_PATH.search(parts.path):
         return None
+    # The Facebook SDK embeds this policy link in messages; it is not an API call.
+    if host == "developers.facebook.com" and re.match(r"^/policy(?:/|$)", parts.path):
+        return None
     return url[:300], parts.scheme.lower() in ("http", "ws")
 
 
@@ -2119,11 +2212,13 @@ def _strings_checks(run: _Run) -> None:
                                 % _short(found[0], 60), key=found[0])
             if text.rstrip().endswith(("'", '"', "'%", '"%')) and _SQL_OPEN_QUOTE.match(text):
                 run.add("FLUTTER-APP-008", sf, number,
-                        "The compiled app contains the SQL text \"%s\", which ends with an "
-                        "opening quote: the query is completed by joining a value into the "
-                        "string, which allows SQL injection." % _short(text.strip(), 120),
-                        "Use parameterized queries (rawQuery with ? placeholders and an "
-                        "arguments list, or the query() helpers of sqflite).",
+                        "The compiled app contains the SQL string fragment \"%s\", ending "
+                        "with an opening quote. This can indicate a dynamically assembled "
+                        "query. Extracted strings alone do not establish execution, "
+                        "untrusted input, or SQL injection." % _short(text.strip(), 120),
+                        "Review the query call and input flow. If a value is concatenated "
+                        "into executable SQL, use parameterized queries (rawQuery with ? "
+                        "placeholders and an arguments list, or the query() helpers of sqflite).",
                         key=text.strip())
 
 

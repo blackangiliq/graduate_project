@@ -38,7 +38,7 @@ ID_FORMAT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]{2,63}")
 USER_FILES = {"learned": "rules.yaml", "custom": "custom.yaml"}
 # the fields of a rule as they are written to a YAML file, in this order
 FILE_KEYS = ("id", "kind", "title", "languages", "files", "cwe", "severity", "confidence",
-             "pattern", "exclude", "ignore_case", "near", "within", "requires_taint", "enabled",
+             "pattern", "exclude", "ignore_case", "near", "within", "requires_taint", "code_only", "enabled",
              "message", "fix", "keywords", "entropy",
              "secret_group", "examples_vulnerable", "examples_safe", "note", "learned")
 HEADERS = {
@@ -86,7 +86,7 @@ def _clean(raw: Dict[str, Any]) -> Dict[str, Any]:
         value = raw.get(key)
         if value in (None, "", [], {}) or (key in ("ignore_case",) and not value) \
                 or (key == "enabled" and value is True) or (key == "kind" and value != "secret") \
-                or (key in ("entropy", "secret_group", "requires_taint") and not value) \
+                or (key in ("entropy", "secret_group", "requires_taint", "code_only") and not value) \
                 or (key == "within" and (not raw.get("near")
                                          or value == rules_engine.DEFAULT_WITHIN)):
             continue
@@ -453,6 +453,7 @@ TEMPLATE = """# A rule for Secure Code Analyzer. Fill it in and add it with:
   near: ''                        # optional: only fire if this matches a neighbouring line
   within: 5                       # ... at most this many lines above or below
   requires_taint: false           # true = report only when user input is traced to the line
+  code_only: false                # require the pattern in code outside comments and strings
   message: Why this line is dangerous.
   fix: How to write it safely.
   examples_vulnerable:            # lines the rule MUST match (checked when you save)

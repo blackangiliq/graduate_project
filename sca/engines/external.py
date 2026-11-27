@@ -59,6 +59,20 @@ def _read_line(root: Path, rel: str, line: int) -> str:
     return ""
 
 
+def _completion_note(returncode: int, findings: List[Finding], errors: list,
+                     label: str = "", *, findings_exit_code: bool = False) -> str:
+    """Retain partial evidence without presenting a failed scanner as a clean scan."""
+    successful = returncode == 0 or (findings_exit_code and returncode == 1 and bool(findings))
+    suffix = ", %s" % label if label else ""
+    if successful and not errors:
+        return "ok (%d results%s)" % (len(findings), suffix)
+    status = "partial" if findings else "failed"
+    # Tool diagnostics may contain source text or credential values. Summarize their
+    # count and exit status here; do not copy arbitrary stderr into model/report data.
+    return "%s (%d results, exit code %d, %d reported errors%s)" % (
+        status, len(findings), returncode, len(errors), suffix)
+
+
 # ----------------------------------------------------------------------------- Bandit
 def bandit_available() -> bool:
     return importlib.util.find_spec("bandit") is not None
@@ -98,10 +112,13 @@ def run_bandit(root: Path) -> Tuple[List[Finding], str]:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SECONDS,
                               encoding="utf-8", errors="replace")
         data = json.loads(proc.stdout[proc.stdout.index("{"):])
-    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        if not isinstance(data, dict) or not isinstance(data.get("results"), list) or not isinstance(data.get("errors", []), list):
+            raise ValueError("Bandit returned an invalid report")
+        findings = parse_bandit(data, target)
+    except (subprocess.SubprocessError, OSError, ValueError, TypeError, AttributeError) as exc:
         return [], "failed: %s" % str(exc)[:200]
-    findings = parse_bandit(data, target)
-    return findings, "ok (%d results)" % len(findings)
+    return findings, _completion_note(proc.returncode, findings, data.get("errors", []),
+                                     findings_exit_code=True)
 
 
 # ------------------------------------------------------------------ Semgrep / Opengrep
@@ -143,11 +160,14 @@ def run_semgrep(root: Path, config: str = "auto") -> Tuple[List[Finding], str]:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SECONDS,
                               encoding="utf-8", errors="replace")
         data = json.loads(proc.stdout[proc.stdout.index("{"):])
-    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        if not isinstance(data, dict) or not isinstance(data.get("results"), list) or not isinstance(data.get("errors", []), list):
+            raise ValueError("The external rule engine returned an invalid report")
+        target = root if root.is_dir() else root.parent
+        findings = parse_semgrep(data, target)
+    except (subprocess.SubprocessError, OSError, ValueError, TypeError, AttributeError) as exc:
         return [], "failed: %s" % str(exc)[:200]
-    target = root if root.is_dir() else root.parent
-    findings = parse_semgrep(data, target)
-    return findings, "ok (%d results, %s)" % (len(findings), Path(binary).name)
+    return findings, _completion_note(proc.returncode, findings, data.get("errors", []),
+                                     Path(binary).name, findings_exit_code=True)
 
 
 # --------------------------------------------------------------------------- Gitleaks
@@ -182,20 +202,24 @@ def run_gitleaks(root: Path) -> Tuple[List[Finding], str]:
     try:
         cmd = [binary, "detect", "--source", str(target), "--no-git", "--report-format",
                "json", "--report-path", report, "--exit-code", "0", "--no-banner"]
-        subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SECONDS,
-                       encoding="utf-8", errors="replace")
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SECONDS,
+                              encoding="utf-8", errors="replace")
         with open(report, "r", encoding="utf-8", errors="replace") as handle:
             text = handle.read().strip()
-        data = json.loads(text) if text else []
-    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        if not text:
+            return [], "failed (Gitleaks produced no JSON report; exit code %d)" % proc.returncode
+        data = json.loads(text)
+        if not isinstance(data, list) or any(not isinstance(item, dict) for item in data):
+            raise ValueError("Gitleaks returned an invalid report")
+        findings = parse_gitleaks(data, target)
+    except (subprocess.SubprocessError, OSError, ValueError, TypeError, AttributeError) as exc:
         return [], "failed: %s" % str(exc)[:200]
     finally:
         try:
             os.remove(report)
         except OSError:
             pass
-    findings = parse_gitleaks(data, target)
-    return findings, "ok (%d results)" % len(findings)
+    return findings, _completion_note(proc.returncode, findings, [])
 
 
 def availability() -> Dict[str, bool]:

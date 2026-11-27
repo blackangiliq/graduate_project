@@ -5,7 +5,9 @@ import ast
 import hashlib
 import os
 import re
+import zipfile
 from collections import Counter
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -201,6 +203,52 @@ def test_dashboard_strict_mode_and_remembered_reviews():
     assert again.status == "dismissed"              # the review was remembered
 
 
+def test_filters_show_all_severities_and_statuses_and_can_be_reset():
+    from sca.models import Finding, ScanResult
+    items = [
+        Finding("TEST-A", "First", "a.xml", 1, severity="high"),
+        Finding("TEST-B", "Second", "b.xml", 2, severity="info", status="needs_review"),
+        Finding("TEST-C", "Third", "c.xml", 3, severity="low", status="dismissed"),
+    ]
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    app.session_state["result"] = ScanResult(target="sample", findings=items)
+    app.run()
+    assert not app.exception
+    assert any(c.value == "3 of 3 findings." for c in app.caption)
+
+    def widget(widgets, label):
+        return next(w for w in widgets if w.label == label)
+
+    widget(app.selectbox, "Show").set_value("open")
+    widget(app.multiselect, "Severity").set_value(["high"])
+    widget(app.multiselect, "File").set_value(["a.xml"])
+    widget(app.text_input, "Search (title, CWE, code)").set_value("First").run()
+    assert any("Showing 1 of 3 findings. The filters hide 2." in i.value for i in app.info)
+    widget(app.text_input, "Search (title, CWE, code)").set_value("no matches").run()
+    assert any("Showing 0 of 3 findings" in i.value for i in app.info)
+    button(app, "Show all findings").click().run()
+    assert not app.exception
+    assert any(c.value == "3 of 3 findings." for c in app.caption)
+    table = next(d.value for d in app.dataframe if "Tier" in d.value.columns)
+    assert list(table["Title"]) == ["First", "Second", "Third"]
+    assert table["Status"].nunique() == 3
+
+
+def test_base_apk_with_adjacent_splits_has_a_scope_note(tmp_path):
+    base = tmp_path / "base.apk"
+    base.touch()
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
+    app.text_input(key="target").set_value(str(base)).run()
+    assert any("An app file" in c.value for c in app.caption)
+    (tmp_path / "split_config.ar.apk").touch()
+    app.run()
+    include = checkbox(app, "Include adjacent APK parts")
+    assert include.value
+    assert any(c.value == "APK files selected: 2" for c in app.caption)
+    include.uncheck().run()
+    assert any("An app file" in c.value for c in app.caption)
+
+
 def test_dashboard_api_provider_settings():
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
     app.run()
@@ -217,7 +265,7 @@ def test_dashboard_api_provider_settings():
 def test_dashboard_rejects_missing_folder():
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
     app.run()
-    app.sidebar.text_input[0].set_value(str(ROOT / "no-such-folder")).run()
+    app.text_input(key="target").set_value(str(ROOT / "no-such-folder")).run()
     button(app, "Run scan").click().run()
     assert any("does not exist" in e.value for e in app.error)
 
@@ -436,8 +484,8 @@ def test_dashboard_scans_a_flutter_project(tmp_path):
     assert checkbox(app, "Flutter / Android checks").value
     tools = checkbox(app, "Decompile and verify app files (jadx, apksigner)")
     assert not tools.value                                  # optional tools stay off
-    app.sidebar.text_input[0].set_value(str(folder)).run()
-    assert any("A Flutter project" in c.value for c in app.sidebar.caption)
+    app.text_input(key="target").set_value(str(folder)).run()
+    assert any("A Flutter project" in c.value for c in app.caption)
     button(app, "Run scan").click().run()
     assert not app.exception
     result = app.session_state["result"]
@@ -484,7 +532,7 @@ def test_dashboard_scans_an_uploaded_app_file(tmp_path):
     app.run()
     broken = tmp_path / "broken.apk"
     broken.write_bytes(b"not a zip archive")
-    app.sidebar.text_input[0].set_value(str(broken)).run()
+    app.text_input(key="target").set_value(str(broken)).run()
     button(app, "Run scan").click().run()
     assert any("not a readable app package" in e.value for e in app.error)
 
@@ -492,9 +540,9 @@ def test_dashboard_scans_an_uploaded_app_file(tmp_path):
     uploads = tmp_path / "data" / "uploads"
     app.file_uploader(key="app_upload").set_value(("junk.apk", b"not a zip", "x")).run()
     assert not app.exception
-    assert app.session_state["target"] == str(broken)                   # unchanged
+    assert app.session_state["target"] == ""                # never scan the previous input by mistake
     assert any("not a readable app package" in c.value and "junk.apk" in c.value
-               for c in app.sidebar.caption)
+               for c in app.warning)
     assert not uploads.exists() or list(uploads.iterdir()) == []
 
     data = build_apk()
@@ -505,7 +553,7 @@ def test_dashboard_scans_an_uploaded_app_file(tmp_path):
     assert target == tmp_path / "data" / "uploads" / (
         "%s-app.apk" % hashlib.sha256(data).hexdigest()[:12])
     assert target.read_bytes() == data
-    assert any("An app file" in c.value for c in app.sidebar.caption)
+    assert any("An app file" in c.value for c in app.caption)
     # the same app under another name is the same file and the same target (History)
     app.file_uploader(key="app_upload").set_value(("second name.apk", data, "x")).run()
     assert app.session_state["target"] == str(target)
@@ -537,7 +585,75 @@ def test_dashboard_scans_an_uploaded_app_file(tmp_path):
     assert any(c.value.startswith("مخططات التوقيع: v2.") for c in app.caption)
 
 
-def test_sidebar_names_the_kind_of_folder_without_walking_it(tmp_path):
+def flutter_zip(folder: Path) -> bytes:
+    with BytesIO() as buffer:
+        with zipfile.ZipFile(buffer, "w") as archive:
+            for file in folder.rglob("*"):
+                if file.is_file():
+                    archive.write(file, file.relative_to(folder.parent).as_posix())
+        return buffer.getvalue()
+
+
+@pytest.mark.parametrize("hosted_mode", [False, True])
+def test_dashboard_scans_an_uploaded_source_zip(tmp_path, monkeypatch, hosted_mode):
+    if not hasattr(AppTest, "file_uploader"):
+        pytest.skip("this Streamlit version cannot upload files in AppTest")
+    if hosted_mode:
+        monkeypatch.setenv("SCA_HOSTED", "1")
+        monkeypatch.delenv("SCA_SCAN_ROOT", raising=False)
+    source = flutter_project(tmp_path / "tiny")
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=180).run()
+    app.file_uploader(key="app_upload").set_value(
+        ("flutter.zip", flutter_zip(source), "application/zip")).run()
+    button(app, "Run scan").click().run()
+    assert not app.exception
+    assert any("use unencrypted" in error.value for error in app.error)
+    result = app.session_state["result"]
+    assert result.app["kind"] == "flutter-project"
+    assert any(f.file == "android/app/src/main/AndroidManifest.xml" for f in result.findings)
+    if hosted_mode:
+        assert result.target == "flutter.zip" and result.scan_id is None
+        assert not (tmp_path / "data").exists()
+        assert result.decoded_files and all(f.original is None for f in result.decoded_files.values())
+        labels = {tab.label for tab in app.tabs}
+        assert {"Dashboard", "Findings", "Source files", "Reports", "Guide"} <= labels
+        assert {"Rules", "Learning", "History"}.isdisjoint(labels)
+    else:
+        assert Path(result.target).suffix == ".zip" and result.scan_id is not None
+
+
+def test_dashboard_hosted_accepts_a_scoped_path_and_apk(tmp_path, monkeypatch):
+    if not hasattr(AppTest, "file_uploader"):
+        pytest.skip("this Streamlit version cannot upload files in AppTest")
+    from flutter_kit import build_apk
+
+    projects = tmp_path / "projects"
+    flutter_project(projects / "tiny")
+    monkeypatch.setenv("SCA_HOSTED", "1")
+    monkeypatch.setenv("SCA_SCAN_ROOT", str(projects))
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=180).run()
+    app.radio(key="scan_input").set_value("path").run()
+    app.text_input(key="server_path").set_value("tiny").run()
+    button(app, "Run scan").click().run()
+    assert not app.exception
+    assert app.session_state["result"].target == "tiny"
+    assert app.session_state["result"].app["kind"] == "flutter-project"
+
+    app.text_input(key="server_path").set_value("..").run()
+    button(app, "Run scan").click().run()
+    assert any("inside the server project directory" in error.value for error in app.error)
+
+    app.radio(key="scan_input").set_value("upload").run()
+    app.file_uploader(key="app_upload").set_value(
+        ("app.apk", build_apk(), "application/vnd.android.package-archive")).run()
+    button(app, "Run scan").click().run()
+    assert not app.exception
+    assert app.session_state["result"].target == "app.apk"
+    assert app.session_state["result"].app["kind"] == "apk"
+    assert not (tmp_path / "data").exists()
+
+
+def test_workspace_names_the_kind_of_folder_without_walking_it(tmp_path):
     """A pure Dart package is not a Flutter project; an Android project gets its caption."""
     dart = tmp_path / "dart_cli"
     (dart / "bin").mkdir(parents=True)
@@ -553,16 +669,16 @@ def test_sidebar_names_the_kind_of_folder_without_walking_it(tmp_path):
     app.run()
     for folder, expected in ((dart, None), (droid, "An Android project"),
                              (flutter_project(tmp_path / "tiny"), "A Flutter project")):
-        app.sidebar.text_input[0].set_value(str(folder)).run()
+        app.text_input(key="target").set_value(str(folder)).run()
         assert not app.exception
-        captions = [c.value for c in app.sidebar.caption
+        captions = [c.value for c in app.caption
                     if "project:" in c.value or "app file:" in c.value]
         if expected is None:
             assert captions == [], folder.name
         else:
             assert len(captions) == 1 and captions[0].startswith(expected), captions
     app.radio[0].set_value("العربية").run()
-    assert any(c.value.startswith("مشروع Flutter") for c in app.sidebar.caption)
+    assert any(c.value.startswith("مشروع Flutter") for c in app.caption)
 
 
 def test_texts_of_a_scan_are_shown_as_text_not_as_markdown():
@@ -609,7 +725,7 @@ def test_dashboard_scans_the_real_probe_apks():
     for name, mode, also in (("release.apk", "release", "FLUTTER-APP-003"),
                              ("debug.apk", "debug", "FLUTTER-APP-001"),
                              ("release.aab", "release", "FLUTTER-APP-007")):
-        app.sidebar.text_input[0].set_value(str(folder / name)).run()
+        app.text_input(key="target").set_value(str(folder / name)).run()
         button(app, "Run scan").click().run()
         assert not app.exception, name
         result = app.session_state["result"]
@@ -620,7 +736,7 @@ def test_dashboard_scans_the_real_probe_apks():
         assert any(s.value == "By OWASP Mobile Top 10 (2024)" for s in app.subheader)
     if os.environ.get("SCA_JADX"):                  # the optional tools on the release APK
         checkbox(app, "Decompile and verify app files").check().run()
-        app.sidebar.text_input[0].set_value(str(folder / "release.apk")).run()
+        app.text_input(key="target").set_value(str(folder / "release.apk")).run()
         button(app, "Run scan").click().run()
         assert not app.exception
         result = app.session_state["result"]

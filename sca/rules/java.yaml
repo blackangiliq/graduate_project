@@ -9,14 +9,16 @@
   pattern: '\.(executeQuery|executeUpdate|execute|prepareStatement|createQuery|createNativeQuery|addBatch)\s*\(\s*[^;]*"\s*\+'
 
 - id: JAVA-SQLI-002
-  title: SQL string assembled from variables
+  title: SQL string assembly requiring execution and input review
   languages: [java]
   cwe: CWE-89
-  severity: high
-  confidence: 0.65
-  pattern: '"\s*(SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^"]*"\s*\+\s*[A-Za-z_]'
+  severity: medium
+  confidence: 0.55
+  pattern: '"\s*(?:SELECT\b[^"\r\n]*\bFROM\b|INSERT\s+INTO\b|UPDATE\b[^"\r\n]*\bSET\b|DELETE\s+FROM\b)[^"\r\n]*"\s*\+\s*[A-Za-z_]'
   exclude: '\.(executeQuery|executeUpdate|execute|prepareStatement|createQuery|createNativeQuery)\s*\('
   ignore_case: true
+  message: A SQL-shaped string is assembled with a variable. This pattern alone does not establish query execution or untrusted input. Review the database call and input flow before classifying SQL injection.
+  fix: If untrusted values reach an executed query, use prepared statements with bound parameters. Validate dynamic identifiers against an allowlist.
 
 - id: JAVA-CMDI-001
   title: OS command built from dynamic data
@@ -44,13 +46,16 @@
   exclude: 'escapeHtml|encodeForHTML|HtmlUtils\.htmlEscape'
 
 - id: JAVA-PATH-001
-  title: File path built from request data or concatenation
+  title: File path construction receives traced request data
   languages: [java]
   cwe: CWE-22
   severity: high
   confidence: 0.6
+  requires_taint: true
   pattern: 'new\s+(File|FileInputStream|FileReader|FileOutputStream|FileWriter)\s*\([^;]*(getParameter\s*\(|"\s*\+\s*[A-Za-z_]|[A-Za-z_]\w*\s*\+\s*")'
   exclude: 'getName\(\)|normalize\(\)'
+  message: Request-derived data is traced to this file-path construction. Review validation and resolved-path containment to determine whether directory traversal is possible.
+  fix: Resolve the path and verify that it remains inside the intended base directory, or map the input to an allowlist of permitted filenames.
 
 - id: JAVA-REDIRECT-001
   title: Redirect target taken from the request
@@ -91,7 +96,8 @@
   cwe: CWE-327
   severity: high
   confidence: 0.8
-  pattern: 'Cipher\.getInstance\s*\(\s*"(DES|DESede|RC4|RC2|Blowfish|ARCFOUR)\b|Cipher\.getInstance\s*\(\s*"[^"]*/ECB/|Cipher\.getInstance\s*\(\s*"AES"\s*\)'
+  # RSA/ECB/... is a standard RSA transformation name, not symmetric ECB encryption.
+  pattern: 'Cipher\.getInstance\s*\(\s*"(DES|DESede|RC4|RC2|Blowfish|ARCFOUR)\b|Cipher\.getInstance\s*\(\s*"(?!RSA/)[^"]*/ECB/|Cipher\.getInstance\s*\(\s*"AES"\s*\)'
   ignore_case: true
 
 - id: JAVA-RANDOM-001

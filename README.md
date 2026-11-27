@@ -2,15 +2,23 @@
 
 **Intelligent Source Code Vulnerability Detection and Security Assessment Platform**
 
-Choose a project folder or an Android app file. The tool scans the source code with several
+Choose a project path, upload a source ZIP, or select a built Android package. The tool scans the code with several
 static analysis engines, reviews the results with AI (a cloud API or a local model),
 separates confirmed findings from probable ones, scores the project, and **learns**: what
 the AI discovers becomes a proposed rule that is validated automatically and activated only
 after you approve it. Flutter and Android apps are analysed both as source projects and as
-built packages (APK, AAB), which are decoded and read, never run.
+built packages (APK, AAB and split APK sets). Static scans decode and read packages;
+the separate **Runtime analysis** tab records a real process on a configured Android lab.
+
+Fresh dashboard scans show original credential values and API addresses, with clickable
+file/line previews. Dashboard report downloads include the original evidence available
+in that scan. Local history stores the original evidence separately and restores it when
+reopening a scan. Legacy archives without evidence need one rescan to recover values.
+CLI output retains its existing masked representation.
 
 > وثيقة المشرف: **[docs/SUPERVISOR_AR.md](docs/SUPERVISOR_AR.md)** ([PDF](docs/SUPERVISOR_AR.pdf)، يُولَّد من ملف md، وعند الاختلاف فملف md هو المعتمد) ·
 > الدليل الكامل بالعربية: **[docs/GUIDE_AR.md](docs/GUIDE_AR.md)** ·
+> تشغيل المنصة على خادم: **[docs/DEPLOY_AR.md](docs/DEPLOY_AR.md)** ·
 > الشرح المصوَّر بكل المخططات: **[docs/DIAGRAMS_AR.md](docs/DIAGRAMS_AR.md)** ·
 > هيكل بحث التخرج: **[docs/THESIS_OUTLINE_AR.md](docs/THESIS_OUTLINE_AR.md)**
 >
@@ -46,6 +54,14 @@ step found and how long it took, and the file being read right now. The same ste
 on the Dashboard tab under *What the scan did, step by step*, are printed by the command
 line, and are saved in the JSON report (`steps`).
 
+### Run on a server
+
+Run `docker compose up -d --build --wait` from the project directory on a Linux host.
+The hosted dashboard accepts browser uploads up to 50 MiB. Configure a read-only project
+directory to enable server paths alongside uploads. Reports are downloadable in the current
+browser session. The container includes JADX for Android bytecode analysis. Follow the
+[Arabic deployment guide](docs/DEPLOY_AR.md) for access from another device and the optional mount.
+
 ## The dashboard
 
 Opening the dashboard shows a short splash screen and then five introduction pages, in
@@ -54,26 +70,30 @@ active rules and app checks), how a scan works step by step, a card for every la
 types, its rule count and how deep the analysis goes, how a finding is decided (source,
 sink, confirmed or probable), and how to start, with a button that scans the sample or one
 of the training labs. **Skip** goes straight to the dashboard, and **Show the
-introduction** in the sidebar opens the pages again (`SCA_SKIP_INTRO=1` turns them off).
+introduction** in **Scan settings** opens the pages again (`SCA_SKIP_INTRO=1` turns them off).
 
-Everything is controlled from the dashboard, in English or Arabic (switch at the top of the
-sidebar). Every option has a (?) tooltip that says what it does, and the **Guide** tab holds
+Switch between English and Arabic at the top of the dashboard. The **Scan workspace**
+groups input selection, samples and scan settings into tabs. Each option has a tooltip, and **Guide** holds
 the instructions, the meaning of every setting, the rule-writing guide, all diagrams with
 their explanation, the command reference and the references.
 
-**Apps.** The target box also takes an app file (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`):
-type its path, press **Browse app...**, or upload it. **Flutter sample** selects the
+**Apps.** In **Scan input**, select a file or directory, paste its path, or upload a
+source ZIP or Android package (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). For a
+split install, select the directory containing the exported APKs or upload the APKs
+together. Selecting a local `base.apk` offers to include its adjacent parts and shows
+the filenames. A source ZIP can contain project files at the root or under a single
+wrapper directory. It is unpacked temporarily. **Flutter sample** in **Samples** selects the
 deliberately vulnerable Flutter app in `samples/flutter_vulnerable_app`. For a Flutter or
 Android target the Dashboard tab adds an app panel (package, versions, build mode, signing,
 permissions, components, deep links, Dart packages), an **APIs and keys** panel (every server
-address, API call, API path and key, with its places and alerts; keys masked) and charts by
+address, API call, API path and key, with its places and alerts; full original values) and charts by
 OWASP Mobile Top 10 (2024) and MASVS group.
 
 **Training labs.** The folder [infected_project](infected_project/README.md) lists 19
 deliberately vulnerable open-source applications from different sources (OWASP, security
 companies, independent authors) in more than 10 languages, three of them Flutter apps,
 with their links and licences.
-`python infected_project/fetch_labs.py` downloads them at pinned commits, the sidebar's
+`python infected_project/fetch_labs.py` downloads them at pinned commits, the **Samples** tab's
 **Training lab** selector scans any of them, and `python infected_project/scan_labs.py`
 scans all of them ([RESULTS.md](infected_project/RESULTS.md),
 [REVIEW.md](infected_project/REVIEW.md)).
@@ -99,6 +119,7 @@ Command line:
 
 ```bash
 python -m sca scan path/to/project --format html,json,sarif,pdf
+python -m sca scan android-source.zip --lang ar
 python -m sca scan path/to/project --llm --deep --strict --lang ar
 python -m sca scan app-release.apk                   # an Android app package (APK, AAB, APK set)
 python -m sca flutter info app-release.apk           # package, build mode, signing, components
@@ -109,7 +130,7 @@ python -m sca doctor       # which engines, AI parts and optional app tools are 
 ## Connecting an AI provider
 
 The static scan and the ML classifier work with no setup. For AI review, deep scan and rule
-learning, choose a provider in the sidebar (section 3) or on the command line:
+learning, choose a provider in **Scan settings** or on the command line:
 
 ```bash
 python -m sca config --provider openai --model <model-name>     # asks for the API key
@@ -141,12 +162,12 @@ Click the image to enlarge it. Source: [docs/diagrams/pipeline.mmd](docs/diagram
 |---|---|---|
 | 0. Input | `app.py`, `sca/__main__.py` | Streamlit dashboard, argparse command line, tkinter folder dialog |
 | 1. Collect | `sca/walker.py`, `sca/flutter/` | `os.walk`, extension-to-language map (70 extensions, 22 languages, including JSP, EJS and ASP.NET pages; a backup copy such as `config.php.dist` is read as the original), binary/minified/size filters. An app package is decoded instead (own readers for ZIP, binary and protobuf XML, `resources.arsc`, DEX, APK signatures, the Dart kernel and the AOT snapshot) into virtual files |
-| 2. Detect | `sca/engines/`, `sca/rules/`, `sca/flutter/checks.py` | Secrets: regex key formats (11 in the engine, 2 Dart formats in `dart.yaml`, 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 215 built-in YAML pattern rules (47 of them for Dart) + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules; pages and templates also get the JavaScript rules inside their `<script>` code. Python: `ast` module, taint analysis with function summaries. C/C++: per-function memory checks (`c_memory`): double free, use after free, leaks, allocation sizes that overflow, division by zero, out-of-bounds indexes, copies larger than the buffer. Flutter/Android: 49 structural checks of the manifest, network security config, Gradle, signing, Info.plist, build mode and Dart dependencies. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
+| 2. Detect | `sca/engines/`, `sca/rules/`, `sca/flutter/checks.py` | Secrets: regex key formats (11 in the engine, 2 Dart formats in `dart.yaml`, 205 imported from Gitleaks) + Shannon entropy. Pattern rules: 215 built-in YAML pattern rules (47 of them for Dart) + 95 imported from DevSkim + your own (PyYAML, Python `re`) + learned rules; pages and templates also get the JavaScript rules inside their `<script>` code. Python: `ast` module, taint analysis with function summaries. C/C++: per-function memory checks (`c_memory`): double free, use after free, leaks, allocation sizes that overflow, division by zero, out-of-bounds indexes, copies larger than the buffer. Flutter/Android: 52 structural checks of the manifest, network security config, Gradle, signing, Info.plist, build mode and Dart dependencies. Optional: Bandit, Opengrep/Semgrep, Gitleaks through `subprocess` + JSON |
 | 3. Refine | `sca/learn/feedback.py`, `sca/engines/taint_lite.py` | Beta-posterior rule confidence and quarantine from your reviews; heuristic input tracing for 13 languages (Dart included) |
 | 4. Merge | `sca/merge.py`, `sca/cwe.py` | Deduplication, noisy-OR confidence, CWE normalization, OWASP Top 10 (2021) mapping (plus OWASP Mobile Top 10 2024 and MASVS for apps), English/Arabic knowledge base, SHA-256 fingerprints |
 | 5. ML | `sca/ai/classifier.py` | scikit-learn: code tokenizer, TF-IDF 1-3-grams, logistic regression; retrained with reviewed lines |
 | 6. AI review | `sca/ai/providers.py`, `sca/ai/llm.py` | OpenAI-compatible and Anthropic APIs or Ollama over `urllib`; JSON-only prompts; deep scan with second-pass verification; SQLite answer cache; secret masking |
-| 7. Assess | `sca/scoring.py`, `sca/flutter/inventory.py` | Confirmed/probable tier, strict mode, risk 0-10, exponential project score 0-100, grade A-F. For a mobile target, an API and key inventory follows: server addresses, API calls and paths, masked keys, service identifiers and alerts, read from text only (nothing is contacted) |
+| 7. Assess | `sca/scoring.py`, `sca/flutter/inventory.py` | Confirmed/probable tier, strict mode, risk 0-10, exponential project score 0-100, grade A-F. The static inventory retains original server addresses, API calls, paths, keys and configuration for local previews; analysis/AI and CLI representations remain masked. Static inventory extraction contacts no services. |
 | 8. Store and report | `sca/storage.py`, `sca/report/` | SQLite, pandas, self-contained HTML, fpdf2 (PDF), JSON, SARIF 2.1.0 |
 | 9. Learn | `sca/learn/` | LLM-written rules as JSON, 9 automatic checks, regex sandbox in a killable child process, human approval, YAML rule store |
 
@@ -192,18 +213,22 @@ AI service.)
 
 ### The rule set: built in, imported, learned, your own
 
-The tool ships **517 rules, 470 of them active**, plus the 49 structural checks for Flutter
-and Android apps (section below). Full guide: [docs/RULES.md](docs/RULES.md).
+The shipped rule catalog and default activation counts are generated from the current
+YAML files in [docs/RULES.md](docs/RULES.md), alongside 52 structural Flutter/Android checks.
+The [2026-11-27 upstream review](docs/UPSTREAM_RULES_2026_11_27.md) records pinned GitHub
+sources, licensed imports, validation, and rules deliberately not converted. Local rule
+overrides can change activation counts; they are not the shipped defaults.
 
-| Origin | Rules | Active | File |
-|---|---:|---:|---|
-| Built in, written with the tool | 217 | 217 | `sca/rules/*.yaml` |
-| Imported from [Microsoft DevSkim](https://github.com/microsoft/DevSkim) (MIT) | 95 | 49 | `sca/rules/imported/devskim.yaml` |
-| Imported from [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT), credential formats | 205 | 204 | `sca/rules/imported/gitleaks.yaml` |
-| Learned from the AI, approved by you | grows with use | | `learned/rules.yaml` |
-| Your own | as many as you write | | `learned/custom.yaml` |
+| Origin | Location |
+|---|---|
+| Project rules, including Android, Dart and client libraries | `sca/rules/*.yaml` |
+| Microsoft DevSkim patterns | `sca/rules/imported/devskim.yaml` |
+| Gitleaks credential formats and compatible boundary handling | `sca/rules/imported/gitleaks*.yaml` |
+| Betterleaks provider formats and contextual credential patterns | `sca/rules/imported/betterleaks*.yaml` |
+| Narrow adaptations of GitHub CodeQL Android checks | `sca/rules/imported/codeql_android*.yaml` |
+| Approved learned rules and user rules | `learned/rules.yaml`, `learned/custom.yaml` |
 
-**How the imported rules were vetted.** `tools/import_rules.py` converts each rule and keeps
+**Historical DevSkim and Gitleaks import checks (2026-11-11).** `tools/import_rules.py` converts each rule and keeps
 it only if it compiles in Python, finishes on stress input, passes its own examples and is
 silent on the known-safe samples. 78 of the 378 source rules were left out (multi-line
 conditions, unsupported languages, failed checks). The rest were run on 2.38 million code
@@ -257,30 +282,37 @@ A finding is *confirmed* by your review, by the AI review, or by a traced flow o
 
 ## Flutter and Android apps
 
-The same scan works on a Flutter or Android **source project** and on a **built app
-package** (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). Full description:
+The same scan works on a Flutter, Java or Kotlin Android **source project** and on a
+**built Android package** (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). Full description:
 [docs/FLUTTER.md](docs/FLUTTER.md).
 
 - **Source project.** 47 Dart pattern rules (TLS, cleartext traffic, WebView settings, plain
   and world-readable storage, SQL built from strings, weak cryptography and seeded random
   numbers, logging of secrets, deep links, commands, reflection, paths) and 2 Dart credential
   formats, input tracing for Dart, 5 rules for CI scripts, Firebase rules and the web page,
-  and 49 structural checks that parse `AndroidManifest.xml`, the network security config,
+  and 52 structural checks that parse `AndroidManifest.xml`, the network security config,
   FileProvider paths, the Gradle release build, `key.properties`, keystores, `Info.plist`,
   `pubspec.yaml` and `pubspec.lock` (25 curated advisories for 23 Pub packages, 16
   discontinued packages). An Android library module gets only its component, permission and
   link checks, product-flavor source sets count as release, and the platform folders of a
   Flutter plugin are not audited as an app.
+- **Java and Kotlin.** Rules cover unsafe WebView settings, mutable pending intents, broad
+  file access, sensitive logging and storage, weak cryptography, and credentials in
+  Android resources and Gradle configuration. Typed and multiline literal assignments and
+  unquoted YAML/properties/INI credentials are also checked. Dashboard previews and downloads
+  retain original evidence; detected credentials are masked in AI inputs and the CLI.
 - **App package.** Decoded in pure Python, with no Android SDK: the binary manifest and
   resources, the DEX strings, the signing certificates, and the Flutter parts. A debug build
   ships its Dart source in `kernel_blob.bin`, which is recovered and scanned like source code;
   a release build ships an AOT snapshot in `libapp.so`, whose strings, build mode, Dart
   version, obfuscation and package names are read. Findings point at a line of a decoded
   file (the manifest is written one attribute per line), and app facts go into every report.
+  JADX can recover Java-like code from both Java and Kotlin bytecode. Optimized builds,
+  obfuscation and Flutter AOT compilation affect how much code and metadata are recoverable.
 - **API and key inventory.** After each scan of an app or project, the tool lists every
   server address (with its service: Firebase, Supabase, AWS, Stripe ... or the app's own
   server), the HTTP, WebSocket and GraphQL calls in code, the API paths kept as texts, the
-  keys and tokens (masked, with what to do about each), service identifiers such as the
+  keys and tokens (full values in the dashboard, with review guidance), service identifiers such as the
   Firebase project, and `.env` entries, each with all its places. Alerts point out secret
   keys in the package, `http://` addresses, test servers and tunnels, keys in addresses,
   webhooks and bot tokens. Addresses are only read, never contacted. It is in the dashboard
@@ -288,6 +320,10 @@ package** (`.apk`, `.aab`, `.apks`, `.xapk`, `.apkm`). Full description:
   [docs/FLUTTER.md](docs/FLUTTER.md#7-api-and-key-inventory).
 - **Optional tools.** With `--apk-tools`, jadx decompiles the app's own classes and
   apksigner verifies the signature, when they are installed.
+- **Decoded files.** After a local package scan, filter the recovered files by name and browse
+  their numbered lines. In **APIs and keys**, **Open decoded location** opens the selected key
+  location. Previews hide text literals and detected credentials and are kept in the current
+  session.
 - **Mobile taxonomy.** Findings of a mobile target also carry an OWASP Mobile Top 10 (2024)
   risk and a MASVS group, mapped from the CWE (the project's own mapping).
 
@@ -489,12 +525,13 @@ scan about 40% slower. On the labelled samples the precision and recall above di
   documentation; the other providers' addresses and formats are from their public
   documentation and were not exercised. The quality of reviews and of learned rules depends
   on the model you connect and is yours to measure.
-- The Opengrep/Semgrep and Gitleaks adapters were tested on sample tool output only.
+- Gitleaks 8.30.1 and Opengrep 2.1.0 were run on Windows against retained decoded text
+  from all twelve supplied applications and source samples. See the pinned tools,
+  actual differences and partial parse diagnostics in [external validation](docs/EXTERNAL_ENGINES.md).
 - Imported rules: each one passed the automatic checks and the noise measurement, but they
   were not each proven against real vulnerabilities or real leaked keys.
-- The external programs Gitleaks, Opengrep and Semgrep were never run for real here (they
-  could not be installed in the development environment); only their output format was
-  tested. The built-in engines do not depend on them.
+- The built-in engines do not depend on optional external executables. Semgrep itself
+  was not run in this Windows experiment; Opengrep used the compatible adapter.
 - "Download and run" was checked from a fresh clone of the repository in a new virtual
   environment on Linux: installation, a scan with all four report formats, the command
   line and the dashboard in a browser. Version 1.4 was checked the same way on Windows 11
@@ -573,12 +610,28 @@ infected_project/      19 training labs: sources and licences, fetch_labs.py, sc
 evaluation/            evaluate.py, results.md, owasp_benchmark.py and .md, import_report.json,
                        flutter_eval.py, flutter_results.md, flutter_truth/ (truth files of
                        the labs and the probe apps)
-tests/                 1,394 tests
+tests/                 regression tests for scanners, loaders, evidence, archives and UI
 docs/                  supervisor document, Arabic guide, rules guide, Flutter guide (EN + AR),
                        illustrated walk-through, thesis outline, architecture,
                        diagrams/ (Mermaid sources) and images/
 experiments/           optional CodeBERT fine-tuning script (not executed)
 ```
+
+## Android runtime analysis
+
+The Runtime analysis tab records real URLs, credential candidates and key material from a connected Android lab, with full values, event evidence, source correlation and archived sessions. See [setup, coverage and Windows instructions](docs/DYNAMIC_ANALYSIS.md). Docker is optional. Runtime observations are separate from static vulnerability findings.
+
+## Evidence and validation update — 2026-11-27
+
+See [the reproducible corpus review](docs/VALIDATION_2026_11_27.md) for independent
+APK inspection, pipeline comparisons, regression fixes and measured limits. Literal URLs,
+URL templates and runtime observations are distinct evidence types. Values resolved from
+Android resources link to their definition; configuration and `.env` rows also open the
+side preview. An SDK identifier or credential-shaped value is not proof of exploitability.
+
+Raw APKs, decompiled application contents, original credentials and local capture archives
+remain in the local `data/` directory. The repository contains implementation, reproducible
+audit tools, isolated regression fixtures and aggregate validation results.
 
 ## License
 

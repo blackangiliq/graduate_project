@@ -9,16 +9,17 @@ does it carry? Every item comes with all the places it occurs (file and line):
              their recovered Dart source, Java decompiled by jadx)
   paths      API paths kept as texts in code and in compiled code ("/api/v1/login" in the
              strings of libapp.so, where a release build keeps them)
-  keys       keys, tokens and passwords that the secrets engine and the rules found (masked)
+  keys       keys, tokens and passwords that the secrets engine and the rules found
   config     service identifiers: Firebase project, app ID, OAuth client ID, AdMob app ID ...
   env        the entries of .env files (flutter_dotenv) in the project or the package
   alerts     the warnings drawn from all of these, the most serious first
 
 Everything is read from text the scan already has: the files of the project, or the files
-decoded from the app package. No address is contacted. Secret values are never kept or shown
-in full: they are masked the way reports mask them (sca.walker.mask_secret).
+decoded from the app package. No address is contacted. Values are masked by default
+(sca.walker.mask_secret); reveal_values retains complete observed values for the dashboard.
 
-The result is a JSON-safe dict, stored as facts["apis"] (ScanResult.app["apis"]).
+The default result is a JSON-safe dict stored as facts["apis"] (ScanResult.app["apis"]).
+The dashboard builds a separate inventory with visible values for its scan session.
 """
 from __future__ import annotations
 
@@ -30,25 +31,31 @@ import posixpath
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from ..cwe import canonical
+from ..engines.public_fixtures import FIXTURE_ADVICE, identify_public_fixture
 from ..merge import LINE_TOLERANCE
 from ..models import Finding
 from ..walker import SourceFile, is_test_path, mask_secret, strip_bidi
-from .checks import FIREBASE_NOTE, _URL, _endpoint
+from .checks import FIREBASE_NOTE, MAPS_CLIENT_NOTE, _URL, _endpoint
+from .android import LOOPBACK_HOSTS
 from .context import ORIGIN_PLACEHOLDER, ORIGIN_STRINGS, ORIGIN_SUMMARY, MobileContext
 
 MAX_ITEMS = 300          # rows of each list; what is left out is counted in "truncated"
 MAX_LOCATIONS = 20       # places kept for one item (all of them are counted)
 MAX_ALERTS = 80
+MAX_VISIBLE_ITEMS = 10_000     # dashboard/archive lists, independently bounded
+MAX_VISIBLE_LOCATIONS = 200
+MAX_CONTEXT_LINE = 4000        # contextual call parsing; literal URLs have no line cutoff
 MAX_TEXT = 300
 
 # categories of a server, in the order the list shows them
-TUNNEL, WEBHOOK, APP, BACKEND, API, SDK = "tunnel", "webhook", "app", "backend", "api", "sdk"
-CATEGORY_ORDER = {TUNNEL: 0, WEBHOOK: 1, APP: 2, BACKEND: 3, API: 4, SDK: 5}
+TUNNEL, WEBHOOK, APP, BACKEND, API, SDK, LOCAL = "tunnel", "webhook", "app", "backend", "api", "sdk", "local"
+CATEGORY_ORDER = {TUNNEL: 0, WEBHOOK: 1, APP: 2, BACKEND: 3, API: 4, SDK: 5, LOCAL: 6}
 CATEGORY_TEXT = {TUNNEL: "Tunnel or test service", WEBHOOK: "Webhook", APP: "App server",
-                 BACKEND: "Cloud backend", API: "Third-party API", SDK: "SDK, analytics or ads"}
+                 BACKEND: "Cloud backend", API: "Third-party API", SDK: "SDK, analytics or ads",
+                 LOCAL: "Local or development address"}
 LEVELS = ("danger", "warning", "info")
 LEVEL_RANK = {level: rank for rank, level in enumerate(LEVELS)}
 
@@ -210,6 +217,15 @@ _SECRET_QUERY = re.compile(
     r"(?i)([?&](?:api[_-]?key|apikey|key|access[_-]?token|token|auth[_-]?token|auth"
     r"|secret|client[_-]?secret|password|passwd|pwd|sig|signature|session[_-]?id|jwt)=)"
     r"([^&#\s]*)")
+_QUERY_PLACEHOLDER = re.compile(
+    r"(?:\$[\w.]+|\$?\{[\w.]+\}|\{\{[\w.]+\}\}|<[\w.]+>|:[\w.]+|"
+    r"%(?:\d+\$)?[sdf]|%\([\w.]+\)[sdf]|\*+)")
+# Unlike the legacy security-check matcher, the inventory preserves interpolation
+# placeholders. These are address templates, never a claim of an actual request.
+_INVENTORY_URL = re.compile(r"(?i)\b(?:https?|wss?)://[^\s\"'<>\\^`|]+")
+_ADDRESS_PLACEHOLDER = re.compile(
+    r"\$\{[A-Za-z_][\w.]*\}|\{[A-Za-z_][\w.-]*\}|\$[A-Za-z_]\w*"
+    r"|%(?:\d+\$)?[sdf]|%\([\w.]+\)[sdf]")
 _URL_PASSWORD = re.compile(r"(?i)^([a-z][a-z0-9+.-]*://[^/@\s:]*:)([^/@\s]+)@")
 _TELEGRAM = re.compile(r"(?i)(api\.telegram\.org/bot)(\d{5,}:[A-Za-z0-9_-]{20,})")
 # the token is the last segment of the path (an address already masked keeps its other
@@ -222,7 +238,7 @@ _TEAMS_HOOK = re.compile(r"(?i)(webhook\.office\.com/webhookb2/)([^\s]+)")
 
 # API paths: a path made of URL characters with a segment that marks an API, a server
 # script, or a query with a parameter
-_PATH = re.compile(r"^(?:/|api/)[\w.~%{}$:@+,;=/-]*(?:\?[\w.~%{}$:@+,;=&/-]*)?$")
+_PATH = re.compile(r"[\w.~%{}$:@+,;=/-]+(?:\?[\w.~%{}$:@+,;=&/-]*)?")
 _API_MARKER = re.compile(
     r"(?i)(?:^|/)(?:api|apis|rest|graphql|gql|rpc|oauth2?|webhooks?|wp-json|v\d{1,2}"
     r"(?:\.\d{1,2})?)(?:/|$|\?)|\.(?:php|aspx?|jsp|do|cgi|json)(?:$|\?)|\?[\w.-]+=")
@@ -239,26 +255,29 @@ _CLIENT_WORDS = frozenset({"http", "https", "dio", "client", "api", "rest", "gra
                            "chopper", "backend", "server", "network", "service", "session",
                            "request", "requests", "retrofit", "remote"})
 _NAME_WORDS = re.compile(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+")
+_FUEL_RECEIVER = re.compile(r"(?:^|\.)Fuel(?:\.INSTANCE)?\Z")
 _DART_CALL = re.compile(
     r"(?P<recv>\b[A-Za-z_$][\w$]*(?:\(\s*\))?(?:\s*\.\s*[A-Za-z_$][\w$]*(?:\(\s*\))?)*)\s*\.\s*"
     r"(?P<method>get|post|put|patch|delete|head|request|send|download|fetch|getUri|postUri"
     r"|putUri|patchUri|deleteUri|headUri|requestUri|read|readBytes|getUrl|postUrl|putUrl"
     r"|patchUrl|deleteUrl|headUrl|openUrl|query|mutate|subscribe)\s*"
     r"(?:<(?:[^<>()]|<(?:[^<>()]|<[^<>()]*>)*>)*>)?\s*\(")
-_URI_CALL = re.compile(r"\bUri\s*\.\s*(https?)\s*\(\s*(['\"])([^'\"]+)\2\s*(?:,\s*(['\"])"
-                       r"([^'\"]*)\4)?")
+_URI_CALL = re.compile(r"\bUri\s*\.\s*(https?)\s*\(\s*(['\"])([^'\"$\\\s/?#]+)\2\s*,"
+                       r"\s*(['\"])([^'\"$\\\s%?#]*)\4\s*\)")
+_URI_CONSTRUCTOR = re.compile(r"Uri\s*\.\s*(https?)\s*\(")
 _SOCKET = re.compile(r"\b(?:IO|Html)?WebSocketChannel\s*\.\s*connect\s*\(|\bWebSocket\s*\."
                      r"\s*connect\s*\(|\bio\s*\(\s*['\"]|\bIO\s*\.\s*io\s*\(")
 _GRAPHQL = re.compile(r"\b(?:HttpLink|WebSocketLink|GraphQLClient)\s*\(")
-_ANNOTATION = re.compile(r"@(?P<method>GET|POST|PUT|PATCH|DELETE|HEAD|Get|Post|Put|Patch"
-                         r"|Delete|Head)\s*\(\s*(?:path\s*:\s*|value\s*=\s*)?(['\"])"
-                         r"(?P<path>[^'\"]*)\2")
+_ANNOTATION = re.compile(r"@(?P<method>GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|Get|Post|Put|Patch"
+                         r"|Delete|Head|Options)\s*\(\s*(?:path\s*[:=]\s*|value\s*=\s*)?(['\"])"
+                         r"(?P<path>[^'\"]*)\2(?=\s*[,)]|\s*$)")
 _BASE_URL = re.compile(r"\bbase_?Url\s*(?::|=>|=(?![=>])|\()\s*", re.IGNORECASE)
 _JAVA_CALL = re.compile(r"\.\s*url\s*\(|\bnew\s+URL\s*\(|(?<![\w.])URL\s*\((?=\s*\")|\bfetch\s*\("
                         r"|\baxios\s*\.\s*(?:get|post|put|patch|delete|request)\s*\(")
 # a quoted literal: an escape pair or any other character than the quote and the backslash
 # (the two branches never match the same text, so a literal that does not close fails fast)
 _FIRST_LITERAL = re.compile(r"""(['"])((?:\\.|(?!\1)[^\\]){0,300})\1""")
+_FULL_FIRST_LITERAL = re.compile(r"""(['"])((?:\\.|(?!\1)[^\\])*)\1""")
 _METHOD = {"getUrl": "GET", "postUrl": "POST", "putUrl": "PUT", "patchUrl": "PATCH",
            "deleteUrl": "DELETE", "headUrl": "HEAD", "openUrl": "OPEN", "getUri": "GET",
            "postUri": "POST", "putUri": "PUT", "patchUri": "PATCH", "deleteUri": "DELETE",
@@ -293,6 +312,8 @@ _ID_HINTS = ("1:", "googleusercontent", "ca-app-pub", "appspot", "firebasestorag
              "sentry", "G-")
 # named entries of configuration files (lower-case name -> label, service, secret)
 CONFIG_NAMES: Dict[str, Tuple[str, str, bool]] = {
+    "com_braze_api_key": ("Braze SDK app identifier", "Braze", False),
+    "com_appboy_api_key": ("Braze SDK app identifier", "Braze", False),
     "google_app_id": ("Firebase app ID", "Firebase", False),
     "mobilesdk_app_id": ("Firebase app ID", "Firebase", False),
     "gcm_defaultsenderid": ("Firebase sender ID", "Firebase Cloud Messaging", False),
@@ -330,9 +351,9 @@ CONFIG_NAMES: Dict[str, Tuple[str, str, bool]] = {
     "com.google.android.maps.v2.api_key": ("Google Maps API key", "Google Maps", True),
     "io.branch.sdk.branchkey": ("Branch key", "Branch", True),
 }
-_NAMED = re.compile(r"""<string\s+name="(?P<xml>[\w.]+)"[^>]*>(?P<xmlv>[^<]{1,300})</string>"""
-                    r"""|(?<![\w.])["']?(?P<key>[A-Za-z_][\w.]*)["']?\s*[:=]\s*["']"""
-                    r"""(?P<val>[^"'\n]{1,300})["']""")
+_NAMED = re.compile(r"""<string\b[^>]*\bname\s*=\s*["'](?P<xml>[\w.]+)["'][^>]*>(?P<xmlv>[^<]+)</string\s*>"""
+                    r"""|(?<![\w.'"])(?P<namequote>["']?)(?P<key>[A-Za-z_][\w.]*)(?P=namequote)\s*[:=]\s*"""
+                    r"""(?P<valuequote>["'])(?P<val>(?:\\.|(?!(?P=valuequote))[^\\\n])+)(?P=valuequote)""")
 _PLIST_KEY = re.compile(r"<key>\s*([\w.]+)\s*</key>")
 _PLIST_STRING = re.compile(r"<string>([^<]{1,300})</string>")
 _ENV_FILE = re.compile(r"(?i)(?:^|/)(?:\.env(?:\.[\w.-]+)?|[\w.-]+\.env)$")
@@ -342,6 +363,15 @@ _SECRET_NAME = re.compile(r"(?i)key|secret|token|passw|passphrase|(?:^|[_.])pass
                           r"|auth|credential|private|signature|salt|cert|hmac")
 _PLACEHOLDER_VALUE = re.compile(r"(?i)^(?:|<.*>|\$\{.*\}|\{\{.*\}\}|x+|\*+|changeme|todo|your[_ -].*"
                                 r"|example.*|placeholder.*|null|none|false|true)$")
+_CONFIG_CREDENTIAL_NAME = re.compile(
+    r"(?:^|_)(?:api_key|apikey|api_token|access_token|auth_token|client_secret|secret_key|"
+    r"private_key|password|passwd|passphrase|token|secret|credential)$")
+_CONFIG_UI_NAME = re.compile(
+    r"(?:^|_)(?:hint|title|label|message|msg|error|invalid|expired|prompt|toggle|description|"
+    r"confirm|enter|empty|forgot|change|reset|repeat|retype|missing|length|format|"
+    r"activity|dictionary|uppercase|lowercase|number|special|whitespace|notification|"
+    r"placeholder|enabled|disabled|type|field|path|resource)(?:_|$)")
+_SERVER_CREDENTIAL_NAME = re.compile(r"(?:^|_)(?:rest|post|server|admin|management|private|secret)(?:_|$)")
 
 # kinds of findings that point to a key, a token or a password
 KEY_CWES = frozenset({"CWE-798", "CWE-321", "CWE-259", "CWE-260", "CWE-547"})
@@ -375,6 +405,7 @@ ADVICE = {
                 "App Check.",
     "public": "A publishable or public key is meant to ship in apps: nothing to rotate, but "
               "check that it cannot do more than intended.",
+    "public_fixture": FIXTURE_ADVICE,
     "stripe": "A Stripe secret key must never be in an app: roll it in the Stripe dashboard; "
               "the app may only hold the publishable key (pk_) and payments are created on the "
               "server.",
@@ -434,19 +465,21 @@ ALERTS = {
                  "pubspec.yaml (flutter_dotenv), it is copied into the app package as it is.",
     "debug_build": "Debug build: the complete Dart source code is inside the package (%s "
                    "files), with every address and key in it.",
-    "strings_visible": "All the texts of the compiled Dart code can be read from libapp.so "
-                       "(%s texts). Obfuscation hides class and method names, not texts: "
-                       "addresses and keys stay readable either way.",
-    "services": "The app talks to %s services: %s.",
+    "strings_visible": "The scan recovered %s text strings from compiled Dart code in libapp.so. "
+                       "These observed strings can contain addresses and keys; encrypted or "
+                       "runtime-generated values may not be present.",
+    "services": "Addresses associated with %s services were found: %s. Runtime use was not verified.",
 }
 
 
 def build(ctx: Optional[MobileContext], files: Sequence[SourceFile],
-          findings: Sequence[Finding]) -> Dict[str, Any]:
+          findings: Sequence[Finding], *, reveal_values: bool = False) -> Dict[str, Any]:
     """The inventory of an app or project: every server address, API call, API path, key,
     service identifier and .env entry in `files`, and the alerts about them. `findings` are
-    the findings of the scan; the keys are taken from those that point to a credential."""
-    return _Inventory(ctx, files, findings).run()
+    the findings of the scan; the keys are taken from those that point to a credential.
+    `reveal_values` retains complete observed values for the interactive scan session;
+    the default keeps the existing masked report representation."""
+    return _Inventory(ctx, files, findings, reveal_values=reveal_values).run()
 
 
 # ------------------------------------------------------------------ helpers
@@ -488,6 +521,67 @@ def _ip(host: str) -> Optional[Any]:
         return None
 
 
+def _local_host(host: str) -> bool:
+    address = _ip(host)
+    return (host in LOOPBACK_HOSTS or host.endswith(".localhost")
+            or bool(address and address.is_loopback))
+
+
+def _local_endpoint(raw: str) -> Optional[Tuple[str, bool]]:
+    """Retain local literals as inventory evidence, without classifying a vulnerability."""
+    url = raw.rstrip(".,;:)]!?*")
+    bracketed = raw.rstrip(".,;:)}!?*")
+    if re.fullmatch(r"(?i)(?:https?|wss?)://\[[0-9a-f:]+\]", bracketed):
+        url = bracketed
+    try:
+        parts = urlsplit(url)
+        host = (parts.hostname or "").lower()
+    except ValueError:
+        return None
+    if parts.scheme.lower() in ("http", "https", "ws", "wss") and _local_host(host):
+        return url, parts.scheme.lower() in ("http", "ws")
+    return None
+
+
+def _inventory_address(raw: str) -> Optional[Tuple[str, bool, bool]]:
+    """Complete literal, cleartext flag and unresolved-template flag.
+
+    Preserve balanced brackets in IPv6 and placeholders rather than cutting at
+    their first brace. A substituted copy is used only to validate the address
+    syntax; the substitution is never emitted as evidence or a resolved host.
+    """
+    value = raw.rstrip(".,;:!?")
+    closing = {")": "(", "]": "[", "}": "{"}
+    while value and value[-1] in closing and value.count(value[-1]) > value.count(closing[value[-1]]):
+        value = value[:-1]
+    value = value.rstrip(".,;:!?")
+    # A trailing Dart '$' is an unfinished interpolation rather than host/path data.
+    value = value.rstrip("$")
+    template = bool(_ADDRESS_PLACEHOLDER.search(value))
+    probe = _ADDRESS_PLACEHOLDER.sub("runtime", value)
+    try:
+        parsed = urlsplit(probe)
+        raw_authority = urlsplit(value).netloc
+        if ":" in raw_authority and _ADDRESS_PLACEHOLDER.fullmatch(raw_authority.rsplit(":", 1)[-1]):
+            authority = parsed.netloc.rsplit(":", 1)[0] + ":1"
+            probe = urlunsplit((parsed.scheme, authority, parsed.path, parsed.query, parsed.fragment))
+            parsed = urlsplit(probe)
+        host = parsed.hostname or ""
+        parsed.port  # Reject malformed ports, rather than displaying a different host.
+    except ValueError:
+        return None
+    if not host or any(ch in probe for ch in "{}"):
+        return None
+    if _local_endpoint(probe) is not None:
+        return value, parsed.scheme.lower() in ("http", "ws"), template
+    # The legacy endpoint helper strips ']' as punctuation. Preserve bare IPv6
+    # authorities by validating a temporary slash-terminated address.
+    validation = probe + "/" if probe.endswith("]") else probe
+    if _endpoint(validation) is None:
+        return None
+    return value, parsed.scheme.lower() in ("http", "ws"), template
+
+
 def _dev_host(host: str) -> bool:
     """True when a label of the host, apart from the domain itself, names a development or
     test server: api-dev.example.com, staging2.example.com, sandbox.paypal.com."""
@@ -500,15 +594,50 @@ def _dev_host(host: str) -> bool:
 
 
 def _maskable(value: str) -> bool:
-    return len(value) >= 4 and not value.startswith(("$", "{", "%", "<", ":"))
+    return len(value) >= 4 and not _QUERY_PLACEHOLDER.fullmatch(value)
+
+
+def _env_value(raw: str) -> str:
+    """Keep hashes inside quoted values; strip only comments outside the value.
+
+    Escapes remain in their original representation so the preview has an exact
+    source span. Unclosed quotes are retained rather than manufacturing a value.
+    """
+    value = raw.strip()
+    if value[:1] in ("'", '"'):
+        quote, index = value[0], 1
+        while index < len(value):
+            if value[index] == "\\":
+                index += 2
+                continue
+            if value[index] == quote:
+                tail = value[index + 1:].strip()
+                if not tail or tail.startswith("#"):
+                    return value[1:index]
+                return value
+            index += 1
+        return value
+    return re.sub(r"\s+#.*$", "", value)
+
+
+def _has_literal_query_value(url: str) -> bool:
+    """A credential parameter with a literal value, not an empty runtime template."""
+    return any(match[2] and not _QUERY_PLACEHOLDER.fullmatch(match[2])
+               for match in _SECRET_QUERY.finditer(url))
+
+
+def _mask_query_parameter(match: re.Match) -> str:
+    name, value = match.groups()
+    if not value or _QUERY_PLACEHOLDER.fullmatch(value):
+        return name + value
+    return name + (mask_secret(value) if len(value) > 1 else "*")
 
 
 def mask_url(url: str) -> str:
     """The URL with the secrets that addresses carry masked: the password of user:password@,
     the values of key and token parameters, bot tokens and webhook tokens."""
     url = _URL_PASSWORD.sub(lambda m: m.group(1) + mask_secret(m.group(2)) + "@", url)
-    url = _SECRET_QUERY.sub(lambda m: m.group(1) + (mask_secret(m.group(2))
-                                                    if _maskable(m.group(2)) else m.group(2)), url)
+    url = _SECRET_QUERY.sub(_mask_query_parameter, url)
     for pattern in (_TELEGRAM, _SLACK_HOOK, _DISCORD_HOOK, _TEAMS_HOOK):
         url = pattern.sub(lambda m: m.group(1) + mask_secret(m.group(2)), url)
     return url
@@ -599,7 +728,7 @@ def text_secrets(sf: SourceFile) -> List[str]:
     inventory agree."""
     out: List[str] = []
     for line in sf.lines:
-        if len(line) > 4000 or "://" not in line:
+        if "://" not in line:
             continue
         for match in _URL.finditer(line):
             url = match.group()
@@ -634,16 +763,31 @@ def client_like(receiver: str) -> bool:
     return any(word.lower() in _CLIENT_WORDS for word in _NAME_WORDS.findall(last))
 
 
-def _argument(text: str) -> str:
+def _argument(text: str, *, complete: bool = False) -> str:
     """The first argument of a call whose arguments start in `text`: its first string
     literal when it starts with one, else the expression up to the first ',' or ')' that
     closes it."""
     stripped = text.lstrip()
     if stripped[:1] in ("'", '"'):
+        if complete:
+            literal = _FULL_FIRST_LITERAL.match(stripped)
+            return literal.group(2) if literal else ""
         return _first_literal(stripped)
     depth, out = 0, []
-    for ch in stripped[:200]:
-        if ch in "([{":
+    quote, escaped = "", False
+    for ch in (stripped if complete else stripped[:200]):
+        if complete and quote:
+            out.append(ch)
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = ""
+            continue
+        if complete and ch in ("'", '"'):
+            quote = ch
+        elif ch in "([{":
             depth += 1
         elif ch in ")]}":
             if depth == 0:
@@ -658,8 +802,9 @@ def _argument(text: str) -> str:
 # ------------------------------------------------------------------ the inventory
 class _Inventory:
     def __init__(self, ctx: Optional[MobileContext], files: Sequence[SourceFile],
-                 findings: Sequence[Finding]) -> None:
+                 findings: Sequence[Finding], *, reveal_values: bool = False) -> None:
         self.ctx = ctx
+        self.reveal_values = reveal_values
         self.is_app = bool(ctx is not None and ctx.is_app)
         self.files = [sf for sf in files
                       if sf.origin not in (ORIGIN_SUMMARY, ORIGIN_PLACEHOLDER)
@@ -680,15 +825,30 @@ class _Inventory:
         self.env: List[Dict[str, Any]] = []
         self.env_files: Dict[str, int] = {}
         self.strings: Dict[str, str] = {}                  # string resources: name -> value
+        self.string_places: Dict[str, Tuple[SourceFile, int]] = {}
         self.alerts: List[Dict[str, Any]] = []
         # distinct items left out once a list holds MAX_ITEMS * 3 (still counted)
         self.dropped: Dict[str, set] = {"endpoints": set(), "paths": set(), "config": set()}
         self.dropped_calls = 0
         self.dropped_hosts: set = set()
+        self.context_lines_skipped = 0
+        self.item_limit = MAX_VISIBLE_ITEMS if reveal_values else MAX_ITEMS
+        self.collection_limit = MAX_VISIBLE_ITEMS if reveal_values else MAX_ITEMS * 3
+        self.location_limit = MAX_VISIBLE_LOCATIONS if reveal_values else MAX_LOCATIONS
+
+    def _text(self, sf: SourceFile, value: str) -> str:
+        """A value for this output, without changing the source or detector inputs."""
+        return strip_bidi(value) if self.reveal_values else mask_url(sf.mask(value))
+
+    def _value(self, value: str, limit: int = MAX_TEXT) -> str:
+        return strip_bidi(value) if self.reveal_values else _short(value, limit)
+
+    def _secret(self, value: str) -> str:
+        return strip_bidi(value) if self.reveal_values else mask_secret(value)
 
     def _full(self, name: str, store: Mapping, key: Any) -> bool:
         """True (and the item counted as left out) when the list `name` is full."""
-        if len(store) < MAX_ITEMS * 3:
+        if len(store) < self.collection_limit:
             return False
         self.dropped[name].add(key)
         return True
@@ -721,14 +881,14 @@ class _Inventory:
                 env=totals["env"], **key_counts(keys),
                 alerts={level: sum(1 for a in self.alerts if a["level"] == level)
                         for level in LEVELS}),
-            "alerts": self.alerts[:MAX_ALERTS],
-            "keys": keys[:MAX_ITEMS],
-            "endpoints": endpoints[:MAX_ITEMS],
-            "hosts": hosts[:MAX_ITEMS],
-            "calls": self.calls[:MAX_ITEMS],
-            "paths": paths[:MAX_ITEMS],
-            "config": config[:MAX_ITEMS],
-            "env": self.env[:MAX_ITEMS],
+            "alerts": self.alerts[:self.item_limit if self.reveal_values else MAX_ALERTS],
+            "keys": keys[:self.item_limit],
+            "endpoints": endpoints[:self.item_limit],
+            "hosts": hosts[:self.item_limit],
+            "calls": self.calls[:self.item_limit],
+            "paths": paths[:self.item_limit],
+            "config": config[:self.item_limit],
+            "env": self.env[:self.item_limit],
             "firebase": self._firebase(config, endpoints, keys),
             "is_app": self.is_app,
         }
@@ -737,27 +897,39 @@ class _Inventory:
                      if totals[name] > shown[name]}
         if truncated:
             out["truncated"] = truncated
+        if self.reveal_values:
+            out["values_visible"] = True
+        if self.context_lines_skipped:
+            out["coverage"] = {"context_lines_skipped": self.context_lines_skipped,
+                               "max_context_line_characters": MAX_CONTEXT_LINE,
+                               "literal_urls_scanned": True}
         return out
 
     # -------------------------------------------------------------- reading the files
     def _file(self, sf: SourceFile) -> None:
         code = _is_code(sf)
         strings = sf.origin == ORIGIN_STRINGS
+        nested_uris: set = set()
         env = bool(_ENV_FILE.search(sf.rel)) and not _ENV_EXAMPLE.search(sf.rel)
         plist_key = ""
         for number, text in enumerate(sf.lines, 1):
-            if len(text) > 4000 or not text.strip():
+            if not text.strip():
                 continue
             if code and sf.is_comment(number):
                 continue
             if "://" in text:
                 self._urls(sf, number, text)
+            if len(text) > MAX_CONTEXT_LINE:
+                if code:
+                    self.context_lines_skipped += 1
+                continue
+            annotations = list(_ANNOTATION.finditer(text)) if code and "@" in text else []
             if strings:
                 self._dump_path(sf, number, text)
-            elif "/" in text and ("'" in text or '"' in text):
-                self._literal_paths(sf, number, text)
+            elif annotations or "/" in text and ("'" in text or '"' in text):
+                self._literal_paths(sf, number, text, annotations)
             if code:
-                self._calls(sf, number, text)
+                self._calls(sf, number, text, annotations, nested_uris)
             if any(hint in text for hint in _ID_HINTS):
                 self._identifiers(sf, number, text)
             if not strings and (plist_key or "<key>" in text or "<string" in text
@@ -769,7 +941,7 @@ class _Inventory:
     def _location(self, item: Dict[str, Any], sf: SourceFile, number: int) -> None:
         item["count"] += 1
         location = {"file": sf.rel, "line": number}
-        if len(item["locations"]) < MAX_LOCATIONS and location not in item["locations"]:
+        if len(item["locations"]) < self.location_limit and location not in item["locations"]:
             item["locations"].append(location)
 
     def _key_location(self, item: Dict[str, Any], sf: SourceFile, number: int) -> None:
@@ -780,38 +952,49 @@ class _Inventory:
             self._location(item, sf, number)
 
     def _urls(self, sf: SourceFile, number: int, text: str) -> None:
-        for match in _URL.finditer(text):
-            found = _endpoint(match.group())
+        for match in _INVENTORY_URL.finditer(text):
+            found = _inventory_address(match.group())
             if not found:
                 continue
-            url = found[0].rstrip("$")
+            url, cleartext, template = found
+            if not self.reveal_values:
+                url = url[:300]
             if _OAUTH_SCOPE.match(url) or _CODE_PAGE.match(url):
                 continue
             parts = urlsplit(url)
             host = (parts.hostname or "").lower()
-            if host in _DOC_HOSTS:
+            # Maps navigation URLs are application targets, unlike Google's home,
+            # documentation or KML namespace URLs. Keep their full query/template.
+            maps_navigation = (host == "www.google.com"
+                               and (parts.path == "/maps" or parts.path.startswith("/maps/")))
+            if host in _DOC_HOSTS and not maps_navigation:
                 continue
-            raw, url = url, mask_url(sf.mask(url))
+            local = _local_host(host)
+            raw, url = url, self._text(sf, url)
             item = self.endpoints.get(url)
             if item is None:
                 if self._full("endpoints", self.endpoints, url):
                     self.dropped_hosts.add(host)
                     continue
-                service, category = service_of(host, parts.path)
+                service, category = ("", LOCAL) if local else service_of(host, parts.path)
                 try:
                     port = parts.port
                 except ValueError:
                     port = None
-                item = {"url": _short(url), "host": host, "scheme": parts.scheme.lower(),
+                item = {"url": self._value(url), "host": host, "scheme": parts.scheme.lower(),
                         "port": port, "service": service, "category": category,
-                        "cleartext": found[1], "alerts": self._url_alerts(raw, host, category,
-                                                                          found[1]),
+                        "cleartext": cleartext, "alerts": self._url_alerts(raw, host, category,
+                                                                          cleartext),
                         "count": 0, "locations": []}
+                if template:
+                    item.update(evidence_kind="url_template", requires_runtime_resolution=True)
                 self.endpoints[url] = item
             self._location(item, sf, number)
 
     @staticmethod
     def _url_alerts(url: str, host: str, category: str, cleartext: bool) -> List[str]:
+        if category == LOCAL:
+            return []
         alerts: List[str] = []
         if cleartext:
             alerts.append("cleartext")
@@ -823,7 +1006,7 @@ class _Inventory:
             alerts.append("telegram")
         if _URL_PASSWORD.search(url):
             alerts.append("password_in_url")
-        if _SECRET_QUERY.search(url):
+        if _has_literal_query_value(url):
             alerts.append("secret_in_url")
         address = _ip(host)
         if address is not None:
@@ -832,17 +1015,20 @@ class _Inventory:
             alerts.append("dev_host")
         return alerts
 
-    def _add_path(self, sf: SourceFile, number: int, path: str) -> None:
-        if not (3 <= len(path) <= 200) or not _PATH.match(path) or _NOT_API_PATH.match(path) \
-                or not _API_MARKER.search(path) or "//" in path:
+    def _add_path(self, sf: SourceFile, number: int, path: str, *, declared: bool = False) -> None:
+        if len(path) > (MAX_CONTEXT_LINE if self.reveal_values else 200) or not _PATH.fullmatch(path) or "//" in path:
             return
-        path = mask_url(sf.mask(path))
+        if not declared and (len(path) < 3 or not path.startswith(("/", "api/"))
+                             or _NOT_API_PATH.match(path) or not _API_MARKER.search(path)):
+            return
+        literal_query = _has_literal_query_value(path)
+        path = self._text(sf, path)
         item = self.paths.get(path)
         if item is None:
             if self._full("paths", self.paths, path):
                 return
-            item = {"path": _short(path), "alerts": ["secret_in_url"]
-                    if _SECRET_QUERY.search(path) else [], "count": 0, "locations": []}
+            item = {"path": self._value(path), "alerts": ["secret_in_url"]
+                    if literal_query else [], "count": 0, "locations": []}
             self.paths[path] = item
         self._location(item, sf, number)
 
@@ -880,81 +1066,108 @@ class _Inventory:
             self.endpoints[text] = item
         self._location(item, sf, number)
 
-    def _literal_paths(self, sf: SourceFile, number: int, text: str) -> None:
+    def _literal_paths(self, sf: SourceFile, number: int, text: str, annotations: Sequence[re.Match]) -> None:
+        declared_spans = {match.span("path") for match in annotations}
+        for match in annotations:
+            self._add_path(sf, number, match.group("path"), declared=True)
         for match in _STRING_LITERAL.finditer(text):
+            if match.span(2) in declared_spans:
+                continue
             value = match.group(2)
             if value.startswith("$"):        # '$baseUrl/api/login' -> /api/login
                 value = value[value.index("/"):]
             self._add_path(sf, number, value)
 
-    def _calls(self, sf: SourceFile, number: int, text: str) -> None:
-        found: List[Tuple[str, str, str]] = []          # (method, target, kind)
-        for match in _URI_CALL.finditer(text):
-            target = "%s://%s%s" % (match.group(1), match.group(3),
-                                    match.group(5) if match.group(5) is not None else "")
-            found.append(("", target, "uri"))
+    def _calls(self, sf: SourceFile, number: int, text: str, annotations: Sequence[re.Match],
+               nested_uris: set) -> None:
+        found: List[Tuple[str, str, str, int]] = []
+
+        def argument(method: str, kind: str, start: int) -> None:
+            target, target_line = self._call_argument(sf, number, start, nested_uris,
+                                                      complete=self.reveal_values)
+            found.append((method, target, kind, target_line))
         for match in _DART_CALL.finditer(text):
             receiver = re.sub(r"\s+|\(\)", "", match.group("recv"))
             method = match.group("method")
             last = receiver.rsplit(".", 1)[-1]
-            if not client_like(receiver):
+            native_fuel = sf.language in ("java", "kotlin") and _FUEL_RECEIVER.search(receiver)
+            if not (client_like(receiver) or native_fuel):
                 continue
             if method in ("read", "readBytes") and last.lstrip("_") != "http":
                 continue                    # storage.read(...) is not a request
             if method in ("query", "mutate", "subscribe") and "graphql" not in receiver.lower() \
                     and "client" not in last.lower():
                 continue
-            found.append((_METHOD.get(method, method.upper()),
-                          self._call_argument(sf, number, text[match.end():]), "http"))
-        socket = _SOCKET.search(text)
-        if socket:                      # io('wss://...') ends the match on the quote
-            rest = text[socket.end() - 1:] if socket.group().endswith(("'", '"')) \
-                else text[socket.end():]
-            found.append(("WS", self._call_argument(sf, number, rest), "websocket"))
-        graphql = _GRAPHQL.search(text)
-        if graphql:
-            found.append(("GRAPHQL", self._call_argument(sf, number, text[graphql.end():]),
-                          "graphql"))
-        for match in _ANNOTATION.finditer(text):
-            found.append((match.group("method").upper(), match.group("path"), "annotation"))
-        base = _BASE_URL.search(text)
-        if base:
-            found.append(("BASE", self._call_argument(sf, number, text[base.end():]),
-                          "base_url"))
-        call = _JAVA_CALL.search(text) if sf.language != "dart" else None
-        if call:
-            found.append(("", self._call_argument(sf, number, text[call.end():]), "http"))
-        # Uri.https('host', '/path') given to a call: the call gets the address it builds
-        built = [target for method, target, kind in found if kind == "uri"]
-        if built and any(kind == "http" for _, _, kind in found):
-            found = [(method, built[0] if kind == "http" and "Uri.http" in target else target,
-                      kind) for method, target, kind in found if kind != "uri"]
+            argument(_METHOD.get(method, method.upper()), "http", match.end())
+        for socket in _SOCKET.finditer(text):
+            # io('wss://...') ends the match on the quote.
+            start = socket.end() - 1 if socket.group().endswith(("'", '"')) else socket.end()
+            argument("WS", "websocket", start)
+        for match in _GRAPHQL.finditer(text):
+            argument("GRAPHQL", "graphql", match.end())
+        for match in annotations:
+            found.append((match.group("method").upper(), match.group("path"), "annotation", number))
+        for match in _BASE_URL.finditer(text):
+            argument("BASE", "base_url", match.end())
+        if sf.language != "dart":
+            for match in _JAVA_CALL.finditer(text):
+                argument("", "http", match.end())
+        for match in _URI_CALL.finditer(text):
+            site = (number, match.start())
+            if site in nested_uris:
+                nested_uris.remove(site)
+            else:
+                found.append(("", self._uri_target(match), "uri", number))
         seen = set()
-        for method, target, kind in found:
-            target = _short(mask_url(sf.mask(target.strip())), 200)
+        for method, target, kind, target_line in found:
+            target = self._value(self._text(sf, target.strip()), 200)
             if not target or (method, target) in seen:
                 continue
             seen.add((method, target))
-            if len(self.calls) >= MAX_ITEMS * 3:
+            if len(self.calls) >= self.collection_limit:
                 self.dropped_calls += 1
                 continue
-            self.calls.append({"method": method or "-", "target": target, "kind": kind,
-                               "file": sf.rel, "line": number})
+            item = {"method": method or "-", "target": target, "kind": kind,
+                    "file": sf.rel, "line": number}
+            if target_line != number:
+                item["target_line"] = target_line
+            self.calls.append(item)
 
     @staticmethod
-    def _call_argument(sf: SourceFile, number: int, rest: str) -> str:
+    def _uri_target(match: re.Match) -> str:
+        path = match.group(5)
+        if path and not path.startswith("/"):
+            path = "/" + path
+        return f"{match.group(1)}://{match.group(3)}{path}"
+
+    @staticmethod
+    def _call_argument(sf: SourceFile, number: int, start: int, nested_uris: set, *,
+                       complete: bool = False) -> Tuple[str, int]:
         """The first argument of a call whose arguments start in `rest`, read on into the
         next lines when it continues there (http.post(<newline> Uri.parse('https://...'),
         ...)); the URL itself when the argument only wraps a literal address."""
-        argument = _argument(rest)
+        rest = sf.lines[number - 1][start:]
+        argument = _argument(rest, complete=complete)
         if not argument or argument.count("(") > argument.count(")"):
-            argument = _argument(rest + " " + " ".join(
-                line.strip() for line in sf.lines[number:number + 3]))
-        literal = _first_literal(argument)
-        if literal and "://" in literal and re.fullmatch(
-                r"(?:Uri\s*\.\s*parse\s*\(\s*)?(['\"]).*\1\s*\)?", argument):
-            return literal
-        return argument
+            rest = "\n".join([rest, *sf.lines[number:number + 3]])
+            argument = _argument(rest, complete=complete)
+        leading = rest[:len(rest) - len(rest.lstrip())]
+        target_line = number + leading.count("\n")
+        uri = _URI_CALL.fullmatch(argument)
+        if uri:
+            column = len(leading.rsplit("\n", 1)[-1]) if target_line != number else start + len(leading)
+            nested_uris.add((target_line, column))
+            return _Inventory._uri_target(uri), target_line
+        dynamic_uri = _URI_CONSTRUCTOR.match(argument)
+        if dynamic_uri and not complete:
+            # A query map or a computed path is not a static address. Its arguments may
+            # also contain credentials that never occur inside a literal URL.
+            return f"Uri.{dynamic_uri[1]}(…)", target_line
+        literal = (_FULL_FIRST_LITERAL if complete else _FIRST_LITERAL).search(argument)
+        if literal and "://" in literal.group(2) and re.fullmatch(
+                r"Uri\s*\.\s*parse\s*\(\s*(['\"]).*\1\s*\)", argument):
+            return literal.group(2), target_line + argument.count("\n", 0, literal.start())
+        return argument, target_line
 
     def _identifiers(self, sf: SourceFile, number: int, text: str) -> None:
         for pattern, label, service in _ID_PATTERNS:
@@ -962,11 +1175,11 @@ class _Inventory:
                 self._config(label, service, match.group(), False, sf, number)
 
     def _config(self, label: str, service: str, value: str, secret: bool, sf: SourceFile,
-                number: int, name: str = "") -> None:
+                number: int, name: str = "") -> Optional[Dict[str, Any]]:
         value = value.strip()
         if not value or _PLACEHOLDER_VALUE.match(value):
             return
-        shown = mask_secret(value) if secret else _short(mask_url(sf.mask(value)), 200)
+        shown = self._secret(value) if secret else self._value(self._text(sf, value), 200)
         key = (label, shown)
         item = self.config.get(key)
         if item is None:
@@ -978,6 +1191,7 @@ class _Inventory:
         elif name and not item["name"]:
             item["name"] = _short(name, 80)
         self._location(item, sf, number)
+        return item
 
     def _named(self, sf: SourceFile, number: int, text: str, plist_key: str) -> str:
         """Named entries of strings.xml, JSON, Dart and plist files; returns the plist key
@@ -998,6 +1212,7 @@ class _Inventory:
             value = match.group("xmlv") if match.group("xml") else match.group("val")
             if match.group("xml"):
                 self.strings.setdefault(name, value)
+                self.string_places.setdefault(name, (sf, number))
             self._named_entry(sf, number, name, value)
         return ""
 
@@ -1005,14 +1220,32 @@ class _Inventory:
         entry = CONFIG_NAMES.get(name.lower())
         if entry is not None and not value.startswith("@"):
             self._config(entry[0], entry[1], value, entry[2], sf, number, name)
+            return
+        # Retain otherwise-unrecognized credential-like configuration as reviewable
+        # inventory evidence. A name does not prove a private secret or a vulnerability.
+        normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower().replace(".", "_")
+        if (not _CONFIG_CREDENTIAL_NAME.search(normalized) or _CONFIG_UI_NAME.search(normalized)
+                or len(value) < 6 or value.startswith(("@", "$", "/")) or "://" in value
+                or re.search(r"\s|[<>]", value) or _PLACEHOLDER_VALUE.match(value)
+                or value.lower() == name.lower()):
+            return
+        service = ""
+        if not _SERVER_CREDENTIAL_NAME.search(normalized):
+            if re.search(r"(?:^|_)appmetrica(?:_|$)", normalized):
+                service = "AppMetrica"
+            elif re.search(r"(?:^|_)webengage(?:_|$)", normalized):
+                service = "WebEngage"
+        item = self._config("SDK client identifier" if service else "Credential-like configuration (review)",
+                            service, value, not bool(service), sf, number, name)
+        if item is not None:
+            item.update(classification="sdk_client_identifier" if service else "credential_candidate",
+                        requires_review=not bool(service), vulnerability_confirmed=False)
 
     def _env_line(self, sf: SourceFile, number: int, text: str) -> None:
         match = _ENV_LINE.match(text)
         if not match or text.lstrip().startswith("#"):
             return
-        name, value = match.group(1), re.sub(r"\s+#.*$", "", match.group(2))
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
-            value = value[1:-1]
+        name, value = match.group(1), _env_value(match.group(2))
         on_line = [hit[2] for hit in getattr(sf, "secret_hits", ()) if hit[0] == number]
         from ..engines.secrets import ENV_NOT_A_SECRET, ENV_NOT_A_SECRET_NAME
         # shown masked: what the secrets engine found, and any other value of a secret-like
@@ -1022,8 +1255,8 @@ class _Inventory:
             and not ENV_NOT_A_SECRET.search(value))
         self.env_files[sf.rel] = self.env_files.get(sf.rel, 0) + 1
         self.env.append({"file": sf.rel, "line": number, "name": _short(name, 80),
-                         "value": mask_secret(value) if secret and value
-                         else _short(mask_url(sf.mask(value)), 200),
+                         "value": self._secret(value) if secret and value
+                         else self._value(self._text(sf, value), 200),
                          "secret": secret})
 
     def _manifest_entries(self) -> None:
@@ -1042,15 +1275,21 @@ class _Inventory:
                 if entry is None or not value:
                     continue
                 resolved = value
+                value_sf, value_line = sf, node.line_of("android:value") or node.line or 1
                 if value.startswith("@string/"):
-                    resolved = self.strings.get(value[len("@string/"):], "")
+                    resource_name = value[len("@string/"):]
+                    resolved = self.strings.get(resource_name, "")
+                    value_sf, value_line = self.string_places.get(resource_name, (sf, value_line))
                 if not resolved or resolved.startswith("@"):
                     continue
-                line = node.line_of("android:value") or node.line or 1
-                self._config(entry[0], entry[1], resolved, entry[2], sf, line, name)
+                self._config(entry[0], entry[1], resolved, entry[2], value_sf, value_line, name)
                 key = self.raw_keys.get(resolved)
                 if key is not None:
                     key["used_by"] = _short("%s (%s)" % (name, entry[1]), 120)
+                    if entry[1] == "Google Maps" and resolved.startswith("AIza"):
+                        # A resource reference can reach Maps even when its resource name
+                        # begins google_ and was originally classified as Firebase config.
+                        key.update(advice="google", advice_text=ADVICE["google"])
 
     # -------------------------------------------------------------- keys
     def _keys(self) -> None:
@@ -1116,30 +1355,40 @@ class _Inventory:
             self.raw_keys[group] = item
             self.keys[(item["type"], group)] = item
         else:
-            if item["advice"] == "firebase" and not self._firebase_key(finding, secret):
-                # the same Google key also outside a Firebase configuration: a secret to
-                # restrict, whatever the order of the findings
-                item.update(public=False, advice="google", advice_text=ADVICE["google"])
+            client_advice = self._google_client_advice(finding, secret)
+            if client_advice:
+                severity = finding.severity
+            if item["public"] and item["advice"] in ("firebase", "google") \
+                    and client_advice != "firebase":
+                # A copy in ordinary code needs its own review. A copy in the Maps SDK
+                # field retains client status and needs the Android/API restriction advice.
+                item.update(public=bool(client_advice), advice="google",
+                            advice_text=ADVICE["google"])
             if not item["public"] and SEVERITY_ORDER.get(severity, 0) > \
                     SEVERITY_ORDER.get(item["severity"], 0):
                 item["severity"] = severity
         self._key_location(item, sf, line)
 
     @staticmethod
-    def _firebase_key(finding: Finding, secret: str) -> bool:
-        """A Google API key of a Firebase configuration (refine() lowered the finding)."""
-        return FIREBASE_NOTE in (finding.description or "") and secret.startswith("AIza")
+    def _google_client_advice(finding: Finding, secret: str) -> str:
+        """How to restrict a key observed in a recognized client configuration."""
+        if secret.startswith("AIza"):
+            if FIREBASE_NOTE in (finding.description or ""):
+                return "firebase"
+            if MAPS_CLIENT_NOTE in (finding.description or ""):
+                return "google"
+        return ""
 
     def _key_item(self, finding: Finding, rule: str, title: str, severity: str,
                   secret: str) -> Dict[str, Any]:
+        fixture = identify_public_fixture(secret)
         words = "%s %s %s" % (rule, title, secret[:4])
         service = next((name for pattern, name in _KEY_SERVICES if pattern.search(words)),
                        "")
-        # the Google API keys of Firebase files that refine() lowered to low severity
-        firebase = self._firebase_key(finding, secret)
-        if firebase:
+        client_advice = self._google_client_advice(finding, secret)
+        if client_advice:
             severity = finding.severity
-        public = firebase or bool(re.match(r"pk_(?:live|test)_|pk\.eyJ", secret))
+        public = bool(fixture or client_advice or re.match(r"pk_(?:live|test)_|pk\.eyJ", secret))
         claims = jwt_claims(secret) if secret.count(".") == 2 else {}
         if claims and not service:
             service = "JSON Web Token"
@@ -1148,8 +1397,11 @@ class _Inventory:
             if claims.get("role") == "anon":
                 public = True
         cwe = canonical(finding.cwe)
-        if firebase:
-            advice = "firebase"
+        if fixture:
+            advice = "public_fixture"
+            severity, title, service = "info", fixture["title"], fixture["library"]
+        elif client_advice:
+            advice = client_advice
         elif public:
             advice = "public"
         elif claims.get("role") == "service_role":
@@ -1175,11 +1427,14 @@ class _Inventory:
         else:
             advice = "generic"
         item = {"type": title or rule, "service": service or "Unknown service",
-                "value": mask_secret(secret) if secret else "", "severity": severity,
+                "value": self._secret(secret) if secret else "", "severity": severity,
                 "rule_id": rule, "cwe": cwe, "public": public,
                 "advice": advice, "advice_text": ADVICE[advice], "count": 0, "locations": []}
         if claims:
             item["claims"] = claims
+        if fixture:
+            item["provenance"] = fixture
+            item["used_by"] = "%s: %s" % (fixture["symbol"], fixture["source"])
         return item
 
     @staticmethod
@@ -1217,7 +1472,7 @@ class _Inventory:
     def _alerts(self, keys: Sequence[Dict[str, Any]]) -> None:
         self.alerts.extend(key_alerts(keys, self.is_app))
         endpoints = sorted(self.endpoints.values(), key=self._endpoint_order)
-        cleartext = [e for e in endpoints if e["cleartext"]]
+        cleartext = [e for e in endpoints if "cleartext" in e["alerts"]]
         if cleartext:
             self._alert("cleartext", [len(cleartext), cleartext[0]["url"]],
                         cleartext[0]["locations"][0])

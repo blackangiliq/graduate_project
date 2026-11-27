@@ -10,5 +10,17 @@ reports/
 .DS_Store
 # AI provider settings and API key
 .env
+.env.*
 # the Flutter samples bundle a fake .env asset on purpose (a finding they test)
 !samples/**/.env
+# Installation-specific rule preferences are not the published default rule set.
+/learned/edits.yaml
+# Android inputs, signing material and build dependencies stay on the scan host.
+*.apk
+*.apks
+*.xapk
+*.apkm
+*.aab
+*.jks
+*.keystore
+node_modules/

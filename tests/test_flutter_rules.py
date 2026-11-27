@@ -66,7 +66,7 @@ def test_rule_files_hold_every_dart_rule_and_only_the_flutter_file_rules():
         assert 0 < rule.confidence < 1 and rule.enabled
         assert (rule.file == "flutter.yaml") == bool(rule.files), rule.id
         if rule.file == "dart.yaml":
-            assert rule.languages == ["dart"]
+            assert rule.languages == (["any"] if rule.id == "DART-SECRET-003" else ["dart"])
 
 
 def test_every_module_rule_passes_at_least_two_examples_of_each_kind():

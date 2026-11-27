@@ -1,0 +1,731 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-27",
+  "platform": "Windows x64",
+  "scope": "Offline external detection on retained decoded snapshots of 12 Android apps, plus existing source samples. No application credentials were sent for validation. Counts are observations, not confirmed vulnerabilities or complete APK coverage.",
+  "gitleaks": {
+    "tool": {
+      "name": "gitleaks",
+      "version": "8.30.1",
+      "source": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip",
+      "sha256": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+      "verification": "matches official GitHub release asset SHA256",
+      "executables": [
+        "gitleaks.exe"
+      ]
+    },
+    "config": {
+      "url": "https://raw.githubusercontent.com/gitleaks/gitleaks/v8.30.1/config/gitleaks.toml",
+      "sha256": "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf"
+    },
+    "app_count": 12,
+    "retained_source_files": 3733,
+    "retained_source_bytes": 131980956,
+    "candidate_occurrences": 21,
+    "exact_prior_secret_hit_occurrences": 9,
+    "reviewed_non_exact_occurrences": {
+      "nested_already_reported_public_sdk_test_key": 2,
+      "pem_formatter_or_marker_without_key_body": 2,
+      "generic_code_or_setting_identifier": 4,
+      "unverified_hex_literal_adjacent_to_dump_label": 2,
+      "patterned_test_payment_candidate": 1,
+      "base64_encoded_google_format_key_gap": 1
+    },
+    "applications": [
+      {
+        "application": "01_AynIQ",
+        "snapshot_sha256": "cf6c4a9bf17cf9e6e9b7cfbd667743483771d22108333bc82397d81ba5182df1",
+        "source_files": 164,
+        "source_bytes": 5325171,
+        "exit_code": 0,
+        "duration_seconds": 1.172,
+        "findings": 4,
+        "distinct_values": 4,
+        "rules": {
+          "gcp-api-key": 2,
+          "generic-api-key": 2
+        },
+        "found_in_prior_secret_hits": 2,
+        "not_in_prior_secret_hits": 2,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "02_Careem",
+        "snapshot_sha256": "ac8b4e15831b1efe9123785ebdef8bb89794de2209b26b2425e5ec76a2981aef",
+        "source_files": 1171,
+        "source_bytes": 22088061,
+        "exit_code": 0,
+        "duration_seconds": 2.797,
+        "findings": 0,
+        "distinct_values": 0,
+        "rules": {},
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 0,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "03_Baly",
+        "snapshot_sha256": "c52fdeb335f61b2282b87b10c1d261f8f9c788e6760709381ea9704785d1eb9e",
+        "source_files": 196,
+        "source_bytes": 13383585,
+        "exit_code": 0,
+        "duration_seconds": 1.735,
+        "findings": 1,
+        "distinct_values": 1,
+        "rules": {
+          "private-key": 1
+        },
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 1,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "05_oodi",
+        "snapshot_sha256": "d49bba64f553ec2aba8495b48b1ecb6dc2897f631afcc153dacc476374e88eb1",
+        "source_files": 159,
+        "source_bytes": 17412277,
+        "exit_code": 0,
+        "duration_seconds": 3.407,
+        "findings": 5,
+        "distinct_values": 3,
+        "rules": {
+          "gcp-api-key": 3,
+          "generic-api-key": 1,
+          "private-key": 1
+        },
+        "found_in_prior_secret_hits": 3,
+        "not_in_prior_secret_hits": 2,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "06_Qi_Services",
+        "snapshot_sha256": "7a6c4a24d673da835e2d85ea785a1166f2733c03f4e8eaa2b29099eeb8418272",
+        "source_files": 228,
+        "source_bytes": 8005258,
+        "exit_code": 0,
+        "duration_seconds": 1.266,
+        "findings": 2,
+        "distinct_values": 2,
+        "rules": {
+          "private-key": 2
+        },
+        "found_in_prior_secret_hits": 2,
+        "not_in_prior_secret_hits": 0,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "07_Qi_PhonePay",
+        "snapshot_sha256": "15bf80f7d113a4abd427028c6c6d869cdc1128406e7e83227f369381fc5e6803",
+        "source_files": 67,
+        "source_bytes": 5757500,
+        "exit_code": 0,
+        "duration_seconds": 1.094,
+        "findings": 1,
+        "distinct_values": 1,
+        "rules": {
+          "private-key": 1
+        },
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 1,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "08_SuperQi",
+        "snapshot_sha256": "bcb4441216b26ab6d5d259445d01e432f75a44daa2ebc53dab3ae708c401237b",
+        "source_files": 429,
+        "source_bytes": 33518158,
+        "exit_code": 0,
+        "duration_seconds": 4.031,
+        "findings": 4,
+        "distinct_values": 4,
+        "rules": {
+          "gcp-api-key": 1,
+          "generic-api-key": 3
+        },
+        "found_in_prior_secret_hits": 1,
+        "not_in_prior_secret_hits": 3,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "09_SNTAT",
+        "snapshot_sha256": "4adb49a400cb28d86ecf8acba62ee5a83c65c0024050eeacef61e9406775906e",
+        "source_files": 862,
+        "source_bytes": 11883901,
+        "exit_code": 0,
+        "duration_seconds": 1.797,
+        "findings": 1,
+        "distinct_values": 1,
+        "rules": {
+          "private-key": 1
+        },
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 1,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "10_Ministry_of_Communications",
+        "snapshot_sha256": "249f47179c935744a1a418af7af1844c06dbfabe3c1e979a40f39b1092ecc15f",
+        "source_files": 37,
+        "source_bytes": 907320,
+        "exit_code": 0,
+        "duration_seconds": 0.812,
+        "findings": 0,
+        "distinct_values": 0,
+        "rules": {},
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 0,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "11_UrukTech",
+        "snapshot_sha256": "c918e1d29c3b311524571ff5c332b81930416b840be8ec2b2c29703fe053001e",
+        "source_files": 71,
+        "source_bytes": 2426414,
+        "exit_code": 0,
+        "duration_seconds": 0.953,
+        "findings": 1,
+        "distinct_values": 1,
+        "rules": {
+          "gcp-api-key": 1
+        },
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 1,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "13_Taqaudi",
+        "snapshot_sha256": "763b1e541d3b1d2d3aaec6dcf6ef3199a613a63026be85c6dc859ed7913ca6d7",
+        "source_files": 276,
+        "source_bytes": 6454282,
+        "exit_code": 0,
+        "duration_seconds": 1.375,
+        "findings": 1,
+        "distinct_values": 1,
+        "rules": {
+          "generic-api-key": 1
+        },
+        "found_in_prior_secret_hits": 0,
+        "not_in_prior_secret_hits": 1,
+        "stderr_bytes": 0
+      },
+      {
+        "application": "14_alwatani",
+        "snapshot_sha256": "a5e0044aacd0df1036589cb10c0c12f9d51c145644b96e8fc95dc1661834a250",
+        "source_files": 73,
+        "source_bytes": 4819029,
+        "exit_code": 0,
+        "duration_seconds": 1.344,
+        "findings": 1,
+        "distinct_values": 1,
+        "rules": {
+          "gcp-api-key": 1
+        },
+        "found_in_prior_secret_hits": 1,
+        "not_in_prior_secret_hits": 0,
+        "stderr_bytes": 0
+      }
+    ],
+    "encoded_gap_resolution": {
+      "application": "11_UrukTech",
+      "source_file": "classes.dex",
+      "source_line": 7045,
+      "encoding": "base64",
+      "depth": 1,
+      "derived_full_value_matches_external_detector": true,
+      "encoded_coordinates_sha256_verified": true,
+      "archive_round_trip_verified": true,
+      "coverage": {
+        "candidates_checked": 11066,
+        "decoded_files": 1,
+        "decoded_bytes": 39,
+        "limits_reached": [],
+        "max_candidates": 200000,
+        "max_files": 2000,
+        "max_decoded_bytes": 4194304,
+        "max_token_characters": 16384,
+        "max_depth": 2
+      }
+    }
+  },
+  "opengrep": {
+    "tool": {
+      "name": "opengrep",
+      "version": "2.1.0",
+      "source": "https://github.com/opengrep/opengrep/releases/download/v2.1.0/opengrep_windows_x86.zip",
+      "sha256": "de250811f7209619e4fdafff55e5f13cb24a70c9cb0ea86435c2c92393ea04ab",
+      "verification": "matches official GitHub release asset SHA256",
+      "executables": [
+        "opengrep.exe"
+      ]
+    },
+    "rules": {
+      "repository": "https://github.com/opengrep/opengrep-rules",
+      "commit": "f1d2b562b414783763fd02a6ed2736eaed622efa",
+      "license": "LGPL-2.1 with Commons Clause v1.0; local validation only; not redistributed as MIT",
+      "files": [
+        {
+          "path": "java/lang/security/audit/crypto/des-is-deprecated.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/des-is-deprecated.yaml",
+          "sha256": "bb12401b8b0abec1291292e0edca31be36349d9b503d59a717acfc4dbc0d5b46"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/desede-is-deprecated.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/desede-is-deprecated.yaml",
+          "sha256": "a670a8372543a15b536aba56065d85e5f29c92bdb0f46508c7d968a1b7722a44"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/ecb-cipher.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/ecb-cipher.yaml",
+          "sha256": "a99202b8cf8aacb68198de00b4b20b4325d8f7a0d2fe92008465beb72c496b39"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/gcm-detection.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/gcm-detection.yaml",
+          "sha256": "63a4de97dc29adcd426286c3e0f9183bd6a9ac2af3a57367f25019235c4c9f49"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/gcm-nonce-reuse.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/gcm-nonce-reuse.yaml",
+          "sha256": "64d2d3a828f281ae26810c3464dfa695d6ca03ce73f34bcf317927c6dbaef6e2"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/no-null-cipher.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/no-null-cipher.yaml",
+          "sha256": "6f0ea51cc475a7a1baa0017f1bfc68c882c2afe971ca5b2891410fe735549713"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/no-static-initialization-vector.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/no-static-initialization-vector.yaml",
+          "sha256": "fb637f8772d34e5edad197fee4c89ad173e11520209e572b014e465f6cd66271"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/rsa-no-padding.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/rsa-no-padding.yaml",
+          "sha256": "a2e9e9c5a4681a6cfc4cb671424f35daa2fd984a93149b0adf6666949181ff04"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/ssl/avoid-implementing-custom-digests.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/ssl/avoid-implementing-custom-digests.yaml",
+          "sha256": "e09f86f91385c49e7786f39c00b82ae57b5871697ba5f6f6a15a88b9e62cface"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/ssl/defaulthttpclient-is-deprecated.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/ssl/defaulthttpclient-is-deprecated.yaml",
+          "sha256": "9fbb10e3e84791bbf251d572767092733d96a2329cb926c315ab79e95c0d55f6"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/ssl/insecure-hostname-verifier.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/ssl/insecure-hostname-verifier.yaml",
+          "sha256": "4f15c66c3e6891cff37466f35eb8394c604bb6423e93484905d1001262f3c12f"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/ssl/insecure-trust-manager.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/ssl/insecure-trust-manager.yaml",
+          "sha256": "26ae8298112a2e9bff89dd5c11546e1769bf40a9819d83aaa88540490bb82589"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/unencrypted-socket.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/unencrypted-socket.yaml",
+          "sha256": "62ac8789701913a3b5e95a63848886836eed04975ff2af4e44173da4b7f9417b"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-aes-ecb.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-aes-ecb.yaml",
+          "sha256": "0e1da99b6e3a5f6f92682487566ab3ae7f1f5ec7bde45dffef79f5bb504b1b43"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-blowfish.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-blowfish.yaml",
+          "sha256": "2c3984bcdb4d4d61074ee9f35a62131e371596c048c1271fde3ed564dc80674a"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-default-aes.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-default-aes.yaml",
+          "sha256": "46ebffa69d1843cc4e687d44ecda8bf9ec38fd1e8bd45e31c0d8eaae818a5c5c"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-md5-digest-utils.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-md5-digest-utils.yaml",
+          "sha256": "3cc4c7c9e10e0a6e1483f9c5162cdb5c380357a303d08a8db4ddcaa9b9e28978"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-md5.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-md5.yaml",
+          "sha256": "801fcfb4b09c5ef5e08a22d4c35351649e6df671f7561298fc95c675ae9552f2"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-rc2.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-rc2.yaml",
+          "sha256": "ff6aa4084cc548e5f02cab58ff1e87df7553016207f9b530b83c6b6c2c6a4125"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-rc4.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-rc4.yaml",
+          "sha256": "4a65bfd5a1d84597444a77fb8ef1a4d8060c241a8d0e435e975353c0fd9d0ef2"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/use-of-sha1.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/use-of-sha1.yaml",
+          "sha256": "6b848e73367f78232cd629630167c2b770395bb1a2465e3bd5f43ce6ba3a2cd8"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/weak-random.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/weak-random.yaml",
+          "sha256": "af7489a2b16048a969ad7460ec7c5eccbeaf07c75d5175967acca0ed9f1c9899"
+        },
+        {
+          "path": "java/lang/security/audit/crypto/weak-rsa.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/crypto/weak-rsa.yaml",
+          "sha256": "c73af1c4a3435222d99700a173c1348e48a94006e4c19ad9649b74e9bf2dfab8"
+        },
+        {
+          "path": "java/lang/security/audit/weak-ssl-context.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/java/lang/security/audit/weak-ssl-context.yaml",
+          "sha256": "267b662f88235193052d1c3ba021dd3b53a88291a62069e305b73206a79b8d85"
+        },
+        {
+          "path": "kotlin/lang/security/anonymous-ldap-bind.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/anonymous-ldap-bind.yaml",
+          "sha256": "eba2211692b64010e6b6067da0abfbd4d1c0a0f3f526730bea2390e9d26826ae"
+        },
+        {
+          "path": "kotlin/lang/security/bad-hexa-conversion.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/bad-hexa-conversion.yaml",
+          "sha256": "9bbc64d83abba6e9b8e02ac9ff0831fe530c6f62dffc4f683656e999103a0e35"
+        },
+        {
+          "path": "kotlin/lang/security/command-injection-formatted-runtime-call.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/command-injection-formatted-runtime-call.yaml",
+          "sha256": "eed86ffc81fbb5efb9c8f1b0611fa8f3ae085e0835fc2ab31f974442bede8a55"
+        },
+        {
+          "path": "kotlin/lang/security/cookie-missing-httponly.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/cookie-missing-httponly.yaml",
+          "sha256": "e987442114ec792e35ef97b30ca6b86bca0a10fc3db9ef7d58f7e11c1f936a59"
+        },
+        {
+          "path": "kotlin/lang/security/cookie-missing-secure-flag.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/cookie-missing-secure-flag.yaml",
+          "sha256": "b1f3a2854a286de9ad67b4452cdc20e83877afb12fccfc6b9435a5b0b37f9835"
+        },
+        {
+          "path": "kotlin/lang/security/defaulthttpclient-is-deprecated.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/defaulthttpclient-is-deprecated.yaml",
+          "sha256": "7a19e4f93d25af6a7f2c05bd3e1af307f2c2f77d8f95a1827b2778efb5d22728"
+        },
+        {
+          "path": "kotlin/lang/security/ecb-cipher.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/ecb-cipher.yaml",
+          "sha256": "678406c943124761782f0e59d6cb42354cc2e8d7dfdd6f35103ca2723c993cda"
+        },
+        {
+          "path": "kotlin/lang/security/gcm-detection.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/gcm-detection.yaml",
+          "sha256": "3c476ceb151454f31a088dbeb531098b933893a8eb2ce94f247ee3db797e801b"
+        },
+        {
+          "path": "kotlin/lang/security/no-null-cipher.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/no-null-cipher.yaml",
+          "sha256": "c4db6e0a893c23427affc3edc23a2c1f0ea3b3e153979f2545c8170ae96af619"
+        },
+        {
+          "path": "kotlin/lang/security/unencrypted-socket.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/unencrypted-socket.yaml",
+          "sha256": "d0df7a6410e3213c749fd037a006f8a4b61138ee8c944f4e95b42d482ed2fe2f"
+        },
+        {
+          "path": "kotlin/lang/security/use-of-md5.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/use-of-md5.yaml",
+          "sha256": "a1a752ca333dc93d50e2ea8014acc4ee63cc89a87b44fcc242a08877899d3096"
+        },
+        {
+          "path": "kotlin/lang/security/use-of-sha1.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/use-of-sha1.yaml",
+          "sha256": "7c4a0276f340ef9886722f0bc58186362646725f7a7f4e7e34370e23680ecdb0"
+        },
+        {
+          "path": "kotlin/lang/security/weak-rsa.yaml",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/kotlin/lang/security/weak-rsa.yaml",
+          "sha256": "031807bfc5d2fe246ddcd56b7e6a4ab8150eb7d234e990df28408a0c510edc4e"
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/opengrep/opengrep-rules/f1d2b562b414783763fd02a6ed2736eaed622efa/LICENSE",
+          "sha256": "9600f388f17cb800a7a0ba8b55bc15c5b0ed047de8517f2d5e533becee9d0a18"
+        }
+      ],
+      "gitleaks_config": {
+        "url": "https://raw.githubusercontent.com/gitleaks/gitleaks/v8.30.1/config/gitleaks.toml",
+        "sha256": "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf"
+      }
+    },
+    "configuration_file_count": 37,
+    "app_count": 12,
+    "retained_java_files_scanned": 2688,
+    "corpus_audit_alerts": 6,
+    "corpus_partial_parsing_diagnostics": 8,
+    "review": "Two RSA /ECB/ tokens do not establish symmetric ECB; four Random calls are UI/notification uses or require further security-context evidence. Safe Java sample also has two upstream audit alerts.",
+    "applications": [
+      {
+        "application": "sample_safe",
+        "exit_code": 0,
+        "duration_seconds": 0.5,
+        "findings": 2,
+        "errors": 0,
+        "scanned_files": 1,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {
+          "gcm-detection": 1,
+          "weak-random": 1
+        }
+      },
+      {
+        "application": "sample_vulnerable",
+        "exit_code": 0,
+        "duration_seconds": 0.203,
+        "findings": 4,
+        "errors": 0,
+        "scanned_files": 1,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {
+          "use-of-md5": 1,
+          "ecb-cipher": 1,
+          "des-is-deprecated": 1,
+          "weak-random": 1
+        }
+      },
+      {
+        "application": "01_AynIQ",
+        "exit_code": 0,
+        "duration_seconds": 0.407,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 44,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "02_Careem",
+        "exit_code": 0,
+        "duration_seconds": 1.14,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 1013,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "03_Baly",
+        "exit_code": 0,
+        "duration_seconds": 0.563,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 89,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "05_oodi",
+        "exit_code": 0,
+        "duration_seconds": 0.437,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 88,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "06_Qi_Services",
+        "exit_code": 0,
+        "duration_seconds": 0.438,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 95,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "07_Qi_PhonePay",
+        "exit_code": 0,
+        "duration_seconds": 0.875,
+        "findings": 0,
+        "errors": 1,
+        "scanned_files": 27,
+        "skipped_files": 0,
+        "error_types": {
+          "PartialParsing": 1
+        },
+        "rules": {}
+      },
+      {
+        "application": "08_SuperQi",
+        "exit_code": 0,
+        "duration_seconds": 1.657,
+        "findings": 1,
+        "errors": 6,
+        "scanned_files": 200,
+        "skipped_files": 0,
+        "error_types": {
+          "PartialParsing": 6
+        },
+        "rules": {
+          "weak-random": 1
+        }
+      },
+      {
+        "application": "09_SNTAT",
+        "exit_code": 0,
+        "duration_seconds": 2.453,
+        "findings": 2,
+        "errors": 1,
+        "scanned_files": 804,
+        "skipped_files": 0,
+        "error_types": {
+          "PartialParsing": 1
+        },
+        "rules": {
+          "ecb-cipher": 2
+        }
+      },
+      {
+        "application": "10_Ministry_of_Communications",
+        "exit_code": 0,
+        "duration_seconds": 0.25,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 15,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "11_UrukTech",
+        "exit_code": 0,
+        "duration_seconds": 0.329,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 45,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      },
+      {
+        "application": "13_Taqaudi",
+        "exit_code": 0,
+        "duration_seconds": 0.906,
+        "findings": 3,
+        "errors": 0,
+        "scanned_files": 231,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {
+          "weak-random": 3
+        }
+      },
+      {
+        "application": "14_alwatani",
+        "exit_code": 0,
+        "duration_seconds": 0.36,
+        "findings": 0,
+        "errors": 0,
+        "scanned_files": 37,
+        "skipped_files": 0,
+        "error_types": {},
+        "rules": {}
+      }
+    ]
+  },
+  "platform_adapter_executions": [
+    {
+      "sample": "samples/safe_app",
+      "engine": "gitleaks",
+      "note": "ok (0 results)",
+      "findings": 0,
+      "locations": []
+    },
+    {
+      "sample": "samples/safe_app",
+      "engine": "opengrep",
+      "note": "ok (2 results, opengrep.EXE)",
+      "findings": 2,
+      "locations": [
+        {
+          "file": "SafeServlet.java",
+          "line": 38,
+          "rule_id": "SEMGREP-gcm-detection"
+        },
+        {
+          "file": "SafeServlet.java",
+          "line": 48,
+          "rule_id": "SEMGREP-weak-random"
+        }
+      ]
+    },
+    {
+      "sample": "samples/vulnerable_app",
+      "engine": "gitleaks",
+      "note": "ok (3 results)",
+      "findings": 3,
+      "locations": [
+        {
+          "file": "config/settings.yaml",
+          "line": 3,
+          "rule_id": "GITLEAKS-generic-api-key"
+        },
+        {
+          "file": "server.js",
+          "line": 13,
+          "rule_id": "GITLEAKS-generic-api-key"
+        },
+        {
+          "file": "server.js",
+          "line": 13,
+          "rule_id": "GITLEAKS-generic-api-key"
+        }
+      ]
+    },
+    {
+      "sample": "samples/vulnerable_app",
+      "engine": "opengrep",
+      "note": "ok (4 results, opengrep.EXE)",
+      "findings": 4,
+      "locations": [
+        {
+          "file": "LoginServlet.java",
+          "line": 38,
+          "rule_id": "SEMGREP-use-of-md5"
+        },
+        {
+          "file": "LoginServlet.java",
+          "line": 43,
+          "rule_id": "SEMGREP-ecb-cipher"
+        },
+        {
+          "file": "LoginServlet.java",
+          "line": 43,
+          "rule_id": "SEMGREP-des-is-deprecated"
+        },
+        {
+          "file": "LoginServlet.java",
+          "line": 49,
+          "rule_id": "SEMGREP-weak-random"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Retained decoded input is bounded by the earlier static decoder and JADX extraction; no claim all original source was recovered.",
+    "Opengrep subset is Java/Kotlin; native ARM code and Dart AOT are outside this AST experiment.",
+    "Upstream audit alerts are not independently confirmed vulnerabilities.",
+    "Gitleaks default decoding identifies derived values whose literal is absent from the source line; reported columns require independent source verification.",
+    "Rules with Commons Clause restrictions remain local validation inputs, not shipped MIT detector packs.",
+    "External executable paths were set only in the validation process, not the platform or machine PATH."
+  ]
+}

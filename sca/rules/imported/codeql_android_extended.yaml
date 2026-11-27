@@ -1,0 +1,104 @@
+# Narrow syntactic adaptations, not execution of CodeQL's type/data-flow engine.
+source:
+  name: GitHub CodeQL
+  url: https://github.com/github/codeql/tree/43fb30bb443c04731009218f39cba97cd93dd6fe/java/ql/src/Security/CWE
+  license: MIT
+  copyright: Copyright (c) 2006-2025 GitHub, Inc.
+  commit: 43fb30bb443c04731009218f39cba97cd93dd6fe
+  imported: '2026-11-26'
+rules:
+- id: CODEQL-JVM-HOSTNAME-LAMBDA
+  source: java/unsafe-hostname-verification
+  title: Hostname verifier lambda unconditionally returns true
+  languages: [java]
+  cwe: CWE-297
+  severity: high
+  confidence: 0.88
+  code_only: true
+  pattern: '\b(?:hostnameVerifier|setHostnameVerifier)\s*(?:\(\s*(?:HostnameVerifier\s*)?)?(?:\(\s*\w+\s*,\s*\w+\s*\)|\{\s*\w+\s*,\s*\w+)\s*->\s*(?:true\b|\{\s*return\s+true\s*;)'
+  message: This verifier's visible lambda body accepts every hostname. Confirm the client uses this verifier; this pattern does not prove a reachable network attack.
+  fix: Use the library's default hostname verifier and configure the correct service hostname.
+  note: Covers Java and Kotlin literal true lambdas. Does not resolve verifier classes or conditional implementations.
+  examples_vulnerable:
+  - 'clientBuilder.hostnameVerifier((host, session) -> true);'
+  - 'clientBuilder.hostnameVerifier { hostname, session -> true }'
+  - 'conn.setHostnameVerifier(HostnameVerifier { _, _ -> true })'
+  examples_safe:
+  - 'clientBuilder.hostnameVerifier((host, session) -> verifier.verify(host, session));'
+  - 'clientBuilder.hostnameVerifier { hostname, session -> false }'
+
+- id: CODEQL-JVM-TRUST-NOOP
+  source: java/insecure-trustmanager
+  title: Certificate trust callback has an explicit no-op implementation
+  languages: [java]
+  cwe: CWE-295
+  severity: high
+  confidence: 0.88
+  code_only: true
+  pattern: '\bcheckServerTrusted\s*\([^)]{0,300}\)\s*(?:(?::\s*Unit\s*)?=\s*Unit\b|(?:throws\s+(?:java\.security\.cert\.)?CertificateException\s*)?\{\s*return\s*;\s*\}|throws\s+(?:java\.security\.cert\.)?CertificateException\s*\{\s*\})'
+  message: The visible checkServerTrusted implementation does not check the certificate chain. Whether this callback is installed must be verified separately.
+  fix: Delegate certificate-chain validation to a correctly initialized platform TrustManager.
+  note: Narrow one-line Java/Kotlin cases missed by the existing empty-body rule; no claim of full control-flow analysis.
+  examples_vulnerable:
+  - 'override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String): Unit = Unit'
+  - 'public void checkServerTrusted(X509Certificate[] chain, String authType) { return; }'
+  - 'public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}'
+  examples_safe:
+  - 'override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) = delegate.checkServerTrusted(chain, authType)'
+  - 'public void checkServerTrusted(X509Certificate[] chain, String authType) { throw new CertificateException(); }'
+
+- id: CODEQL-ANDROID-FRAGMENT-ALLOW-ALL
+  source: java/android/fragment-injection-preference-activity
+  title: Fragment validation explicitly accepts every fragment name
+  languages: [java]
+  cwe: CWE-470
+  severity: medium
+  confidence: 0.75
+  code_only: true
+  pattern: '\bisValidFragment\s*\([^)]{0,200}\)\s*(?::\s*Boolean\s*)?(?:=\s*true\b|\{\s*return\s+true\s*;?\s*\})'
+  message: The visible fragment-name validator always returns true. Verify the containing activity type, exported state and callers before classifying this as exploitable fragment injection.
+  fix: Allow only the intended fragment classes and restrict externally reachable activities.
+  note: Literal unconditional validator only. Does not infer exported-component reachability.
+  examples_vulnerable:
+  - 'protected boolean isValidFragment(String name) { return true; }'
+  - 'override fun isValidFragment(fragmentName: String): Boolean = true'
+  examples_safe:
+  - 'protected boolean isValidFragment(String name) { return TrustedFragment.class.getName().equals(name); }'
+  - 'override fun isValidFragment(fragmentName: String) = allowed.contains(fragmentName)'
+
+- id: CODEQL-ANDROID-INTENT-DIRECT-FORWARD
+  source: java/android/intent-redirection
+  title: Nested incoming Intent is passed directly to a component launcher
+  languages: [java]
+  cwe: CWE-926
+  severity: high
+  confidence: 0.76
+  code_only: true
+  pattern: '\b(?:startActivity|startService|startForegroundService|sendBroadcast)\s*\(\s*(?:\(\s*Intent\s*\)\s*)?(?:getIntent\s*\(\s*\)|intent)\s*\.\s*getParcelableExtra(?:\s*<\s*Intent\s*>)?\s*\('
+  message: An Intent obtained from the incoming Intent is directly forwarded. Exploitability depends on whether an untrusted caller can reach this component and on upstream restrictions, which this pattern does not resolve.
+  fix: Restrict the caller and allow-list the destination component before launching a nested Intent.
+  note: Covers only direct source-to-launcher syntax. Safe named-variable code and multi-step flows are not judged by this rule.
+  examples_vulnerable:
+  - 'startActivity((Intent) getIntent().getParcelableExtra("next"));'
+  - 'startActivity(intent.getParcelableExtra<Intent>("next")!!)'
+  examples_safe:
+  - 'startActivity(new Intent(this, TrustedActivity.class));'
+  - 'startActivity(validatedIntent);'
+
+- id: CODEQL-ANDROID-PREFS-DIRECT-SECRET
+  source: java/android/cleartext-storage-shared-prefs
+  title: Sensitive-named value is written directly to ordinary SharedPreferences
+  languages: [java]
+  cwe: CWE-312
+  severity: medium
+  confidence: 0.76
+  pattern: '(?i)\bgetSharedPreferences\s*\([^;\n]{1,180}\)\s*\.\s*edit\s*\(\s*\)\s*\.\s*putString\s*\(\s*["\x27](?:password|passwd|access[_-]?token|refresh[_-]?token|client[_-]?secret|api[_-]?key)["\x27]\s*,'
+  message: A direct getSharedPreferences/edit/putString chain stores a sensitive-named value. Review the actual value and backup/access policy; the name alone does not prove that live credentials are present.
+  fix: Avoid persisting privileged credentials when possible, and use an appropriate protected storage design for necessary secrets.
+  note: Requires an ordinary SharedPreferences creation call in the same chain; does not flag arbitrary putString calls or encrypted preference objects.
+  examples_vulnerable:
+  - 'getSharedPreferences("settings", MODE_PRIVATE).edit().putString("access_token", token).apply();'
+  - 'context.getSharedPreferences("settings", 0).edit().putString("password", password).commit()'
+  examples_safe:
+  - 'encryptedPrefs.edit().putString("access_token", token).apply();'
+  - 'getSharedPreferences("settings", 0).edit().putString("theme", theme).apply();'

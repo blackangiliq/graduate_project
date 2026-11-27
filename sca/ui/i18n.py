@@ -3,6 +3,301 @@ here is shown in English. Placeholders such as %s and %d must stay in the same o
 from __future__ import annotations
 
 AR = {
+    "Evidence": "نوع الدليل",
+    "Classification": "التصنيف",
+    "Extraction coverage": "نطاق الاستخراج وحدوده",
+    "Native library string coverage": "تغطية نصوص المكتبات الأصلية",
+    "Base64 literal coverage": "تغطية فك النصوص بترميز Base64",
+    "Complex Android resources": "موارد Android المركّبة",
+    "Read and omitted inputs, decoding budgets and derived-text counts "
+    "describe coverage; they do not prove that every vulnerability was found.":
+        "توضح الملفات المقروءة والمستبعدة وحدود فك الترميز وعدد النصوص الناتجة نطاق التغطية؛ "
+        "ولا تثبت اكتشاف جميع الثغرات.",
+    "Credential candidate; review required": "قيمة محتملة لبيانات اعتماد؛ تحتاج مراجعة",
+    "SDK client identifier": "معرّف تطبيق لمكتبة SDK",
+    "Service configuration": "إعداد خدمة",
+    "Service configuration and credential candidates found in the files. "
+    "Client identifiers can be public; a name alone does not establish "
+    "privileges or exploitability. Select a value to inspect its source.":
+        "إعدادات الخدمات والقيم المرشّحة لبيانات الاعتماد الموجودة في الملفات. قد تكون معرّفات "
+        "التطبيق عامة؛ اسم الحقل وحده لا يثبت صلاحياته أو قابليته للاستغلال. اختر قيمة لعرض مصدرها.",
+    "URL template": "قالب رابط يحتاج قيماً أثناء التشغيل",
+    "URL literal": "رابط نصي داخل الملفات",
+    "Host literal": "اسم مضيف داخل الملفات",
+    "URL templates are shown exactly as stored, including placeholders. "
+    "Their final addresses require runtime values; finding a literal "
+    "does not prove a network request occurred.":
+        "تظهر قوالب الروابط كما خُزّنت تماماً، بما فيها المتغيرات. يتطلب العنوان النهائي قيماً "
+        "من وقت التشغيل؛ ووجود النص داخل الملف لا يثبت حصول طلب شبكي.",
+    "JADX loaded %d files. Scope: the base APK's manifest package and declared "
+    "components; limits: %d files and %d seconds. Other DEX contents are still "
+    "examined as extracted strings.":
+    "حمّل JADX عدد %d من الملفات. النطاق: حزمة التطبيق والمكوّنات المعلنة في ملف APK الأساسي؛ "
+    "الحدود: %d ملف و%d ثانية. تُفحص محتويات DEX الأخرى كنصوص مستخرجة.",
+    "%d long lines exceed the code-pattern analysis limit. Secrets and literal URLs "
+    "are checked separately; code vulnerability coverage is partial.":
+        "يتجاوز %d سطراً طويلاً حدّ تحليل الأنماط البرمجية. تُفحص الأسرار والروابط النصية بشكل منفصل؛ "
+        "تغطية ثغرات الكود جزئية.",
+    "The scan recovered %s text strings from compiled Dart code in libapp.so. These observed "
+    "strings can contain addresses and keys; encrypted or runtime-generated values may not be present.":
+        "استخرج الفحص %s نصاً من كود Dart المترجم في libapp.so. قد تحتوي النصوص المكتشفة روابط ومفاتيح؛ "
+        "وقد لا تظهر القيم المشفّرة أو التي تتولّد أثناء التشغيل.",
+    "Addresses associated with %s services were found: %s. Runtime use was not verified.":
+        "وُجدت عناوين مرتبطة بـ %s خدمات: %s. لم يُتحقق من استخدامها أثناء التشغيل.",
+    "Jump to column": "انتقل إلى العمود",
+    "Download this file": "نزّل هذا الملف",
+    "Columns %d–%d of %d": "الأعمدة %d–%d من أصل %d",
+    "This is a long source line. Navigate by column or download the complete file.":
+        "هذا سطر مصدري طويل. انتقل إلى عمود محدد أو نزّل الملف كاملاً.",
+    "Showing columns %d–%d of %d. The selected value is complete; "
+    "open the file to navigate the rest of this line.":
+        "تظهر الأعمدة %d–%d من أصل %d. القيمة المحددة كاملة؛ افتح الملف لتصفّح بقية السطر.",
+    "%d long code lines were checked for literal URLs, but their API call expressions "
+    "could not be fully analyzed.":
+        "فُحص %d سطراً برمجياً طويلاً بحثاً عن الروابط النصية، لكن تعذّر تحليل تعبيرات استدعاء API فيها بالكامل.",
+    "This saved result has no original file snapshot. Rescan its input to display "
+    "and export the complete observed values.":
+        "هذه النتيجة المحفوظة لا تحتوي نسخة من الملفات الأصلية. أعد فحص الإدخال لعرض القيم المكتشفة وتصديرها كاملة.",
+    "Detected value": "القيمة المكتشفة",
+    "Addresses, API calls, paths and keys observed in the scanned files, with "
+    "their recorded locations. Values are shown in full. No service was contacted.":
+        "العناوين واستدعاءات API والمسارات والمفاتيح الموجودة في الملفات المفحوصة، مع مواضعها المسجّلة. "
+        "تظهر القيم كاملة. لم يتم الاتصال بالخدمات.",
+    "Values are shown in full. The severity reflects the evidence in the scanned "
+    "files. Service permissions and restrictions require separate verification.":
+        "تظهر القيم كاملة. تعكس درجة الخطورة الأدلة الموجودة في الملفات المفحوصة. "
+        "تتطلب صلاحيات الخدمة وقيودها تحققاً مستقلاً.",
+    "Source files": "ملفات المصدر",
+    "Filter source files": "تصفية ملفات المصدر",
+    "No source files match this filter.": "لا توجد ملفات مصدر تطابق التصفية.",
+    "Source file": "ملف مصدري",
+    "Browse source files": "تصفّح ملفات المصدر",
+    "The original file changed or is unavailable. Rescan to view the current source.":
+        "تغيّر الملف الأصلي أو تعذّر فتحه. أعد الفحص لعرض محتواه الحالي.",
+    "Line numbers refer to the scanned source. Previews mask literal values.":
+        "تشير أرقام الأسطر إلى الملفات المصدرية التي فُحصت. تُحجب القيم الحرفية في المعاينة.",
+    "Compare a known key locally": "مطابقة مفتاح معروف محلياً",
+    "Find the matching key in your source file": "ابحث عن المفتاح المطابق في ملف من مشروعك",
+    "Choose the text file from your project that contains the value, such as strings.xml or local.properties.":
+        "اختر الملف النصي الذي يحتوي قيمة المفتاح في مشروعك، مثل strings.xml أو local.properties.",
+    "Choose a source file of at most %d bytes.": "اختر ملفاً مصدرياً لا يتجاوز حجمه %d بايت.",
+    "Could not confirm a unique matching key in this source file.":
+        "تعذّر تأكيد مفتاح واحد من هذا الملف يطابق الموضع المحدد.",
+    "Rescan this APK to match a key from your source file.":
+        "أعد فحص حزمة APK لمطابقة المفتاح مع ملف من مشروعك.",
+    "The APK preview masks credential values. Choose your original source file below to display "
+    "the value that matches this line.":
+        "تحجب معاينة APK قيم المفاتيح. اختر ملف السورس الأصلي أدناه لعرض القيمة المطابقة لهذا السطر.",
+    "The highlighted attribute shows the matching value from your source file.":
+        "القيمة الظاهرة في الخاصية المميّزة مطابقة للقيمة الموجودة في ملفك المصدري.",
+    "Matched value on this line": "القيمة المطابقة في هذا السطر",
+    "Checks the complete value you enter against this rule's matches on the selected line. "
+    "The comparison stays on this computer.":
+        "أدخل القيمة الكاملة من مشروعك لمقارنتها بالقيم التي اكتشفتها هذه القاعدة في السطر المحدد. "
+        "تجري المقارنة على هذا الجهاز.",
+    "Known value from your project": "القيمة المعروفة من مشروعك",
+    "Check exact match": "تحقّق من تطابق القيمة",
+    "Enter the value you want to compare.": "أدخل القيمة التي تريد مقارنتها.",
+    "Exact match with a value detected on this line.": "تطابقت القيمة بالكامل مع قيمة مكتشفة في هذا السطر.",
+    "The entered value differs from the matches on this line.": "تختلف القيمة المُدخلة عن القيم المكتشفة في هذا السطر.",
+    "Values are masked. The severity reflects the evidence in the scanned files. "
+    "Service permissions and restrictions require separate verification.":
+        "القيم محجوبة. تعكس درجة الخطورة الأدلة الموجودة في الملفات المفحوصة. "
+        "تتطلب صلاحيات الخدمة وقيودها تحققاً مستقلاً.",
+    "No inventory alerts at the current thresholds.": "لا توجد تنبيهات للجرد وفق حدود التنبيه الحالية.",
+    "APK files in this scan": "ملفات APK الداخلة في الفحص",
+    "%d of %d APK files read without a reported input limit.":
+        "اكتملت قراءة %d من أصل %d ملف APK ضمن حدود إدخال الفاحص.",
+    "Read": "مقروء", "Partially read": "مقروء جزئياً", "Skipped": "تم تخطّيه",
+    "Base APK": "الملف الأساسي", "Split APK": "جزء من التطبيق", "Alternative APK": "نسخة بديلة",
+    "Package role": "دور الملف",
+    "Native library count limit reached": "تجاوز عدد المكتبات الأصلية حدّ الفحص",
+    "Optional Java decompilation covers the base APK": "فكّ ترجمة Java الاختياري يشمل الملف الأساسي",
+    "APK package does not match the base": "معرّف التطبيق يختلف عن معرّف الملف الأساسي",
+    "APK version does not match the base": "إصدار الجزء يختلف عن إصدار الملف الأساسي",
+    "Duplicate split ID": "معرّف الجزء مكرّر",
+    "Unreadable base manifest": "تعذّرت قراءة ملف Manifest الأساسي",
+    "Unreadable split manifest": "تعذّرت قراءة ملف Manifest لهذا الجزء",
+    "APK has no declared split ID": "لا يصرّح ملف APK بمعرّف جزء",
+    "Alternative installation variant": "نسخة تثبيت بديلة",
+    "APK count limit": "تجاوز عدد ملفات APK الحدّ",
+    "The base APK was not supplied": "ملف APK الأساسي غير موجود ضمن الإدخال",
+    "Duplicate APK member filename": "اسم ملف APK مكرّر داخل الحزمة",
+    "This value appears in Firebase client configuration. The file scan cannot establish access to project data.":
+        "تظهر هذه القيمة في إعدادات عميل Firebase. لا يبيّن فحص الملف صلاحيات الوصول إلى بيانات المشروع.",
+    "Review the allowed apps and APIs in Google Cloud and verify the project's Firebase Security Rules.":
+        "راجع التطبيقات والواجهات المسموح بها في Google Cloud وتحقق من قواعد الوصول إلى البيانات في Firebase.",
+    "The package was found, but its version could not be matched to the affected versions in the advisory.":
+        "اكتُشفت المكتبة، وتعذّر مطابقة إصدارها مع الإصدارات المتأثرة الواردة في النشرة الأمنية.",
+    "Check the resolved dependency version against the advisory before classifying this as a vulnerability.":
+        "طابق إصدار المكتبة الفعلي مع النشرة الأمنية قبل تصنيف النتيجة كثغرة.",
+    "APK size limit": "تجاوز حجم ملف APK الحدّ",
+    "Compressed APK size limit": "تجاوز حجم APK المضغوط الحدّ",
+    "A decoder could not finish": "تعذّر على إحدى أدوات فك الملف إكمال القراءة",
+    "Localized string resource limit reached": "تجاوز عدد موارد الترجمة الحدّ",
+    "An archive entry could not be read within the scan limits": "تعذّرت قراءة عنصر الأرشيف ضمن حدود الفحص",
+    "Decoded text limit reached": "تجاوز النص المفكوك حدّ الحجم",
+    "An XML resource could not be decoded": "تعذّر فكّ أحد موارد XML",
+    "XML resource count limit reached": "تجاوز عدد موارد XML الحدّ",
+    "String resource count limit reached": "تجاوز عدد الموارد النصية الحدّ",
+    "Text asset size limit reached": "تجاوز حجم أحد الأصول النصية الحدّ",
+    "Text asset count limit reached": "تجاوز عدد الأصول النصية الحدّ",
+    "DEX count limit reached": "تجاوز عدد ملفات DEX الحدّ",
+    "APK containing this file: %s": "ملف APK الذي يحتوي هذا الموضع: %s",
+    "Line numbers index the extracted strings. The original source line and byte offset "
+    "are unavailable in this view.":
+        "رقم السطر يخص قائمة النصوص المستخرجة من الملف الثنائي. سطر المصدر الأصلي وموضع البايت "
+        "غير متاحين في هذه المعاينة.",
+    "Line numbers refer to the code reconstructed by JADX.":
+        "تخص أرقام الأسطر الكود الذي أعادت أداة JADX بناءه.",
+    "Scan archive": "أرشيف الفحوصات", "Archive database": "مكان قاعدة بيانات الأرشيف",
+    "Find scans by file name or path": "ابحث في الأرشيف باسم الملف أو مساره",
+    "No saved scans match this path.": "لا توجد فحوصات محفوظة تطابق هذا المسار.",
+    "Archive page": "صفحة الأرشيف", "%d saved scans · page %d of %d": "%d فحصاً محفوظاً · صفحة %d من %d",
+    "Scan target": "المسار المفحوص", "Started": "وقت الفحص", "Grade": "التقدير", "ID": "الرقم",
+    "Use this path for a new scan": "استخدم هذا المسار لفحص جديد",
+    "Saved results keep the locations recorded at scan time. A new scan of the original path "
+    "rebuilds file previews from the files currently on disk.":
+        "تحفظ نتائج الأرشيف مواضع الأدلة وقت الفحص. لإعادة بناء المعاينات من الملفات الموجودة الآن، "
+        "ابدأ فحصاً جديداً للمسار الأصلي.",
+    "Scan workspace": "إعداد الفحص",
+    "Scan settings": "خيارات الفحص",
+    "Samples": "العيّنات",
+    "Static engines": "محركات الفحص الستاتيكي",
+    "Artificial intelligence": "الذكاء الاصطناعي",
+    "Precision and output": "الدقة وحفظ النتائج",
+    "Include adjacent APK parts (%d files)": "تضمين أجزاء APK الموجودة بجانب الملف (%d ملفات)",
+    "APK files selected: %d": "عدد ملفات APK المحددة: %d",
+    "Selected input: %s": "الهدف المحدد للفحص: %s",
+    "%d selected APK files": "%d ملفات APK محددة",
+    "One archive up to %d MiB, or up to %d MiB total for a split set. "
+    "Download the report before closing this session.":
+        "حد الأرشيف الواحد %d ميبيبايت، وحد مجموعة الملفات المجزّأة %d ميبيبايت إجمالاً. "
+        "نزّل التقرير قبل إغلاق هذه الجلسة.",
+    "The selected APKs exceed the combined size limit.": "يتجاوز مجموع أحجام ملفات APK الحد المسموح.",
+    "Select distinct APK filenames from the same app.": "اختر ملفات APK مختلفة الأسماء من التطبيق نفسه.",
+    "One of the selected APKs is empty.": "أحد ملفات APK المختارة فارغ.",
+    "Select the base APK and its split APKs together.": "اختر ملف APK الأساسي وأجزاءه معاً.",
+    "Select a directory with a base APK and its splits, or choose one APK.":
+        "اختر مجلداً يضم ملف APK الأساسي وأجزاءه، أو اختر ملف APK واحداً.",
+    "Too many APKs in the selected set.": "يتجاوز عدد ملفات APK في المجموعة الحد المسموح.",
+    "An APK set cannot contain links or special files.": "يجب أن تضم المجموعة ملفات APK عادية فقط.",
+    "The scanner checks the ZIP contents to identify a source project or a split APK set.":
+        "يفحص المحرك محتويات ZIP لتمييز مشروع الكود المصدري عن مجموعة APK المجزأة.",
+    "Choose your files in **Scan input**, then press **Run scan**.":
+        "اختر ملفاتك من **مصدر الفحص** ثم اضغط **ابدأ الفحص**.",
+    "Choose a working AI provider in Scan settings to use learning.":
+        "اختر مزوّد ذكاء اصطناعي متاحاً من خيارات الفحص لاستخدام التعلّم.",
+    "The help next to each scan setting explains what it does.":
+        "تعرض المساعدة بجانب كل خيار وظيفته عند الفحص.",
+    "Decoded files": "الملفات المفكوكة",
+    "No decoded files are available for this scan.": "لا توجد ملفات مفكوكة متاحة لهذا الفحص.",
+    "Filter decoded files": "تصفية الملفات المفكوكة",
+    "No decoded files match this filter.": "لا توجد ملفات تطابق التصفية.",
+    "Decoded file": "الملف المفكوك",
+    "Jump to line": "الانتقال إلى السطر",
+    "Previous page": "الصفحة السابقة",
+    "Next page": "الصفحة التالية",
+    "Showing lines %d–%d of %d": "عرض الأسطر %d–%d من أصل %d",
+    "%s · %s · %d lines": "%s · %s · %d سطراً",
+    "This decoded file is empty.": "معاينة هذا الملف فارغة.",
+    "The preview was shortened to fit.": "اختُصرت أسطر المعاينة الطويلة.",
+    "This location is outside the available preview.": "هذا الموضع خارج المعاينة المتاحة.",
+    "Decoded from package": "مفكوك من الحزمة",
+    "Recovered Dart source": "كود Dart مستعاد",
+    "Decompiled by JADX": "مفكوك باستخدام JADX",
+    "Strings from binary": "سلاسل مستخرجة من ملف ثنائي",
+    "Analysis summary": "ملخص التحليل",
+    "Binary file placeholder": "عنصر يمثّل ملفاً ثنائياً",
+    "Key location in decoded files": "موضع المفتاح في الملفات المفكوكة",
+    "Open decoded location": "افتح الموضع في الملف المفكوك",
+    "Demo APK": "حزمة APK تجريبية",
+    "File preview": "معاينة الملف",
+    "Credential match · %s": "نمط بيانات الاعتماد المطابق · %s",
+    "The highlighted line is the recorded location. The preview uses "
+    "`[redacted]` or `…` to hide text values, including credentials.":
+        "السطر المميّز هو الموضع المسجّل. تعرض المعاينة `[redacted]` أو `…` مكان القيم النصية، بما فيها المفاتيح.",
+    "Credential": "بيانات اعتماد",
+    "Hard-coded credential": "بيانات اعتماد مكتوبة في الملف",
+    "Google Maps Android client key": "مفتاح عميل خرائط Google لأندرويد",
+    "The packaged manifest declares a Google Maps Android client key. "
+    "Its Google Cloud application and API restrictions require verification by the project owner.":
+        "يعرّف ملف البيان في الحزمة مفتاح عميل خرائط Google لأندرويد. يستطيع مالك المشروع التحقق "
+        "من قيود التطبيقات وواجهات API لهذا المفتاح في Google Cloud.",
+    "In Google Cloud, restrict the key to the Android package and signing certificate "
+    "and to the required Maps APIs.":
+        "في Google Cloud، قيّد المفتاح باسم حزمة أندرويد وشهادة توقيعها وبواجهات الخرائط التي يحتاجها التطبيق.",
+    "AWS access key ID": "معرّف مفتاح وصول AWS",
+    "GitHub token": "رمز وصول GitHub",
+    "Slack token": "رمز وصول Slack",
+    "Stripe live key": "مفتاح Stripe لبيئة الإنتاج",
+    "Private key embedded in source": "مفتاح خاص مضمن في الكود",
+    "Hard-coded JSON Web Token": "رمز JWT مكتوب في الملف",
+    "Credentials embedded in a connection URL": "بيانات اعتماد مضمّنة في عنوان الاتصال",
+    "Slack webhook URL": "عنوان Webhook لخدمة Slack",
+    "Discord webhook URL": "عنوان Webhook لخدمة Discord",
+    "Telegram bot token": "رمز بوت Telegram",
+    "Browse decoded files": "تصفّح الملفات المفكوكة",
+    "Preview location": "عاين الموضع",
+    "Select a finding to preview its location.": "اختر نتيجة لعرض موضعها في الملف.",
+    "Positions refer to decoded files. Previews show the scanned text, including credential values.":
+        "تشير المواضع إلى الملفات المفكوكة. تعرض المعاينة النص المفحوص بما فيه قيم المفاتيح وبيانات الاعتماد.",
+    "Some files exceed the session preview limit.": "تتجاوز بعض الملفات الحد الأقصى لمعاينة الجلسة.",
+    "Run the scan again to browse this package's decoded files.":
+        "أعد الفحص لتصفّح الملفات المفكوكة من هذه الحزمة.",
+    "1. Project or Android app": "١. مشروع أو تطبيق أندرويد",
+    "Upload a source ZIP or an Android app": "ارفع ملف ZIP للمصدر أو تطبيق أندرويد",
+    "Upload file": "رفع ملف",
+    "Server path": "مسار على الخادم",
+    "Scan input": "مصدر الفحص",
+    "Enter a path inside the server project directory.":
+        "أدخل مساراً داخل مجلد المشاريع المخصّص على الخادم.",
+    "Choose a path inside the server project directory.":
+        "اختر مساراً داخل مجلد المشاريع المخصّص على الخادم.",
+    "The server path cannot be read.": "تعذّرت قراءة المسار على الخادم.",
+    "Server projects cannot contain links or special files.":
+        "يجب أن يخلو مشروع الخادم من الروابط والملفات الخاصة.",
+    "The server project exceeds the scan size limits.": "يتجاوز مشروع الخادم حدود حجم الفحص.",
+    "Choose a source file, a source ZIP or an Android package.":
+        "اختر ملف كود مصدري أو ملف ZIP للمصدر أو حزمة أندرويد.",
+    "Choose a source ZIP or an Android app package.":
+        "اختر ملف ZIP للمصدر أو حزمة تطبيق أندرويد.",
+    "Choose a project folder, source ZIP or Android app package first.":
+        "اختر أولاً مجلد مشروع أو ملف ZIP للمصدر أو حزمة تطبيق أندرويد.",
+    "Choose a file between 1 byte and %d MiB.": "اختر ملفاً حجمه بين بايت واحد و%d ميبيبايت.",
+    "Up to %d MiB per upload. Download the report before closing this session.":
+        "يمكن رفع ملف بحجم يصل إلى %d ميبيبايت. نزّل التقرير قبل إغلاق الجلسة.",
+    "A source ZIP: the project is unpacked for analysis.": "يُفك ضغط ملفات المشروع لتحليلها.",
+    "This file is not a readable source ZIP: %s": "هذا الملف ليس أرشيف ZIP قابلاً للقراءة: %s",
+    "The source ZIP cannot be read: %s": "تعذّرت قراءة ملف ZIP للمصدر: %s",
+    "The source ZIP could not be read or extracted.": "تعذّرت قراءة الملف أو فك ضغطه.",
+    "The source ZIP contains an unsafe path.": "يحتوي الملف على مسار غير آمن.",
+    "The source ZIP contains a link or a special file.": "يحتوي الملف على رابط أو ملف خاص.",
+    "The source ZIP contains encrypted entries.": "يحتوي الملف على عناصر مشفّرة.",
+    "The source ZIP must use stored or deflate compression.":
+        "استخدم طريقة التخزين دون ضغط أو طريقة Deflate.",
+    "The source ZIP contains duplicate or conflicting paths.":
+        "يحتوي الملف على مسارات مكرّرة أو متعارضة.",
+    "The source ZIP contains no project files.": "لا يحتوي الملف على ملفات مشروع.",
+    "The source ZIP contains no readable source files.": "لا يحتوي الملف على كود مصدري قابل للفحص.",
+    "The source ZIP directory is too large.": "فهرس الملفات في أرشيف ZIP كبير جداً.",
+    "The scanner is busy. Try again when the current scan finishes.":
+        "الفاحص مشغول. أعد المحاولة بعد انتهاء الفحص الجاري.",
+    "The scan failed.": "فشل الفحص.",
+    "%d of %d findings.": "%d من أصل %d نتيجة.",
+    "Showing %d of %d findings. The filters hide %d.":
+        "تظهر %d من أصل %d نتيجة. تُخفي عوامل التصفية %d من النتائج.",
+    "Show all findings": "عرض كل النتائج",
+    "This scan covers base.apk only. To include the adjacent split APKs, "
+    "select an APKS archive containing the base and its splits.":
+        "يشمل الفحص ملف base.apk وحده. لفحص ملفات APK المجزأة الموجودة بجانبه أيضاً، "
+        "اختر أرشيف APKS يحتوي على الملف الأساسي وأجزائه.",
+    "Choose the scan input in the sidebar and press **Run scan**.":
+        "اختر مصدر الفحص من الشريط الجانبي واضغط **ابدأ الفحص**.",
+    "Choose a folder, upload a source ZIP or select an Android app in the sidebar, then press "
+    "**Run scan**. Try **Use sample** for an example.":
+        "اختر مجلداً أو ارفع ملف ZIP للمصدر أو اختر تطبيق أندرويد من الشريط الجانبي، ثم اضغط "
+        "**ابدأ الفحص**. جرّب **استخدم العيّنة** لتشاهد مثالاً.",
     # ---- tabs
     "Dashboard": "اللوحة", "Findings": "النتائج", "Rules": "القواعد", "Learning": "التعلّم",
     "Reports": "التقارير", "History": "السجل", "Guide": "التعليمات",
@@ -529,6 +824,16 @@ AR = {
         "CWE الخاص بها. هذا الربط من وضع المشروع، وليس ربطاً رسمياً من OWASP.",
     "Group": "المجموعة",
     # ---- APIs and keys (sca/flutter/inventory.py, sca/ui/app_panel.py)
+    "Select a row to see where it was found.": "اضغط على صف لعرض موضعه في الملفات.",
+    "Recorded locations": "المواضع المسجّلة",
+    "%d recorded locations for %d occurrences.": "عدد المواضع المسجّلة %d، وعدد مرات الظهور %d.",
+    "Call site · %s": "موضع الاستدعاء · %s",
+    "Target argument · %s": "موضع عنوان الاستدعاء · %s",
+    "No file and line were recorded for this item.": "لم يُسجَّل ملف وسطر لهذا العنصر.",
+    "Run the scan again to view the file at this location.":
+        "أعد الفحص لعرض محتوى الملف عند هذا الموضع.",
+    "Calls found in source or decompiled code. Some compiled apps only expose address and path strings.":
+        "استدعاءات ظهرت في السورس أو في الكود المفكوك. في بعض التطبيقات المترجمة لا تظهر إلا نصوص العناوين والمسارات.",
     "APIs and keys: %d server addresses, %d keys, %d serious alerts":
         "واجهات API والمفاتيح: %d عنوان خادم، %d مفتاح، %d تنبيه خطير",
     "Every server address, API call, API path and key the analyzer found, with the file and "
@@ -573,6 +878,7 @@ AR = {
     "test server": "خادم اختبار", "private IP": "IP خاص", "IP address": "رقم IP",
     "Tunnel or test service": "نفق أو خدمة اختبار", "Webhook": "Webhook",
     "App server": "خادم التطبيق", "Cloud backend": "خلفية سحابية",
+    "Local or development address": "عنوان محلي أو للتطوير",
     "Third-party API": "API لطرف ثالث", "SDK, analytics or ads": "SDK أو تحليلات أو إعلانات",
     "HTTP request": "طلب HTTP", "Address built with Uri": "عنوان مبني بـ Uri",
     "Retrofit/Chopper route": "مسار Retrofit/Chopper", "Base address": "العنوان الأساسي",
@@ -592,6 +898,8 @@ AR = {
     "Google API key": "مفتاح Google API", "Unknown service": "خدمة غير معروفة",
     "App signing": "توقيع التطبيق", "Encryption": "التشفير", "Password": "كلمة مرور",
     "Private key": "مفتاح خاص",
+    "Known public SDK test private key": "مفتاح خاص علني معروف لاختبارات مكتبة SDK",
+    "Known public SDK test JWT": "رمز JWT علني معروف لاختبارات مكتبة SDK",
     "API inventory: listing the server addresses, API calls and keys of the app":
         "جرد API: حصر عناوين الخوادم واستدعاءات API والمفاتيح في التطبيق",
     "API inventory: %d server addresses on %d hosts (%d without TLS), %d keys (%d secret), "
@@ -691,6 +999,10 @@ AR = {
     "it cannot do more than intended.":
         "المفتاح العلني (publishable) مصمَّم ليكون داخل التطبيقات: لا حاجة لتغييره، لكن تأكد "
         "أنه لا يستطيع أكثر مما يُراد له.",
+    "Review whether this public SDK fixture is used only for tests or capability probes. "
+    "Runtime trust or signing with it would require remediation; its presence alone is not a secret leak.":
+        "راجع ما إذا كانت بيانات SDK العلنية هذه تُستخدم للاختبار أو للتحقق من الإمكانات فقط. "
+        "الاعتماد عليها للتحقق من الثقة أو التوقيع الفعلي يحتاج إلى معالجة؛ وجودها وحده ليس تسريباً لسر.",
     "A Stripe secret key must never be in an app: roll it in the Stripe dashboard; the app "
     "may only hold the publishable key (pk_) and payments are created on the server.":
         "مفتاح Stripe السري لا يوضع في تطبيق أبداً: بدّله من لوحة Stripe؛ ولا يحمل التطبيق "
@@ -729,3 +1041,170 @@ AR = {
         "التطبيق العنوان أبداً.",
     "Keys": "المفاتيح", "Service IDs": "معرّفات الخدمات", ".env entries": "قيم ملفات env.",
 }
+
+# Runtime observations retain their values and distinguish capture evidence from code.
+AR.update({
+    "Dynamic analysis": "التحليل الديناميكي",
+    "Runtime URL": "رابط رُصد أثناء التشغيل",
+    "Runtime host": "مضيف رُصد أثناء التشغيل",
+    "Socket destination attempt": "وجهة محاولة اتصال عبر المقبس",
+    "Recorded occurrences": "مرات الرصد المسجّلة",
+    "Summary metadata describes the first occurrence. Select another recorded event below to inspect its own timestamp, API and call stack.":
+        "معلومات الملخّص تخص أول رصد للقيمة. اختر حدثاً آخر أدناه لمعاينة وقته واستدعائه وتسلسل الدوال الخاص به.",
+    "Capture mode": "وضع التسجيل",
+    "Observe native DNS and TLS calls": "رصد استدعاءات DNS وTLS في الكود الأصلي",
+    "Disable to compare Java hooks alone when native compatibility issues occur. This reduces visibility into native DNS, socket and TLS calls.":
+        "ألغِ التفعيل لمقارنة الرصد عبر Java وحدها عند حدوث مشكلات توافق في الكود الأصلي. يقلّل ذلك رصد استدعاءات DNS والمقابس وTLS الأصلية.",
+    "Requested hook mode": "وضع الرصد المطلوب",
+    "Java and native observation requested": "طلب رصد Java والكود الأصلي",
+    "Java-only observation requested": "طلب الرصد عبر Java فقط",
+    "Native DNS, socket and TLS observation was disabled for this capture.":
+        "عُطّل رصد DNS والمقابس وTLS في الكود الأصلي لهذا التسجيل.",
+    "Native DNS/socket/TLS observation hooks were explicitly disabled for this compatibility capture. Java observation remains enabled; the Frida Java bridge itself still uses native internals. This setting does not establish the cause of any previous crash.":
+        "عُطّلت نقاط رصد DNS والمقابس وTLS الأصلية صراحةً لاختبار التوافق. يبقى رصد Java مفعّلاً، ويظل جسر Java في Frida يستخدم مكوّناته الداخلية الأصلية. لا يثبت هذا الإعداد سبب أي انهيار سابق.",
+    "Install and restart the application": "تثبيت التطبيق وإعادة تشغيله",
+    "Attach to the running application": "الاتصال بالتطبيق الجاري تشغيله",
+    "During capture, use the selected Android device to open the screens you want to inspect. Only the selected process and executed actions are observed.":
+        "أثناء التسجيل، افتح الشاشات التي تريد فحصها على جهاز أندرويد المحدد. يُرصد فقط ما يُنفّذ داخل عملية التطبيق المحددة.",
+    "Recorded event occurrence": "موضع حدث الرصد",
+    "Hook available": "نقطة الرصد متاحة",
+    "Hook unavailable": "نقطة الرصد غير متاحة",
+    "Credential candidate": "قيمة محتملة لبيانات اعتماد",
+    "Observed encryption key": "مفتاح تشفير مرصود",
+    "Observed value": "القيمة المرصودة",
+    "Capture completed": "اكتمل التسجيل",
+    "Partial capture": "تسجيل جزئي",
+    "Capture failed": "فشل التسجيل",
+    "Capture running": "التسجيل جارٍ",
+    "Imported capture": "تسجيل مستورد",
+    "Capture status unavailable": "حالة التسجيل غير متاحة",
+    "Runtime evidence": "دليل من وقت التشغيل",
+    "Observed at": "وقت الرصد",
+    "Observed API": "واجهة الاستدعاء المرصودة",
+    "Process ID": "معرّف العملية",
+    "Thread ID": "معرّف مسار التنفيذ",
+    "Observation label": "وصف الرصد",
+    "Observation details": "تفاصيل الرصد",
+    "Observed key material or a token-shaped value does not by itself prove a credential leak or exploitability.":
+        "رصد مفتاح أو قيمة تشبه رمز الوصول لا يثبت وحده تسرب بيانات اعتماد أو إمكانية الاستغلال.",
+    "Exact value match in the retained files. This does not prove that this line generated the runtime value.":
+        "تطابق حرفي للقيمة داخل الملفات المحفوظة. لا يثبت ذلك أن هذا السطر ولّد القيمة أثناء التشغيل.",
+    "Matching file location": "موضع القيمة المطابقة في الملف",
+    "No exact source line was verified for this value. Its runtime event and recorded call stack are shown below.":
+        "لم يثبت سطر مصدر مطابق لهذه القيمة. يظهر أدناه حدث التشغيل وتسلسل الاستدعاءات المسجّل.",
+    "Related class or method candidates": "أصناف أو دوال محتملة الصلة",
+    "These are possible code associations, not verified source lines.":
+        "هذه ارتباطات محتملة بالكود، وليست مواضع مصدر متحققة.",
+    "Recorded call stack": "تسلسل الاستدعاءات المسجّل",
+    "Class / module": "الصنف / المكتبة",
+    "Method / address": "الدالة / العنوان",
+    "Runtime source file": "ملف المصدر في معلومات التشغيل",
+    "Runtime line": "السطر في معلومات التشغيل",
+    "Runtime stack line numbers are debug metadata; they are not JADX line numbers.":
+        "أرقام أسطر تسلسل الاستدعاءات تأتي من معلومات التصحيح وقت التشغيل؛ وليست أرقام أسطر JADX.",
+    "No call stack was recorded for this event.": "لم يُسجّل تسلسل استدعاءات لهذا الحدث.",
+    "Capture record: %s · line %d": "سجل الرصد: %s · السطر %d",
+    "This line belongs to the capture log, not to the application's source code.":
+        "هذا السطر من سجل الرصد، وليس من الكود المصدري للتطبيق.",
+    "The referenced runtime event is unavailable in this capture.": "حدث التشغيل المشار إليه غير متاح في هذا التسجيل.",
+    "Target package": "حزمة التطبيق المستهدف",
+    "Device: %s · started: %s · ended: %s": "الجهاز: %s · البداية: %s · النهاية: %s",
+    "Imported evidence: this dashboard did not independently witness the capture.":
+        "دليل مستورد: لم تشهد هذه المنصة عملية التسجيل بصورة مستقلة.",
+    "Recorded events": "الأحداث المسجّلة",
+    "Observed addresses": "العناوين المرصودة",
+    "Key / token observations": "قيم المفاتيح والرموز المرصودة",
+    "Capture coverage and diagnostics": "تغطية التسجيل والتشخيص",
+    "Capture profile": "نمط الرصد",
+    "Startup instrumentation": "رصد بدء التشغيل",
+    "Attached running process": "رصد عملية جارية",
+    "Attached after launch": "رصد بعد بدء التطبيق",
+    "Observed duration (seconds)": "مدة الرصد الفعلية بالثواني",
+    "Requested duration (seconds)": "مدة الرصد المطلوبة بالثواني",
+    "Not recorded": "غير مسجّل",
+    "Observed duration is recording time, not a measure of screen or code coverage.":
+        "المدة الفعلية هي زمن التسجيل؛ وليست مقياساً لتغطية الشاشات أو الكود.",
+    "No automated screen exploration was recorded for this session.": "لم يُسجّل تصفّح آلي للشاشات في هذه الجلسة.",
+    "Capture timing and profile metadata were not recorded.": "لم تُسجّل معلومات مدة الرصد ونمطه.",
+    "Only code executed during this capture is covered; startup alone does not exercise login or other screens.":
+        "تشمل التغطية الكود الذي نُفّذ أثناء التسجيل فقط؛ بدء التطبيق وحده لا يختبر تسجيل الدخول أو بقية الشاشات.",
+    "An observed key, token or endpoint is evidence of runtime use, not a vulnerability or proof of exploitability.":
+        "رصد مفتاح أو رمز أو عنوان اتصال دليل على استخدامه أثناء التشغيل؛ ولا يثبت وجود ثغرة أو إمكانية استغلاله.",
+    "Values are complete within the explicit event/value/journal budgets; omitted evidence is reported, never silently shortened.":
+        "تُحفظ القيم كاملة ضمن الحدود المعلنة للأحداث والقيم والسجل؛ ويُبلّغ عن الأدلة التي تعذّر حفظها دون اقتطاع صامت.",
+    "TLS validation and application integrity checks are unchanged. No pinning or root-detection bypass is performed.":
+        "تبقى فحوص التحقق من TLS وسلامة التطبيق كما هي. لا تُتجاوز آليات تثبيت الشهادات أو اكتشاف صلاحيات الجذر.",
+    "Flutter/native DNS and socket destinations may be visible without full URLs. Stripped or inlined TLS, QUIC and HTTP/2 header decoding are not covered.":
+        "قد تظهر أسماء DNS ووجهات المقابس في Flutter والكود الأصلي دون الروابط الكاملة. لا تشمل التغطية TLS منزوع الرموز أو المدمج، ولا QUIC أو فك ترويسات HTTP/2.",
+    "Only the selected process is instrumented; child processes and WebView renderer processes are outside this session.":
+        "تُرصد العملية المحددة فقط؛ العمليات الفرعية وعمليات عرض WebView خارج هذه الجلسة.",
+    "Native hooks cover the process architecture only; ARM translation on x86 does not guarantee access to translated native TLS or Dart code.":
+        "تشمل نقاط رصد الكود الأصلي معمارية العملية فقط؛ ترجمة ARM على x86 لا تضمن الوصول إلى كود TLS أو Dart المترجَم.",
+    "Only readable complete decoded outputs and TLS chunks are classified; binary payloads and values split across chunks may not be reconstructed.":
+        "تُصنّف فقط المخرجات المفكوكة ومقاطع TLS الكاملة القابلة للقراءة؛ قد لا يُعاد تركيب المحتوى الثنائي أو القيم الموزعة على مقاطع متعددة.",
+    "Cipher.doFinal capture covers readable byte-array return values; output-buffer and ByteBuffer result variants are not reconstructed.":
+        "يشمل رصد Cipher.doFinal القيم المعادة كمصفوفات بايت قابلة للقراءة؛ ولا يُعاد تركيب النتائج التي تُكتب في مخزن إخراج أو ByteBuffer.",
+    "Generated values may have no literal source location. Stack lines are runtime debug metadata, not asserted JADX source lines.":
+        "قد لا يوجد موضع حرفي للقيم المتولّدة داخل المصدر. أسطر تسلسل الاستدعاءات من معلومات التصحيح أثناء التشغيل؛ وليست مواضع مصدر مؤكدة في JADX.",
+    "Frida spawn failed. Attached after an ordinary Android launch; initialization before attachment was not captured.":
+        "تعذّر بدء العملية عبر Frida. جرى الاتصال بها بعد تشغيل أندرويد الاعتيادي؛ لم تُسجّل مرحلة التهيئة السابقة للاتصال.",
+    "Capability": "إمكانية الرصد",
+    "No hook coverage metadata was recorded.": "لم تُسجّل معلومات تغطية نقاط الرصد.",
+    "No runtime values were recorded in this session. This is not evidence that the app has no network traffic or security issues.":
+        "لم تُسجّل قيم أثناء هذه الجلسة. لا يثبت ذلك خلو التطبيق من الاتصالات الشبكية أو المشكلات الأمنية.",
+    "Search runtime values, APIs or locations": "ابحث في القيم والاستدعاءات والمواضع المرصودة",
+    "All observation types": "كل أنواع الرصد",
+    "Observation type": "نوع الرصد",
+    "Showing %d of %d runtime observations.": "عرض %d من أصل %d قيمة مرصودة أثناء التشغيل.",
+    "No recorded values match these filters.": "لا توجد قيم مسجّلة تطابق هذه التصفية.",
+    "Full observed value": "القيمة المرصودة كاملة",
+    "Open recorded value": "افتح قيمة مرصودة",
+    "Download runtime capture JSON": "تنزيل التسجيل بصيغة JSON",
+    "Download runtime events JSONL": "تنزيل أحداث التشغيل بصيغة JSONL",
+    "Record actual values while the app runs. Observed traffic, keys and call stacks are separate from static findings; unvisited screens and encrypted or unsupported paths may remain unobserved.":
+        "سجّل القيم الفعلية أثناء تشغيل التطبيق. تُعرض الاتصالات والمفاتيح وتسلسلات الاستدعاء المرصودة بصورة مستقلة عن النتائج الساكنة؛ قد تبقى الشاشات التي لم تُفتح والمسارات المشفّرة أو غير المدعومة خارج الرصد.",
+    "Runtime capture setup": "إعداد التسجيل أثناء التشغيل",
+    "Select a scanned Android application before starting a runtime capture.":
+        "اختر تطبيق أندرويد مفحوصاً قبل بدء التسجيل أثناء التشغيل.",
+    "Android device": "جهاز أندرويد",
+    "No Android device is available for capture.": "لا يوجد جهاز أندرويد متاح للتسجيل.",
+    "Capture duration (seconds)": "مدة التسجيل بالثواني",
+    "The selected Android device is not connected or authorized.": "جهاز أندرويد المحدد غير متصل أو لم يسمح بالاتصال.",
+    "Runtime capture prerequisites are unavailable. Check device and instrumentation status.":
+        "متطلبات التسجيل أثناء التشغيل غير متاحة. راجع حالة الجهاز وأدوات الرصد.",
+    "Available capture tools": "أدوات التسجيل المتاحة",
+    "Start runtime capture": "ابدأ التسجيل أثناء التشغيل",
+    "Runtime capture could not finish.": "تعذّر إكمال التسجيل أثناء التشغيل.",
+    "Refresh devices": "تحديث الأجهزة",
+    "Reconnect lab observer": "إعادة توصيل أداة الرصد",
+    "The lab observer could not be reconnected.": "تعذّرت إعادة توصيل أداة الرصد في بيئة الاختبار.",
+    "Lab observer reconnected. Device status has been refreshed.": "أُعيد توصيل أداة الرصد وتحديث حالة الجهاز.",
+    "Import an existing runtime capture": "استيراد تسجيل تشغيل سابق",
+    "Import a capture JSON exported by this analyzer. Imported evidence remains labelled separately from a capture witnessed by this dashboard.":
+        "استورد ملف JSON لتسجيل صادر من هذا المحلّل. يبقى الدليل المستورد مميّزاً عن التسجيل الذي نفذته هذه المنصة.",
+    "Runtime capture JSON": "ملف تسجيل التشغيل JSON",
+    "Import capture": "استيراد التسجيل",
+    "The runtime capture exceeds the 64 MiB import limit.": "حجم التسجيل يتجاوز حد الاستيراد البالغ 64 ميبيبايت.",
+    "The runtime capture could not be imported.": "تعذّر استيراد تسجيل التشغيل.",
+    "No runtime capture has been recorded for this scan yet.": "لا يوجد تسجيل أثناء التشغيل مرتبط بهذا الفحص بعد.",
+    "Recorded capture session": "جلسة التسجيل المحفوظة",
+    "Runtime analysis": "التحليل أثناء التشغيل",
+    "Live capture requires a connected Android lab. Import its capture JSON to inspect it here.":
+        "التسجيل المباشر يحتاج إلى جهاز أندرويد مخصّص للاختبار ومتصل بالمنصة. استورد ملف التسجيل JSON لمعاينته هنا.",
+    "The archived runtime capture could not be loaded.": "تعذّر تحميل تسجيل التشغيل المؤرشف.",
+    "The archived runtime evidence is unavailable. Its summary is not a complete capture.":
+        "دليل التشغيل المؤرشف غير متاح. الملخّص وحده ليس تسجيلاً كاملاً.",
+})
+
+
+# Provenance for bounded, derived literal evidence.
+AR.update({
+    "Base64-decoded literal": "قيمة نصية مفكوكة من Base64",
+    "Decoded-literal provenance is unavailable or invalid.": "مصدر القيمة المفكوكة غير متاح أو غير صالح.",
+    "Base64-decoded text. These lines are derived evidence, not original source lines.":
+        "نص فُك ترميزه من Base64. هذه الأسطر دليل مشتق وليست أسطر الملف الأصلي.",
+    "Encoded source: %s · line %d · columns %d–%d · decoding depth %d":
+        "المصدر المرمّز: %s · السطر %d · الأعمدة %d–%d · عمق فك الترميز %d",
+    "The encoded source is outside the retained preview.": "المصدر المرمّز خارج نطاق المعاينة المحفوظة.",
+    "Open encoded source": "افتح المصدر المرمّز",
+})

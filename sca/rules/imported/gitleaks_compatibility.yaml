@@ -1,0 +1,56 @@
+# Previously skipped upstream rules, adapted and covered by explicit examples.
+source:
+  name: Gitleaks compatibility adaptations
+  url: https://github.com/gitleaks/gitleaks/blob/09242ce9c8a60d9b051fc2d166f9e849b88c7ac0/config/gitleaks.toml
+  license: MIT
+  copyright: Copyright (c) 2019 Zachary Rice
+  commit: 09242ce9c8a60d9b051fc2d166f9e849b88c7ac0
+  sha256: e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf
+  imported: '2026-11-26'
+rules:
+- id: GITLEAKS-airtable-personnal-access-token
+  source: airtable-personnal-access-token
+  title: Airtable personal access token
+  kind: secret
+  languages: [any]
+  cwe: CWE-798
+  severity: high
+  confidence: 0.85
+  pattern: '\b(pat[A-Za-z0-9]{14}\.[a-f0-9]{64})\b'
+  secret_group: 1
+  keywords: [airtable]
+  message: A literal matches an Airtable personal access token and the line identifies Airtable. This does not verify the token's status or permissions.
+  fix: Review the token and rotate it if exposed beyond the intended trust boundary.
+  note: Replaces Go POSIX alnum syntax with the equivalent ASCII character class. Preserves upstream provider-keyword gating.
+
+- id: GITLEAKS-facebook-access-token
+  source: facebook-access-token
+  title: Facebook app access token
+  kind: secret
+  languages: [any]
+  cwe: CWE-798
+  severity: high
+  confidence: 0.8
+  pattern: '(?i)\b(\d{15,16}(?:\||%)[0-9a-z\-_]{27,40})(?:[\x60\x27"\s;]|\\[nr]|$)'
+  secret_group: 1
+  keywords: [facebook]
+  entropy: 3
+  message: A literal matches the Facebook app-token format. Its validity, restrictions and actual service permissions remain unverified.
+  fix: Review the embedded token and move privileged app-secret operations to a trusted backend.
+  note: Equivalent non-capturing separator and explicit secret group. The former generated-example check lacked the required Facebook context.
+
+- id: GITLEAKS-freemius-secret-key
+  source: freemius-secret-key
+  title: Freemius secret key
+  kind: secret
+  languages: [php]
+  files: ['*.php']
+  cwe: CWE-798
+  severity: high
+  confidence: 0.8
+  pattern: '(?i)["\x27]secret_key["\x27]\s*=>\s*["\x27](sk_[^\s"\x27]{29})["\x27]'
+  secret_group: 1
+  keywords: [secret_key]
+  message: A PHP configuration value matches the Freemius secret-key format. Static detection does not establish service access.
+  fix: Review the credential and avoid distributing privileged secrets in application source.
+  note: Preserves the PHP path restriction; excludes quote characters from the captured value.
